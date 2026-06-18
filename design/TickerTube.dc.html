@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  @keyframes ttUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  .anno-card{opacity:0;visibility:hidden;transition:opacity .14s ease, transform .14s ease;}
+  .anno:hover .anno-card{opacity:1;visibility:visible;transform:translate(-50%,-12px) !important;}
+  .anno:hover{z-index:80 !important;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#F6F6F2;font-family:'Plus Jakarta Sans',sans-serif;color:#14151A;-webkit-font-smoothing:antialiased;">
+
+  <!-- NAV -->
+  <div style="position:sticky;top:0;z-index:100;background:rgba(246,246,242,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #ECEBE4;">
+    <div style="max-width:1240px;margin:0 auto;padding:0 28px;height:66px;display:flex;align-items:center;gap:28px;">
+      <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <svg width="30" height="30" viewBox="0 0 100 100" style="border-radius:9px;display:block;">
+          <rect x="0" y="0" width="100" height="100" fill="#14151A"></rect>
+          <polyline points="20,80 34,71 48,74 64,47 80,25" fill="none" stroke="#23D17F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <path d="M70 25 L80 25 L80 35" fill="none" stroke="#23D17F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="M40 31 L40 63 L67 47 Z" fill="#fff"></path>
+        </svg>
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:-0.02em;">StonkTube</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-left:8px;">
+        <sc-for list="{{ nav }}" as="nv" hint-placeholder-count="3">
+          <sc-if value="{{ nv.active }}" hint-placeholder-val="{{ true }}"><div onClick="{{ nv.onClick }}" style="padding:7px 13px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:#14151A;color:#fff;">{{ nv.label }}</div></sc-if>
+          <sc-if value="{{ nv.inactive }}" hint-placeholder-val="{{ true }}"><div onClick="{{ nv.onClick }}" style="padding:7px 13px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;color:#6E6F78;" style-hover="color:#14151A;">{{ nv.label }}</div></sc-if>
+        </sc-for>
+      </div>
+      <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:12px;">
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ECEBE4;border-radius:10px;padding:8px 13px;width:230px;color:#9A9BA4;font-size:13.5px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#9A9BA4" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>
+          Search ticker or creator
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1240px;margin:0 auto;padding:38px 28px 90px;">
+
+    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.03em;margin:0 0 30px;max-width:680px;">What the creators are calling.</h1>
+
+    <!-- pills -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px;">
+      <sc-for list="{{ pills }}" as="p" hint-placeholder-count="4">
+        <div onClick="{{ p.open }}" style="background:#fff;border:1px solid #ECEBE4;border-radius:16px;padding:18px 18px 14px;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;" style-hover="transform:translateY(-3px);box-shadow:0 12px 28px -12px rgba(20,21,26,0.18);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:16px;letter-spacing:-0.02em;">{{ p.ticker }}</div>
+              <div style="font-size:12px;color:#9A9BA4;margin-top:1px;">{{ p.name }}</div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:#0F9D63;background:#E7F6EE;padding:4px 8px;border-radius:7px;display:flex;align-items:center;gap:3px;">{{ p.bullStr }}</div>
+          </div>
+          <svg viewBox="0 0 120 40" preserveAspectRatio="none" width="100%" height="38" style="display:block;">
+            <polyline points="{{ p.spark }}" fill="none" stroke="{{ p.sparkColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:12px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:18px;">{{ p.priceStr }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:13px;color:{{ p.chgColor }};">{{ p.chgStr }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:28px;align-items:start;">
+
+      <!-- LEFT: feed -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;letter-spacing:-0.02em;margin:0;">Latest analysis</h2>
+          <div style="font-size:13px;color:#9A9BA4;font-weight:500;">Across 6 creators</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <sc-for list="{{ feed }}" as="f" hint-placeholder-count="6">
+            <div style="background:#fff;border:1px solid #ECEBE4;border-radius:14px;padding:14px;display:flex;gap:14px;transition:border-color .15s ease;" style-hover="border-color:#D6D5CC;">
+              <a href="{{ f.videoUrl }}" target="_blank" rel="noopener" style="position:relative;flex-shrink:0;width:176px;height:99px;border-radius:10px;overflow:hidden;display:block;text-decoration:none;background:{{ f.thumbBg }};">
+                <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.04) 0%,rgba(0,0,0,0.55) 100%);"></div>
+                <div style="position:absolute;left:13px;top:10px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:27px;color:rgba(255,255,255,0.95);letter-spacing:-0.02em;">{{ f.primaryTicker }}</div>
+                <div style="position:absolute;left:13px;bottom:10px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.82);text-transform:uppercase;letter-spacing:0.08em;">{{ f.creatorName }}</div>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:rgba(20,21,26,0.5);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent #fff;margin-left:2px;"></div>
+                </div>
+                <div style="position:absolute;right:7px;bottom:7px;background:rgba(20,21,26,0.88);color:#fff;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;padding:1px 5px;border-radius:4px;">{{ f.durationStr }}</div>
+              </a>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+                  <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:{{ f.creatorColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;font-family:'Space Grotesk',sans-serif;">{{ f.creatorInitial }}</div>
+                  <span style="font-weight:600;font-size:13px;white-space:nowrap;">{{ f.creatorName }}</span>
+                  <span style="font-size:12px;color:#9A9BA4;white-space:nowrap;">· {{ f.dateStr }}</span>
+                </div>
+                <a href="{{ f.videoUrl }}" target="_blank" rel="noopener" style="font-size:15px;font-weight:600;line-height:1.32;color:#16171C;text-decoration:none;margin-bottom:10px;" style-hover="color:#4F46E5;">{{ f.title }}</a>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;">
+                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <sc-for list="{{ f.mentions }}" as="mn" hint-placeholder-count="2">
+                      <span onClick="{{ mn.open }}" style="display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;background:#F3F2EC;border:1px solid #ECEBE4;padding:3px 9px;border-radius:7px;cursor:pointer;" style-hover="background:#ECEBE2;border-color:#D6D5CC;">{{ mn.ticker }}{{ mn.thumb }}</span>
+                    </sc-for>
+                  </div>
+                  <div onClick="{{ f.summaryOpen }}" style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#4F46E5;cursor:pointer;white-space:nowrap;flex-shrink:0;" style-hover="color:#3730A3;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M8 13h8M8 17h5"></path></svg>
+                    View full summary
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- RIGHT: leaderboards -->
+      <div style="display:flex;flex-direction:column;gap:24px;">
+
+        <div style="background:#fff;border:1px solid #ECEBE4;border-radius:16px;padding:20px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <h3 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;margin:0;">Most mentioned</h3>
+          </div>
+          <div style="font-size:12.5px;color:#9A9BA4;margin-bottom:16px;">Total mentions · last 30 days</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <sc-for list="{{ mentioned }}" as="m" hint-placeholder-count="6">
+              <div onClick="{{ m.open }}" style="display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:10px;cursor:pointer;transition:background .15s ease;" style-hover="background:#F6F6F2;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#B6B7BE;width:14px;">{{ m.rank }}</div>
+                <div style="width:9px;height:9px;border-radius:50%;background:{{ m.dotColor }};flex-shrink:0;"></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13.5px;">{{ m.ticker }}</div>
+                  <div style="height:5px;background:#F0EFE8;border-radius:3px;margin-top:5px;overflow:hidden;">
+                    <div style="height:100%;width:{{ m.barPct }}%;background:{{ m.dotColor }};border-radius:3px;"></div>
+                  </div>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;color:#6E6F78;">{{ m.mentionsStr }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #ECEBE4;border-radius:16px;padding:20px;">
+          <h3 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;margin:0 0 4px;">Most bullish</h3>
+          <div style="font-size:12.5px;color:#9A9BA4;margin-bottom:16px;">Share of positive ratings</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <sc-for list="{{ bullish }}" as="b" hint-placeholder-count="6">
+              <div onClick="{{ b.open }}" style="display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:10px;cursor:pointer;transition:background .15s ease;" style-hover="background:#F6F6F2;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#B6B7BE;width:14px;">{{ b.rank }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13.5px;">{{ b.ticker }}</span>
+                    <span style="font-size:12px;color:#9A9BA4;">{{ b.verdict }}</span>
+                  </div>
+                  <div style="height:5px;background:#F0EFE8;border-radius:3px;margin-top:5px;overflow:hidden;">
+                    <div style="height:100%;width:{{ b.barPct }}%;background:#0F9D63;border-radius:3px;"></div>
+                  </div>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;color:#0F9D63;width:38px;text-align:right;">{{ b.bullStr }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ STOCK DETAIL ============ -->
+  <sc-if value="{{ isStock }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1240px;margin:0 auto;padding:28px 28px 90px;">
+
+    <div onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:#6E6F78;cursor:pointer;margin-bottom:22px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+      Dashboard
+    </div>
+
+    <!-- header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:54px;height:54px;border-radius:14px;background:{{ s.logoBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.02em;">{{ s.initials }}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:24px;letter-spacing:-0.02em;">{{ s.ticker }}</span>
+            <sc-if value="{{ s.private }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#8A6D3B;background:#FBF3E2;padding:3px 8px;border-radius:6px;">Private · Secondary</span></sc-if>
+          </div>
+          <div style="font-size:15px;color:#6E6F78;margin-top:2px;">{{ s.name }} · {{ s.sector }}</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:30px;letter-spacing:-0.02em;">{{ s.priceStr }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:14px;color:{{ s.chgColor }};margin-top:2px;">{{ s.chgStr }}</div>
+        <div style="font-size:12.5px;color:#9A9BA4;margin-top:4px;">{{ s.trackedStr }}</div>
+      </div>
+    </div>
+
+    <!-- chart card -->
+    <div style="background:#fff;border:1px solid #ECEBE4;border-radius:18px;padding:22px 24px 18px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;">
+        <div style="display:inline-flex;background:#F3F2EC;border-radius:10px;padding:3px;gap:2px;">
+          <sc-for list="{{ tfs }}" as="t" hint-placeholder-count="4">
+            <sc-if value="{{ t.active }}" hint-placeholder-val="{{ true }}"><div onClick="{{ t.onClick }}" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#14151A;box-shadow:0 1px 3px rgba(20,21,26,0.08);">{{ t.label }}</div></sc-if>
+            <sc-if value="{{ t.inactive }}" hint-placeholder-val="{{ true }}"><div onClick="{{ t.onClick }}" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#6E6F78;">{{ t.label }}</div></sc-if>
+          </sc-for>
+        </div>
+
+      </div>
+
+      <div style="position:relative;height:360px;overflow:visible;">
+        <svg viewBox="0 0 1000 360" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">
+          <defs>
+            <linearGradient id="ttAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="{{ chart.color }}" stop-opacity="0.16"></stop>
+              <stop offset="100%" stop-color="{{ chart.color }}" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="5">
+            <line x1="0" y1="{{ g.y }}" x2="1000" y2="{{ g.y }}" stroke="#F0EFE8" stroke-width="1"></line>
+          </sc-for>
+          <polygon points="{{ chart.area }}" fill="url(#ttAreaGrad)"></polygon>
+          <sc-if value="{{ modeFlags }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ chart.flagLines }}" as="fl" hint-placeholder-count="4">
+              <line x1="{{ fl.x }}" y1="0" x2="{{ fl.x }}" y2="360" stroke="{{ fl.color }}" stroke-width="1.5" stroke-dasharray="3 4" stroke-opacity="0.55"></line>
+            </sc-for>
+          </sc-if>
+          <polyline points="{{ chart.line }}" fill="none" stroke="{{ chart.color }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+        </svg>
+
+        <!-- price y-axis labels -->
+        <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="5">
+          <div style="position:absolute;left:6px;top:{{ g.topPct }}%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:11px;color:#B6B7BE;background:rgba(255,255,255,0.7);padding:0 4px;border-radius:4px;">{{ g.label }}</div>
+        </sc-for>
+
+        <!-- annotation overlay -->
+        <sc-for list="{{ annos }}" as="a" hint-placeholder-count="5">
+          <div class="anno" style="position:absolute;left:{{ a.leftPct }}%;top:{{ a.topPct }}%;width:0;height:0;z-index:20;">
+
+            <sc-if value="{{ modeDots }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:{{ a.sentColor }};border:3px solid #fff;box-shadow:0 1px 5px rgba(20,21,26,0.3);cursor:pointer;"></div>
+            </sc-if>
+
+            <sc-if value="{{ modeAvatars }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:0;top:-46px;width:2px;height:46px;background:{{ a.creatorColor }};opacity:0.45;transform:translateX(-50%);"></div>
+              <div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:{{ a.creatorColor }};border:2px solid #fff;"></div>
+              <div style="position:absolute;left:0;top:-46px;transform:translate(-50%,-100%);width:34px;height:34px;border-radius:50%;background:{{ a.creatorColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;font-family:'Space Grotesk',sans-serif;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(20,21,26,0.22);cursor:pointer;">{{ a.creatorInitial }}
+                <span style="position:absolute;right:-5px;bottom:-5px;">{{ a.cornerBadge }}</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modeFlags }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:{{ a.sentColor }};border:2.5px solid #fff;box-shadow:0 1px 4px rgba(20,21,26,0.25);"></div>
+            </sc-if>
+
+            <!-- tooltip -->
+            <div class="anno-card" style="position:absolute;left:0;top:0;transform:translate(-50%,-8px);bottom:auto;width:218px;background:#14151A;color:#fff;border-radius:12px;padding:13px 14px;box-shadow:0 12px 32px -8px rgba(20,21,26,0.4);pointer-events:none;margin-top:-58px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+                <div style="width:24px;height:24px;border-radius:50%;background:{{ a.creatorColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;font-family:'Space Grotesk',sans-serif;">{{ a.creatorInitial }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12.5px;font-weight:600;line-height:1.1;">{{ a.creatorName }}</div>
+                  <div style="font-size:11px;color:#9A9BA4;">{{ a.date }}</div>
+                </div>
+                {{ a.badgeDark }}
+              </div>
+              <div style="font-size:12.5px;line-height:1.35;color:#D7D8DE;margin-bottom:8px;">{{ a.title }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;border-top:1px solid #2A2B32;padding-top:8px;">Price at mention · {{ a.priceLabel }}</div>
+            </div>
+
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- x-axis -->
+      <div style="position:relative;height:20px;margin-top:8px;">
+        <sc-for list="{{ chart.xlabels }}" as="x" hint-placeholder-count="6">
+          <div style="position:absolute;left:{{ x.leftPct }}%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:11px;color:#B6B7BE;">{{ x.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- bottom split -->
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:28px;align-items:start;">
+
+      <!-- recent coverage -->
+      <div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;letter-spacing:-0.02em;margin:0 0 16px;">Recent creator coverage</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <sc-for list="{{ events }}" as="e" hint-placeholder-count="5">
+            <div style="background:#fff;border:1px solid #ECEBE4;border-radius:14px;padding:16px 18px;display:flex;gap:15px;">
+              <div style="flex-shrink:0;width:42px;height:42px;border-radius:50%;background:{{ e.creatorColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;font-family:'Space Grotesk',sans-serif;">{{ e.creatorInitial }}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;">
+                  <span style="font-weight:600;font-size:13.5px;">{{ e.creatorName }}</span>
+                  <span style="font-size:12px;color:#9A9BA4;">{{ e.handle }} · {{ e.dateStr }}</span>
+                </div>
+                <div style="font-size:15px;font-weight:500;line-height:1.35;margin-bottom:10px;color:#23242B;">{{ e.title }}</div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  {{ e.badge }}
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9A9BA4;">@ {{ e.priceStr }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- sentiment summary -->
+      <div style="background:#fff;border:1px solid #ECEBE4;border-radius:16px;padding:22px;position:sticky;top:90px;">
+        <h3 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;margin:0 0 3px;">Overall sentiment</h3>
+        <div style="font-size:12.5px;color:#9A9BA4;margin-bottom:20px;">Based on {{ senti.total }} recent ratings</div>
+
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;letter-spacing:-0.03em;color:#0F9D63;">{{ senti.bullPct }}%</div>
+          <div style="font-size:14px;font-weight:600;color:{{ senti.verdictColor }};">{{ senti.verdict }}</div>
+        </div>
+        <div style="font-size:13px;color:#6E6F78;margin-bottom:18px;">of creators are bullish</div>
+
+        <div style="display:flex;height:10px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:16px;">
+          <div style="width:{{ senti.bullW }}%;background:#0F9D63;"></div>
+          <div style="width:{{ senti.neutW }}%;background:#D9B26A;"></div>
+          <div style="width:{{ senti.bearW }}%;background:#E5484D;"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:#0F9D63;"></span><span style="font-size:13.5px;font-weight:500;">Bullish</span></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">{{ senti.bullN }}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:#D9B26A;"></span><span style="font-size:13.5px;font-weight:500;">Neutral</span></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">{{ senti.neutN }}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:#E5484D;"></span><span style="font-size:13.5px;font-weight:500;">Bearish</span></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">{{ senti.bearN }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ STOCKS ============ -->
+  <sc-if value="{{ isStocks }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1240px;margin:0 auto;padding:38px 28px 90px;">
+    <div style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4F46E5;margin-bottom:12px;">All tracked names</div>
+    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.03em;margin:0 0 26px;">Stocks</h1>
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+      <span style="font-size:12.5px;font-weight:600;color:#9A9BA4;margin-right:4px;">Sort by</span>
+      <sc-for list="{{ stkSorts }}" as="so" hint-placeholder-count="5">
+        <sc-if value="{{ so.active }}" hint-placeholder-val="{{ true }}"><div onClick="{{ so.onClick }}" style="padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#14151A;color:#fff;">{{ so.label }}</div></sc-if>
+        <sc-if value="{{ so.inactive }}" hint-placeholder-val="{{ true }}"><div onClick="{{ so.onClick }}" style="padding:7px 13px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;border:1px solid #ECEBE4;color:#6E6F78;" style-hover="border-color:#D6D5CC;color:#14151A;">{{ so.label }}</div></sc-if>
+      </sc-for>
+    </div>
+
+    <div style="background:#fff;border:1px solid #ECEBE4;border-radius:18px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:2.2fr 1.1fr 0.9fr 1.4fr 0.9fr 0.9fr;gap:16px;padding:14px 22px;border-bottom:1px solid #ECEBE4;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#B6B7BE;">
+        <div>Stock</div>
+        <div style="text-align:right;">Price</div>
+        <div style="text-align:right;">30D</div>
+        <div>Sentiment</div>
+        <div style="text-align:right;">Mentions</div>
+        <div style="text-align:right;">Creators</div>
+      </div>
+      <sc-for list="{{ stkRows }}" as="r" hint-placeholder-count="6">
+        <div onClick="{{ r.open }}" style="display:grid;grid-template-columns:2.2fr 1.1fr 0.9fr 1.4fr 0.9fr 0.9fr;gap:16px;padding:16px 22px;border-bottom:1px solid #F3F2EC;align-items:center;cursor:pointer;transition:background .12s ease;" style-hover="background:#FAFAF7;">
+          <div style="display:flex;align-items:center;gap:13px;min-width:0;">
+            <div style="flex-shrink:0;width:40px;height:40px;border-radius:11px;background:{{ r.logoBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;letter-spacing:-0.02em;">{{ r.initials }}</div>
+            <div style="min-width:0;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:-0.02em;">{{ r.key }}</span>
+                <sc-if value="{{ r.private }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#8A6D3B;background:#FBF3E2;padding:2px 6px;border-radius:5px;">Private</span></sc-if>
+              </div>
+              <div style="font-size:12.5px;color:#9A9BA4;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }} · {{ r.sector }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:11px;">
+            <svg viewBox="0 0 120 40" preserveAspectRatio="none" width="60" height="26" style="display:block;flex-shrink:0;">
+              <polyline points="{{ r.spark }}" fill="none" stroke="{{ r.sparkColor }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            </svg>
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;">{{ r.priceStr }}</span>
+          </div>
+          <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500;font-size:13.5px;color:{{ r.chgColor }};">{{ r.chgStr }}</div>
+          <div>
+            <div style="display:flex;height:8px;border-radius:5px;overflow:hidden;gap:2px;margin-bottom:5px;">
+              <div style="width:{{ r.bullW }}%;background:#0F9D63;"></div>
+              <div style="width:{{ r.neutW }}%;background:#D9B26A;"></div>
+              <div style="width:{{ r.bearW }}%;background:#E5484D;"></div>
+            </div>
+            <div style="font-size:12px;color:#0F9D63;font-weight:600;">{{ r.bullStr }} bullish</div>
+          </div>
+          <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;">{{ r.mentionsStr }}</div>
+          <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;color:#6E6F78;">{{ r.creatorStr }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ CREATORS ============ -->
+  <sc-if value="{{ isCreators }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1240px;margin:0 auto;padding:38px 28px 90px;">
+    <div style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4F46E5;margin-bottom:12px;">The Network</div>
+    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.03em;margin:0 0 10px;">Creators we track</h1>
+    <p style="font-size:16px;color:#6E6F78;margin:0 0 32px;max-width:560px;line-height:1.5;">Six finance YouTubers, every stock call scored and timestamped. Tap any video to watch on YouTube.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+      <sc-for list="{{ creators }}" as="cr" hint-placeholder-count="6">
+        <div style="background:#fff;border:1px solid #ECEBE4;border-radius:18px;padding:22px;">
+          <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;">
+            <div style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:{{ cr.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:21px;font-family:'Space Grotesk',sans-serif;">{{ cr.initial }}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.02em;">{{ cr.name }}</div>
+              <div style="font-size:12.5px;color:#9A9BA4;margin-top:1px;">{{ cr.handle }} · {{ cr.subs }} subscribers</div>
+            </div>
+            <a href="{{ cr.channelUrl }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;border:1px solid #ECEBE4;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;color:#14151A;text-decoration:none;white-space:nowrap;" style-hover="border-color:#14151A;">Visit
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg>
+            </a>
+          </div>
+
+          <p style="font-size:13.5px;color:#6E6F78;line-height:1.5;margin:0 0 16px;">{{ cr.bio }}</p>
+
+          <div style="display:flex;gap:10px;margin-bottom:6px;">
+            <div style="flex:1;background:#F8F8F4;border-radius:11px;padding:11px 13px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:18px;">{{ cr.videoCountStr }}</div>
+              <div style="font-size:11.5px;color:#9A9BA4;margin-top:1px;">Videos tracked</div>
+            </div>
+            <div style="flex:1;background:#F8F8F4;border-radius:11px;padding:11px 13px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:18px;color:#0F9D63;">{{ cr.bullStr }}</div>
+              <div style="font-size:11.5px;color:#9A9BA4;margin-top:1px;">Bullish calls</div>
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:#9A9BA4;margin:12px 0 16px;">Covers&nbsp;&nbsp;<span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#6E6F78;">{{ cr.coverage }}</span></div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#B6B7BE;margin-bottom:4px;">Recent calls</div>
+          <sc-for list="{{ cr.recent }}" as="rc" hint-placeholder-count="3">
+            <div style="border-top:1px solid #F0EFE8;padding:12px 0;display:flex;gap:11px;align-items:flex-start;">
+              <a href="{{ rc.videoUrl }}" target="_blank" rel="noopener" style="position:relative;flex-shrink:0;width:66px;height:37px;border-radius:7px;overflow:hidden;display:block;background:{{ rc.color }};">
+                <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.04),rgba(0,0,0,0.5));"></div>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:rgba(20,21,26,0.5);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:0;height:0;border-style:solid;border-width:4px 0 4px 7px;border-color:transparent transparent transparent #fff;margin-left:1px;"></div>
+                </div>
+                <div style="position:absolute;right:4px;bottom:3px;background:rgba(20,21,26,0.85);color:#fff;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:600;padding:0 3px;border-radius:3px;">{{ rc.durationStr }}</div>
+              </a>
+              <div style="flex:1;min-width:0;">
+                <a href="{{ rc.videoUrl }}" target="_blank" rel="noopener" style="display:block;font-size:13.5px;font-weight:600;line-height:1.3;color:#16171C;text-decoration:none;margin-bottom:7px;" style-hover="color:#4F46E5;">{{ rc.title }}</a>
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;">
+                  <span style="font-size:11.5px;color:#9A9BA4;margin-right:2px;">{{ rc.dateStr }}</span>
+                  <sc-for list="{{ rc.mentions }}" as="mn" hint-placeholder-count="2">
+                    <span onClick="{{ mn.open }}" style="display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11.5px;background:#F3F2EC;border:1px solid #ECEBE4;padding:2px 8px;border-radius:6px;cursor:pointer;" style-hover="background:#ECEBE2;">{{ mn.ticker }}{{ mn.thumb }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ SUMMARY MODAL ============ -->
+  <sc-if value="{{ openVidActive }}" hint-placeholder-val="{{ true }}">
+  <div onClick="{{ closeModal }}" style="position:fixed;inset:0;z-index:200;background:rgba(20,21,26,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div onClick="{{ modalStop }}" style="background:#fff;border-radius:20px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 80px -20px rgba(20,21,26,0.5);">
+      <div style="position:relative;height:188px;background:{{ modal.creatorColor }};overflow:hidden;border-radius:20px 20px 0 0;">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.6) 100%);"></div>
+        <div style="position:absolute;left:22px;top:18px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:46px;color:rgba(255,255,255,0.96);letter-spacing:-0.03em;">{{ modal.primaryTicker }}</div>
+        <a href="{{ modal.videoUrl }}" target="_blank" rel="noopener" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(20,21,26,0.55);display:flex;align-items:center;justify-content:center;text-decoration:none;" style-hover="background:rgba(20,21,26,0.78);">
+          <div style="width:0;height:0;border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff;margin-left:3px;"></div>
+        </a>
+        <div style="position:absolute;right:13px;bottom:13px;background:rgba(20,21,26,0.88);color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;">{{ modal.durationStr }}</div>
+        <div onClick="{{ closeModal }}" style="position:absolute;right:14px;top:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;cursor:pointer;" style-hover="background:#fff;">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#14151A" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+        </div>
+      </div>
+
+      <div style="padding:24px 26px 26px;">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:{{ modal.creatorColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif;">{{ modal.creatorInitial }}</div>
+          <span style="font-weight:600;font-size:13.5px;">{{ modal.creatorName }}</span>
+          <span style="font-size:12.5px;color:#9A9BA4;">{{ modal.handle }} · {{ modal.dateStr }}</span>
+        </div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-0.02em;margin:0 0 18px;">{{ modal.title }}</h2>
+
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#B6B7BE;margin-bottom:7px;">Summary</div>
+        <p style="font-size:15px;color:#3A3B42;line-height:1.6;margin:0 0 22px;">{{ modal.summary }}</p>
+
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#B6B7BE;margin-bottom:10px;">Key takeaways</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
+          <sc-for list="{{ modal.takeaways }}" as="tk" hint-placeholder-count="2">
+            <div onClick="{{ tk.open }}" style="display:flex;gap:12px;align-items:flex-start;background:#F8F8F4;border:1px solid #ECEBE4;border-radius:12px;padding:13px 15px;cursor:pointer;" style-hover="border-color:#D6D5CC;">
+              <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:84px;">
+                <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;">{{ tk.ticker }}</span>
+                {{ tk.badge }}
+              </div>
+              <div style="flex:1;min-width:0;font-size:13.5px;color:#3A3B42;line-height:1.45;">{{ tk.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <a href="{{ modal.videoUrl }}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#14151A;color:#fff;border-radius:11px;padding:13px;font-size:14px;font-weight:600;text-decoration:none;" style-hover="background:#000;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23 12s0-3.5-.4-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.7.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.4 5.2a2.7 2.7 0 0 0 1.9 1.9c1.8.4 8.7.4 8.7.4s6.9 0 8.7-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"></path></svg>
+          Watch full video on YouTube
+        </a>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { screen: 'home', cur: 'NVDA', tf: 66, mode: 'avatars' };
+
+  // ---- icon paths ----
+  get UP(){ return "M7 10v12 M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"; }
+  get DOWN(){ return "M17 14V2 M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"; }
+
+  thumbIcon(sent, size, color){
+    const d = sent==='bull' ? this.UP : sent==='bear' ? this.DOWN : "M5 12h14";
+    return React.createElement('svg',{viewBox:'0 0 24 24',width:size,height:size,fill:'none',stroke:color,strokeWidth:2.2,strokeLinecap:'round',strokeLinejoin:'round'}, React.createElement('path',{d}));
+  }
+  sentMeta(sent){
+    if(sent==='bull') return {color:'#0F9D63',bg:'#E7F6EE',darkBg:'rgba(15,157,99,0.22)',darkColor:'#5FD6A0',label:'Bullish'};
+    if(sent==='bear') return {color:'#E5484D',bg:'#FCEBEC',darkBg:'rgba(229,72,77,0.22)',darkColor:'#F1888B',label:'Bearish'};
+    return {color:'#B7791F',bg:'#FBF3E2',darkBg:'rgba(217,178,106,0.22)',darkColor:'#E2C588',label:'Neutral'};
+  }
+  badge(sent, dark){
+    const m=this.sentMeta(sent);
+    return React.createElement('span',{style:{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 9px 3px 7px',borderRadius:999,background:dark?m.darkBg:m.bg,color:dark?m.darkColor:m.color,fontSize:12,fontWeight:600,fontFamily:"'Plus Jakarta Sans',sans-serif"}}, this.thumbIcon(sent,13,'currentColor'), m.label);
+  }
+  cornerBadge(sent){
+    const m=this.sentMeta(sent);
+    return React.createElement('span',{style:{width:18,height:18,borderRadius:'50%',background:m.color,border:'2px solid #fff',display:'inline-flex',alignItems:'center',justifyContent:'center'}}, this.thumbIcon(sent,9,'#fff'));
+  }
+  chipThumb(sent){ const m=this.sentMeta(sent); return React.createElement('span',{style:{display:'inline-flex',color:m.color,marginLeft:1}}, this.thumbIcon(sent,12,'currentColor')); }
+  dur(t){ let h=0; for(let i=0;i<t.length;i++) h=(h+t.charCodeAt(i)*7)|0; h=Math.abs(h); const m=8+(h%16); const s=h%60; return m+':'+String(s).padStart(2,'0'); }
+  ytUrl(name,title){ return 'https://www.youtube.com/results?search_query='+encodeURIComponent(name+' '+title); }
+  hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h+s.charCodeAt(i)*13)|0; return Math.abs(h); }
+  listText(a){ if(a.length===1) return a[0]; if(a.length===2) return a[0]+' and '+a[1]; return a.slice(0,-1).join(', ')+', and '+a[a.length-1]; }
+  noteFor(ticker,sent,title){
+    const bank={
+      bull:["Sees more upside ahead and treats pullbacks as buying opportunities.","Points to strong fundamentals and a favorable setup into the next catalyst.","Adding to the position and expects the uptrend to continue.","Calls the risk/reward attractive at current levels."],
+      bear:["Flags downside risk and would wait for a lower entry.","Warns the valuation has run ahead of the fundamentals.","Trimming exposure until the picture improves.","Sees better opportunities elsewhere right now."],
+      neutral:["Staying on the sidelines until there's a clearer catalyst.","Sees balanced risk/reward and is holding for now.","Wants more data before making a move.","Neutral here — not a buy, not a sell."]
+    };
+    const arr=bank[sent]||bank.neutral; return arr[this.hash(ticker+title)%arr.length];
+  }
+  buildModal(v){
+    const d=this._d; const c=d.creators[v.creator]; const dt=d.dates[d.N-1-v.ago];
+    const names={NVDA:'NVIDIA',GOOGL:'Alphabet',COIN:'Coinbase',SPACEX:'SpaceX',TSLA:'Tesla',MSTR:'Strategy'};
+    const tkNames=v.m.map(p=>names[p[0]]||p[0]);
+    const prim=names[v.m[0][0]]||v.m[0][0]; const primSent=v.m[0][1];
+    const verb={bull:'is bullish on',bear:'is bearish on',neutral:'is neutral on'}[primSent];
+    const summary=c.name+' walks through '+this.listText(tkNames)+' in this '+this.dur(v.title)+' video, covering the latest price action, fundamentals, and what it means for everyday investors. The headline call: '+c.name+' '+verb+' '+prim+(v.m.length>1?', with additional notes on the names below.':'.');
+    const takeaways=v.m.map(p=>({ ticker:p[0], name:names[p[0]]||p[0], badge:this.badge(p[1],false), note:this.noteFor(p[0],p[1],v.title),
+      open:()=>{ this.setState({openVid:null}); this.open(p[0]); } }));
+    return { creatorInitial:c.initial, creatorColor:c.color, creatorName:c.name, handle:c.handle,
+      title:v.title, dateStr:dt.full, durationStr:this.dur(v.title), primaryTicker:v.m[0][0],
+      videoUrl:this.ytUrl(c.name,v.title), summary, takeaways };
+  }
+
+  // ---- data ----
+  rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  fmt(n){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  buildDates(n){
+    const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let d=new Date(2026,5,18); const out=[];
+    while(out.length<n){ const day=d.getDay(); if(day!==0&&day!==6){ out.push({short:MO[d.getMonth()]+' '+d.getDate(), full:MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()}); } d.setDate(d.getDate()-1); }
+    return out.reverse();
+  }
+  genSeries(seed,start,drift,vol,n,dates){
+    const r=this.rng(seed); let p=start; const out=[];
+    for(let i=0;i<n;i++){ const shock=(r()-0.5)*vol; p=p*(1+drift+shock); if(p<1)p=1; out.push({d:dates[i],v:p}); }
+    return out;
+  }
+
+  build(){
+    const N=260; const dates=this.buildDates(N);
+    const creators={
+      bella:{name:'Bella Finance',initial:'B',color:'#DB2D7A',handle:'@bellafinance',subs:'612K',bio:'Beginner-friendly breakdowns of growth and tech stocks for new investors.'},
+      mei:{name:'MeiTouJun',initial:'美',color:'#E0962B',handle:'@MeiTouJun',subs:'1.2M',bio:'In-depth Chinese-language analysis of US tech, AI, and semiconductor names.'},
+      joseph:{name:'Joseph Carlson',initial:'J',color:'#2563EB',handle:'@JosephCarlson',subs:'843K',bio:'Long-term compounding and quality-business investing, one portfolio update at a time.'},
+      andrei:{name:'Andrei Jikh',initial:'A',color:'#7C3AED',handle:'@AndreiJikh',subs:'2.3M',bio:'Dividends, growth bets, and pre-IPO opportunities explained simply.'},
+      tom:{name:'Tom Nash',initial:'T',color:'#0D9488',handle:'@TomNash',subs:'498K',bio:'Contrarian takes and risk-first stock breakdowns — the bear case nobody wants.'},
+      kevin:{name:'Meet Kevin',initial:'K',color:'#EA580C',handle:'@MeetKevin',subs:'2.1M',bio:'High-conviction macro and momentum calls with daily market coverage.'}
+    };
+    const cfg=[
+      {key:'NVDA',name:'NVIDIA Corp',sector:'Semiconductors',color:'#76B900',logoBg:'#1A1A1A',initials:'NV',seed:11,start:118,drift:0.0018,vol:0.05,mentions:42,bull:78},
+      {key:'GOOGL',name:'Alphabet Inc',sector:'Internet',color:'#4285F4',logoBg:'#4285F4',initials:'GO',seed:22,start:152,drift:0.0010,vol:0.034,mentions:31,bull:64},
+      {key:'COIN',name:'Coinbase Global',sector:'Crypto Exchange',color:'#0052FF',logoBg:'#0052FF',initials:'CO',seed:33,start:205,drift:0.0017,vol:0.072,mentions:27,bull:52},
+      {key:'SPACEX',name:'SpaceX',sector:'Aerospace',color:'#5B6BD6',logoBg:'#15172B',initials:'SX',seed:44,start:150,drift:0.0016,vol:0.026,mentions:23,bull:88,private:true},
+      {key:'TSLA',name:'Tesla Inc',sector:'Autos · Energy',color:'#E31937',logoBg:'#E31937',initials:'TS',seed:55,start:300,drift:0.0006,vol:0.06,mentions:38,bull:46},
+      {key:'MSTR',name:'Strategy',sector:'Bitcoin Treasury',color:'#F7931A',logoBg:'#0E1B33',initials:'MS',seed:66,start:1300,drift:0.0021,vol:0.092,mentions:19,bull:59}
+    ];
+    const videos=[
+      {creator:'bella',ago:3,title:"NVIDIA's next leg up? Blackwell demand is off the charts",m:[['NVDA','bull'],['GOOGL','bull']]},
+      {creator:'kevin',ago:4,title:"Coinbase to new highs if Bitcoin holds — plus my full crypto basket",m:[['COIN','bull'],['MSTR','bull']]},
+      {creator:'joseph',ago:5,title:"Alphabet is still the cheapest Big Tech name",m:[['GOOGL','bull'],['NVDA','neutral']]},
+      {creator:'andrei',ago:6,title:"How to actually invest in SpaceX before the IPO",m:[['SPACEX','bull']]},
+      {creator:'tom',ago:7,title:"Tesla deliveries are slowing — here's the data",m:[['TSLA','bear']]},
+      {creator:'kevin',ago:8,title:"Strategy is a leveraged Bitcoin bet — and that's the point",m:[['MSTR','bull'],['COIN','bull']]},
+      {creator:'mei',ago:9,title:"英伟达还能追吗？最新财报与估值全解读",m:[['NVDA','bull']]},
+      {creator:'bella',ago:14,title:"Is Google's ad business in trouble? Let's look",m:[['GOOGL','neutral']]},
+      {creator:'kevin',ago:16,title:"Why Tesla is still a robotaxi call option",m:[['TSLA','bull']]},
+      {creator:'joseph',ago:17,title:"Why I trimmed my NVDA position (but didn't sell)",m:[['NVDA','neutral']]},
+      {creator:'tom',ago:19,title:"Coinbase margins are getting squeezed",m:[['COIN','bear']]},
+      {creator:'kevin',ago:21,title:"SpaceX secondary shares — is the valuation justified?",m:[['SPACEX','bull']]},
+      {creator:'tom',ago:27,title:"The MSTR premium makes no sense to me",m:[['MSTR','bear'],['COIN','bear']]},
+      {creator:'andrei',ago:29,title:"My updated price targets after the AI capex wave",m:[['NVDA','bull'],['GOOGL','bull']]},
+      {creator:'andrei',ago:33,title:"Why GOOGL is my largest position right now",m:[['GOOGL','bull']]},
+      {creator:'bella',ago:38,title:"COIN earnings breakdown — what actually matters",m:[['COIN','neutral']]},
+      {creator:'joseph',ago:40,title:"I don't own Tesla — here's my honest take",m:[['TSLA','neutral']]},
+      {creator:'mei',ago:44,title:"星链估值飙升，SpaceX 还有多少空间",m:[['SPACEX','bull']]},
+      {creator:'tom',ago:46,title:"The NVIDIA setup nobody is talking about",m:[['NVDA','bear']]},
+      {creator:'mei',ago:55,title:"微策略：比特币的杠杆代理",m:[['MSTR','bull']]},
+      {creator:'mei',ago:58,title:"谷歌：被低估的AI赢家",m:[['GOOGL','bull'],['NVDA','bull']]},
+      {creator:'andrei',ago:64,title:"Buying the Coinbase dip again",m:[['COIN','bull']]},
+      {creator:'andrei',ago:68,title:"Cutting my Tesla position in half",m:[['TSLA','bear']]},
+      {creator:'kevin',ago:71,title:"Loading up on NVDA going into earnings",m:[['NVDA','bull']]},
+      {creator:'bella',ago:79,title:"SpaceX: the hype vs the numbers",m:[['SPACEX','neutral']]}
+    ];
+    const ev={};
+    videos.forEach(v=>{ v.m.forEach(pair=>{ const tk=pair[0], sent=pair[1]; (ev[tk]=ev[tk]||[]).push({creator:v.creator,ago:v.ago,sent,title:v.title}); }); });
+    const stocks={};
+    cfg.forEach(c=>{
+      const series=this.genSeries(c.seed,c.start,c.drift,c.vol,N,dates);
+      const price=series[N-1].v, prev=series[N-2].v;
+      const chg=price-prev, chgPct=chg/prev*100;
+      // sparkline last 66 -> downsample
+      const slice=series.slice(N-66); const step=Math.max(1,Math.floor(slice.length/28));
+      const sp=[]; for(let i=0;i<slice.length;i+=step) sp.push(slice[i].v); sp.push(slice[slice.length-1].v);
+      const mn=Math.min(...sp),mx=Math.max(...sp),rg=(mx-mn)||1;
+      const spark=sp.map((v,i)=>((i/(sp.length-1))*120).toFixed(1)+','+(36-((v-mn)/rg)*32+2).toFixed(1)).join(' ');
+      stocks[c.key]={...c, series, price, chg, chgPct, events:ev[c.key]||[], spark};
+    });
+    const feedRaw=[...videos].sort((a,b)=>a.ago-b.ago);
+    return {stocks, creators, feedRaw, N, dates, order:cfg.map(c=>c.key)};
+  }
+
+  open(k){ this.setState({screen:'stock',cur:k,tf:66,mode:'avatars'}); }
+
+  renderVals(){
+    if(!this._d) this._d=this.build();
+    const d=this._d, st=this.state;
+    const base={
+      isHome: st.screen==='home', isStock: st.screen==='stock', isCreators: st.screen==='creators', isStocks: st.screen==='stocks',
+      today:'Jun 18, 2026',
+      goHome: ()=>this.setState({screen:'home'}),
+      nav:[
+        {label:'Dashboard', active:st.screen==='home', inactive:st.screen!=='home', onClick:()=>this.setState({screen:'home'})},
+        {label:'Stocks', active:st.screen==='stocks', inactive:st.screen!=='stocks', onClick:()=>this.setState({screen:'stocks'})},
+        {label:'Creators', active:st.screen==='creators', inactive:st.screen!=='creators', onClick:()=>this.setState({screen:'creators'})}
+      ]
+    };
+    base.closeModal=()=>this.setState({openVid:null});
+    base.modalStop=(e)=>{ if(e&&e.stopPropagation) e.stopPropagation(); };
+    if(st.openVid){ base.openVidActive=true; base.modal=this.buildModal(st.openVid); }
+    else { base.openVidActive=false; }
+
+    if(st.screen==='home'){
+      const pillKeys=['NVDA','GOOGL','COIN','SPACEX'];
+      base.pills=pillKeys.map(k=>{ const s=d.stocks[k]; const up=s.chgPct>=0;
+        return { ticker:k, name:s.name, priceStr:'$'+this.fmt(s.price),
+          chgStr:(up?'+':'')+this.fmt(s.chg)+' ('+(up?'+':'')+s.chgPct.toFixed(2)+'%)',
+          chgColor: up?'#0F9D63':'#E5484D', spark:s.spark, sparkColor: up?'#0F9D63':'#E5484D',
+          bullStr:s.bull+'% bullish', open:()=>this.open(k) }; });
+
+      base.feed=d.feedRaw.slice(0,7).map(v=>{ const c=d.creators[v.creator]; const dt=d.dates[d.N-1-v.ago];
+        const mentions=v.m.slice(0,5).map(pair=>{ const tk=pair[0], sent=pair[1];
+          return { ticker:tk, thumb:this.chipThumb(sent), open:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.open(tk); } }; });
+        return { creatorInitial:c.initial, creatorColor:c.color, creatorName:c.name,
+          title:v.title, dateStr:dt.short, mentions, thumbBg:c.color, primaryTicker:v.m[0][0],
+          videoUrl:this.ytUrl(c.name,v.title), durationStr:this.dur(v.title), summaryOpen:()=>this.setState({openVid:v}) }; });
+
+      const maxM=Math.max(...d.order.map(k=>d.stocks[k].mentions));
+      base.mentioned=[...d.order].sort((a,b)=>d.stocks[b].mentions-d.stocks[a].mentions).map((k,i)=>{ const s=d.stocks[k]; const up=s.chgPct>=0;
+        return { rank:i+1, ticker:k, name:s.name, dotColor:s.color, mentionsStr:String(s.mentions),
+          barPct:Math.round(s.mentions/maxM*100), open:()=>this.open(k) }; });
+
+      base.bullish=[...d.order].sort((a,b)=>d.stocks[b].bull-d.stocks[a].bull).map((k,i)=>{ const s=d.stocks[k];
+        const verdict=s.bull>=75?'Strong buy':s.bull>=60?'Buy':s.bull>=50?'Mixed':'Cautious';
+        return { rank:i+1, ticker:k, bullStr:s.bull+'%', barPct:s.bull, verdict, open:()=>this.open(k) }; });
+      return base;
+    }
+
+    if(st.screen==='stocks'){
+      const names={NVDA:'NVIDIA',GOOGL:'Alphabet',COIN:'Coinbase',SPACEX:'SpaceX',TSLA:'Tesla',MSTR:'Strategy'};
+      const sort=st.stkSort||'mentions';
+      let rows=d.order.map(k=>{ const s=d.stocks[k]; const up=s.chgPct>=0;
+        const creatorCount=new Set(s.events.map(e=>e.creator)).size;
+        const bull=s.events.filter(e=>e.sent==='bull').length, bear=s.events.filter(e=>e.sent==='bear').length, neut=s.events.filter(e=>e.sent==='neutral').length;
+        const total=s.events.length||1;
+        return { key:k, name:s.name, sector:s.sector, logoBg:s.logoBg, initials:s.initials, color:s.color, private:!!s.private,
+          price:s.price, priceStr:'$'+this.fmt(s.price), chgPct:s.chgPct, chgStr:(up?'+':'')+s.chgPct.toFixed(2)+'%', chgColor:up?'#0F9D63':'#E5484D',
+          spark:s.spark, sparkColor:up?'#0F9D63':'#E5484D', mentions:s.mentions, mentionsStr:String(s.mentions),
+          bull:s.bull, bullStr:s.bull+'%', creatorCount, creatorStr:String(creatorCount),
+          bullW:(bull/total*100).toFixed(1), neutW:(neut/total*100).toFixed(1), bearW:(bear/total*100).toFixed(1),
+          open:()=>this.open(k) }; });
+      const cmp={ mentions:(a,b)=>b.mentions-a.mentions, bull:(a,b)=>b.bull-a.bull, chg:(a,b)=>b.chgPct-a.chgPct, ticker:(a,b)=>a.key.localeCompare(b.key), price:(a,b)=>b.price-a.price };
+      rows.sort(cmp[sort]||cmp.mentions);
+      base.stkRows=rows;
+      base.stkSorts=[{key:'mentions',label:'Most mentioned'},{key:'bull',label:'Most bullish'},{key:'chg',label:'Top movers'},{key:'price',label:'Price'},{key:'ticker',label:'A–Z'}].map(o=>({label:o.label, active:sort===o.key, inactive:sort!==o.key, onClick:()=>this.setState({stkSort:o.key})}));
+      base.stkCount=String(rows.length);
+      return base;
+    }
+
+    if(st.screen==='creators'){
+      const co=['andrei','kevin','mei','joseph','bella','tom'];
+      base.creators=co.map(key=>{ const c=d.creators[key];
+        const vids=d.feedRaw.filter(v=>v.creator===key).sort((a,b)=>a.ago-b.ago);
+        const all=[]; vids.forEach(v=>v.m.forEach(p=>all.push(p[1])));
+        const bull=all.filter(x=>x==='bull').length; const bullPct=all.length?Math.round(bull/all.length*100):0;
+        const tk=[]; vids.forEach(v=>v.m.forEach(p=>{ if(!tk.includes(p[0])) tk.push(p[0]); }));
+        const recent=vids.slice(0,3).map(v=>({ title:v.title, videoUrl:this.ytUrl(c.name,v.title), dateStr:d.dates[d.N-1-v.ago].short, durationStr:this.dur(v.title), color:c.color,
+          mentions:v.m.slice(0,4).map(p=>({ ticker:p[0], thumb:this.chipThumb(p[1]), open:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.open(p[0]); } })) }));
+        return { initial:c.initial, color:c.color, name:c.name, handle:c.handle, subs:c.subs, bio:c.bio,
+          channelUrl:'https://www.youtube.com/'+c.handle, videoCountStr:String(vids.length), bullStr:bullPct+'%',
+          coverage:tk.slice(0,4).join('  ·  '), recent }; });
+      return base;
+    }
+
+    // ---- stock detail ----
+    const s=d.stocks[st.cur]; const N=d.N; const series=s.series;
+    const up=s.chgPct>=0;
+    base.s={ ticker:s.key, name:s.name, sector:s.sector, private:!!s.private, initials:s.initials, logoBg:s.logoBg,
+      priceStr:'$'+this.fmt(s.price),
+      chgStr:(up?'+':'')+this.fmt(s.chg)+'  ('+(up?'+':'')+s.chgPct.toFixed(2)+'%) today',
+      chgColor: up?'#0F9D63':'#E5484D',
+      trackedStr:'Tracked by '+new Set(s.events.map(e=>e.creator)).size+' creators' };
+
+    const tf=Math.min(st.tf,N); const sl=series.slice(N-tf);
+    const vals=sl.map(p=>p.v); const mn=Math.min(...vals), mx=Math.max(...vals); const pad=(mx-mn)*0.14||1; const lo=mn-pad, hi=mx+pad;
+    const W=1000,H=360; const mapX=i=>(i/(tf-1))*W; const mapY=v=>H-((v-lo)/(hi-lo))*H;
+    const line=sl.map((p,i)=>mapX(i).toFixed(1)+','+mapY(p.v).toFixed(1)).join(' ');
+    const area=line+' '+W+','+H+' 0,'+H;
+    const grid=[]; for(let g=0;g<=4;g++){ const val=hi-(hi-lo)*g/4; const y=mapY(val); grid.push({y:y.toFixed(1), topPct:(y/H*100).toFixed(2), label:'$'+this.fmt(val)}); }
+    const xlabels=[]; const xs=Math.max(1,Math.floor((tf-1)/5)); for(let k=0;k<=5;k++){ let i=k*xs; if(i>tf-1)i=tf-1; xlabels.push({leftPct:(mapX(i)/W*100).toFixed(2), label:sl[i].d.short}); }
+
+    const annos=s.events.filter(e=>e.ago<tf).map(e=>{ const idx=tf-1-e.ago; const v=series[N-1-e.ago].v; const x=mapX(idx), y=mapY(v); const c=d.creators[e.creator]; const m=this.sentMeta(e.sent);
+      return { leftPct:(x/W*100).toFixed(2), topPct:(y/H*100).toFixed(2), xUnit:x.toFixed(1),
+        creatorColor:c.color, creatorInitial:c.initial, creatorName:c.name, sentColor:m.color,
+        date:series[N-1-e.ago].d.full, priceLabel:'$'+this.fmt(v), title:e.title,
+        modeDots: st.mode==='dots', modeAvatars: st.mode==='avatars', modeFlags: st.mode==='flags',
+        cornerBadge:this.cornerBadge(e.sent), badgeDark:this.badge(e.sent,true) }; });
+    base.annos=annos;
+    base.chart={ color:s.color, line, area, grid, xlabels, flagLines: annos.map(a=>({x:a.xUnit, color:a.creatorColor})) };
+    base.modeDots= st.mode==='dots'; base.modeAvatars= st.mode==='avatars'; base.modeFlags= st.mode==='flags';
+
+    base.tfs=[{label:'1M',n:22},{label:'3M',n:66},{label:'6M',n:132},{label:'1Y',n:260}].map(t=>({label:t.label, active:st.tf===t.n, inactive:st.tf!==t.n, onClick:()=>this.setState({tf:t.n})}));
+    base.modes=[{key:'dots',label:'Dots'},{key:'avatars',label:'Avatars'},{key:'flags',label:'Flags'}].map(m=>({label:m.label, active:st.mode===m.key, inactive:st.mode!==m.key, onClick:()=>this.setState({mode:m.key})}));
+
+    base.events=[...s.events].sort((a,b)=>a.ago-b.ago).map(e=>{ const c=d.creators[e.creator];
+      return { creatorInitial:c.initial, creatorColor:c.color, creatorName:c.name, handle:c.handle,
+        title:e.title, dateStr:series[N-1-e.ago].d.short, badge:this.badge(e.sent,false), priceStr:'$'+this.fmt(series[N-1-e.ago].v) }; });
+
+    const bull=s.events.filter(e=>e.sent==='bull').length, bear=s.events.filter(e=>e.sent==='bear').length, neut=s.events.filter(e=>e.sent==='neutral').length, total=s.events.length;
+    const bp=Math.round(bull/total*100);
+    base.senti={ bullPct:bp, bullN:bull, bearN:bear, neutN:neut, total,
+      bullW:(bull/total*100).toFixed(1), neutW:(neut/total*100).toFixed(1), bearW:(bear/total*100).toFixed(1),
+      verdict: bp>=75?'Strong buy':bp>=60?'Buy':bp>=50?'Mixed':'Cautious',
+      verdictColor: bp>=60?'#0F9D63':bp>=50?'#B7791F':'#E5484D' };
+    return base;
+  }
+}
+</script>
+</body>
+</html>
