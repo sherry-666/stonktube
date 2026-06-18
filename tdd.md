@@ -83,8 +83,8 @@ A **single TypeScript monorepo** backs all three app services so types (especial
 | DB | **MongoDB Atlas** (managed, replica set) | A video + its summary + its mentions is naturally one document; aggregation pipeline handles leaderboards/sentiment splits well. Atlas gives transactions, backups, and HA without ops overhead. Daily price series uses a native **time-series collection**. |
 | Queue | **BullMQ** on Redis | Durable jobs, retries with backoff, rate limiting, concurrency control. |
 | LLM | **Anthropic Claude** — `claude-haiku-4-5` for extraction (cheap, high volume), escalate to `claude-opus-4-8` for long/ambiguous transcripts | Structured **tool-use** gives strict JSON output; Haiku keeps per-video cost low. |
-| Transcription | YouTube caption track first; **Whisper** (Deepgram or `whisper.cpp`/OpenAI) fallback | Captions are free and instant when present; fallback covers videos without them. |
-| Market data | Pluggable provider behind an interface (default **Financial Modeling Prep** or **Polygon.io**) | Daily OHLC for public tickers; private names handled separately (§6.4). |
+| Transcription | YouTube caption track first; **Whisper** (`faster-whisper`/`whisper.cpp`/OpenAI, or Deepgram) fallback | Captions are free/instant when present; Whisper fallback covers missing captions **and multilingual creators** (transcribes Chinese etc. directly). |
+| Market data | Pluggable provider behind an interface (default **Financial Modeling Prep**, alt **Twelve Data**/Polygon) | Daily close for public tickers, fetched incrementally; private names (SPACEX) have no feed → manual secondary-market marks (§6.5). |
 | Validation | **Zod** | Runtime validation of external payloads (YouTube, LLM, price API) at the boundary. |
 
 > LLM note: extraction uses Claude tool-use with a fixed schema so the model returns validated JSON, not prose. Default to the latest models above; `claude-haiku-4-5` is the workhorse and `claude-opus-4-8` is the escalation path for transcripts that fail schema validation or exceed a length/ambiguity threshold.
@@ -250,13 +250,15 @@ Job options: `attempts: 4`, exponential backoff (`5s → 4m`), `removeOnComplete
 ### 6.2 Discovery
 For each active creator, call YouTube Data API `search.list`/`playlistItems` (uploads playlist) for videos published since `max(publishedAt)` we have. Upsert by `youtubeVideoId`. New videos → `transcribe` queue. (Optionally subscribe to **PubSubHubbub** push for near-instant discovery; cron polling is the v1 baseline.)
 
-### 6.3 Transcription
-1. Fetch YouTube caption track (auto or manual) → `source = YOUTUBE_CAPTIONS`.
-2. If absent: download audio (yt-dlp), send to Whisper provider → `source = WHISPER`.
-3. Long videos chunked; segments stored for future timestamp anchoring.
-4. Non-English creators (`language=zh`) keep the original-language transcript; the extraction prompt is language-aware.
+We transcribe rather than analyze audio/video frames — **sentiment extraction operates on text** (§6.4).
+1. Fetch YouTube caption track (auto or manual) via `youtube-transcript-api` / `youtubei.js` / `yt-dlp --write-auto-sub` → `source = YOUTUBE_CAPTIONS`. Free and instant. Caveats handled in code: not every video has captions, auto-captions lack punctuation (fine for LLM input), and YouTube throttles caption access at volume (mitigate with retry/backoff, a cookie jar, and IP rotation if needed).
+2. If captions are absent or throttled: download audio (`yt-dlp`), send to **Whisper** (OpenAI API or self-hosted `faster-whisper`/`whisper.cpp`; Deepgram/AssemblyAI as alternates) → `source = WHISPER`. Costs compute but is reliable and yields word timestamps.
+3. Long videos chunked; segments stored for future timestamp anchoring (deep-linking a mention to its moment in the video).
+4. **Multilingual** creators (e.g. `language=zh` — MeiTouJun) are handled by Whisper's multilingual model, which transcribes the original language directly; the transcript stays in-language and the extraction prompt is language-aware. No separate translation step.
 
 ### 6.4 Analysis (LLM extraction)
+**Why an LLM and not classic sentiment NLP (VADER / FinBERT):** those score a sentence's text *polarity* but cannot (a) attribute the opinion to a specific ticker, or (b) distinguish the creator's *stance* from market description. E.g. *"Nvidia dropped 20% this week — which is exactly why it's the best buy right now"* is **BULLISH on NVDA**, but a polarity model reads the negative words. Our "sentiment" is the creator's **call/stance**, not text positivity, so we need a model that reasons over the whole passage and emits structured, ticker-attributed output. Claude tool-use does this in one pass and also produces the modal `summary` + per-mention `note`.
+
 A single Claude **tool-use** call per video. The tool schema forces structured output:
 
 ```jsonc
@@ -274,17 +276,16 @@ A single Claude **tool-use** call per video. The tool schema forces structured o
 ```
 
 - System prompt pins the role ("extract explicit stock calls a finance creator makes; do not infer calls that aren't stated; sentiment is the creator's stance, not the market's").
-- Input = title + transcript (truncated/chunked with map-reduce for very long videos).
-- Ticker resolution: map model output against the `Stock` table (alias list, e.g. "Nvidia/英伟达" → `NVDA`). Unknown tickers are logged for an admin to optionally add as new `Stock`s — not auto-created.
+- Input = title + transcript. A typical 1-hour video (~10–15k words) fits comfortably in Claude's 200k-token context, so it's usually a **single call**; only unusually long transcripts are chunked map-reduce.
+- Ticker resolution: map model output against the `stocks` collection via the `aliases` field (e.g. "Nvidia"/"英伟达" → `NVDA`). Unknown tickers are logged for an admin to optionally add as new `stocks` — not auto-created.
 - Output validated with Zod; on schema failure or low aggregate confidence, **retry once on `claude-opus-4-8`**, then mark `analysisStatus=FAILED` for manual review.
-- Zero valid mentions → `NO_MENTIONS` (still keep `summary`, no `Mention` rows).
+- Zero valid mentions → `NO_MENTIONS` (still keep `summary`, no embedded `mentions`).
 
 Cost control: Haiku-first, prompt caching of the system prompt + tool schema, and skipping re-analysis of unchanged transcripts.
 
-### 6.5 Price fill
-- For each `Stock` with new/changed mentions, ensure daily `PricePoint`s cover the chart windows.
-- **Public tickers**: provider `historical-price` (daily). Incremental — fetch only the gap since the latest stored `date`.
-- **Private tickers** (`isPrivate`, e.g. SPACEX): no public feed. Marks come from a `manual`/secondary-market source ingested via an admin CSV/endpoint; the pipeline interpolates between known marks for chart continuity and flags them `source=manual`.
+- For each `stock` with new/changed mentions, ensure `pricePoints` cover the chart windows.
+- **Public tickers**: daily close from the configured market-data provider, fetched **incrementally** — only the gap since the latest stored `date` (a few calls/day, so free tiers suffice). Recommended default **Financial Modeling Prep** (generous free historical) or **Twelve Data** (800 req/day); Polygon.io/Tiingo as alternates. Avoid Alpha Vantage (25 req/day) and don't rely on yfinance/Yahoo in prod (unofficial, breaks). All behind the `MARKET_DATA_PROVIDER` interface so the choice is swappable.
+- **Private tickers** (`isPrivate`, e.g. SPACEX): **no market API carries them** — SpaceX isn't publicly traded. Marks come from secondary-market sources (Forge Global, EquityZen, Hiive, Caplight) or funding-round valuations ÷ share count, entered periodically via the admin upload endpoint (§8.2). The pipeline interpolates between known marks for chart continuity and flags them `source=manual`.
 - After fill, set each new mention's `priceAtMention` = close on (or nearest trading day before) `publishedAt`.
 
 ### 6.6 Rollup
