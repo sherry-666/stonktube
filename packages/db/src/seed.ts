@@ -1,0 +1,141 @@
+/**
+ * Seeds the DB from the prototype dataset in design/TickerTube.dc.html.
+ * Safe to re-run: uses upserts on natural keys.
+ */
+import { connectDB, disconnectDB } from './connection.js'
+import { Creator } from './models/Creator.js'
+import { Stock } from './models/Stock.js'
+import { Video } from './models/Video.js'
+
+const CREATORS = [
+  { slug: 'bella', name: 'Bella Finance', handle: '@bellafinance', brandColor: '#DB2D7A', initial: 'B', youtubeChannelId: 'UC_bella', channelUrl: 'https://youtube.com/@bellafinance', subscriberCount: 612000, bio: 'Beginner-friendly breakdowns of growth and tech stocks for new investors.', language: 'en' },
+  { slug: 'mei', name: 'MeiTouJun', handle: '@MeiTouJun', brandColor: '#E0962B', initial: '美', youtubeChannelId: 'UC_mei', channelUrl: 'https://youtube.com/@MeiTouJun', subscriberCount: 1200000, bio: 'In-depth Chinese-language analysis of US tech, AI, and semiconductor names.', language: 'zh' },
+  { slug: 'joseph', name: 'Joseph Carlson', handle: '@JosephCarlson', brandColor: '#2563EB', initial: 'J', youtubeChannelId: 'UC_joseph', channelUrl: 'https://youtube.com/@JosephCarlson', subscriberCount: 843000, bio: 'Long-term compounding and quality-business investing, one portfolio update at a time.', language: 'en' },
+  { slug: 'andrei', name: 'Andrei Jikh', handle: '@AndreiJikh', brandColor: '#7C3AED', initial: 'A', youtubeChannelId: 'UC_andrei', channelUrl: 'https://youtube.com/@AndreiJikh', subscriberCount: 2300000, bio: 'Dividends, growth bets, and pre-IPO opportunities explained simply.', language: 'en' },
+  { slug: 'tom', name: 'Tom Nash', handle: '@TomNash', brandColor: '#0D9488', initial: 'T', youtubeChannelId: 'UC_tom', channelUrl: 'https://youtube.com/@TomNash', subscriberCount: 498000, bio: 'Contrarian takes and risk-first stock breakdowns — the bear case nobody wants.', language: 'en' },
+  { slug: 'kevin', name: 'Meet Kevin', handle: '@MeetKevin', brandColor: '#EA580C', initial: 'K', youtubeChannelId: 'UC_kevin', channelUrl: 'https://youtube.com/@MeetKevin', subscriberCount: 2100000, bio: 'High-conviction macro and momentum calls with daily market coverage.', language: 'en' },
+]
+
+const STOCKS = [
+  { ticker: 'NVDA', name: 'NVIDIA Corp', sector: 'Semiconductors', brandColor: '#76B900', logoBg: '#1A1A1A', initials: 'NV', aliases: ['Nvidia', 'NVIDIA', '英伟达'] },
+  { ticker: 'GOOGL', name: 'Alphabet Inc', sector: 'Internet', brandColor: '#4285F4', logoBg: '#4285F4', initials: 'GO', aliases: ['Google', 'Alphabet', '谷歌'] },
+  { ticker: 'COIN', name: 'Coinbase Global', sector: 'Crypto Exchange', brandColor: '#0052FF', logoBg: '#0052FF', initials: 'CO', aliases: ['Coinbase'] },
+  { ticker: 'SPACEX', name: 'SpaceX', sector: 'Aerospace', brandColor: '#5B6BD6', logoBg: '#15172B', initials: 'SX', aliases: ['Space X', '星链'], isPrivate: true },
+  { ticker: 'TSLA', name: 'Tesla Inc', sector: 'Autos · Energy', brandColor: '#E31937', logoBg: '#E31937', initials: 'TS', aliases: ['Tesla'] },
+  { ticker: 'MSTR', name: 'Strategy', sector: 'Bitcoin Treasury', brandColor: '#F7931A', logoBg: '#0E1B33', initials: 'MS', aliases: ['MicroStrategy', 'Strategy', '微策略'] },
+]
+
+// Prototype video data: [creator_slug, days_ago, title, [[ticker, sentiment]]]
+const VIDEOS: [string, number, string, [string, string][]][] = [
+  ['bella', 3, "NVIDIA's next leg up? Blackwell demand is off the charts", [['NVDA', 'BULLISH'], ['GOOGL', 'BULLISH']]],
+  ['kevin', 4, 'Coinbase to new highs if Bitcoin holds — plus my full crypto basket', [['COIN', 'BULLISH'], ['MSTR', 'BULLISH']]],
+  ['joseph', 5, 'Alphabet is still the cheapest Big Tech name', [['GOOGL', 'BULLISH'], ['NVDA', 'NEUTRAL']]],
+  ['andrei', 6, 'How to actually invest in SpaceX before the IPO', [['SPACEX', 'BULLISH']]],
+  ['tom', 7, 'Tesla deliveries are slowing — here\'s the data', [['TSLA', 'BEARISH']]],
+  ['kevin', 8, 'Strategy is a leveraged Bitcoin bet — and that\'s the point', [['MSTR', 'BULLISH'], ['COIN', 'BULLISH']]],
+  ['mei', 9, '英伟达还能追吗？最新财报与估值全解读', [['NVDA', 'BULLISH']]],
+  ['bella', 14, "Is Google's ad business in trouble? Let's look", [['GOOGL', 'NEUTRAL']]],
+  ['kevin', 16, 'Why Tesla is still a robotaxi call option', [['TSLA', 'BULLISH']]],
+  ['joseph', 17, 'Why I trimmed my NVDA position (but didn\'t sell)', [['NVDA', 'NEUTRAL']]],
+  ['tom', 19, 'Coinbase margins are getting squeezed', [['COIN', 'BEARISH']]],
+  ['kevin', 21, 'SpaceX secondary shares — is the valuation justified?', [['SPACEX', 'BULLISH']]],
+  ['tom', 27, 'The MSTR premium makes no sense to me', [['MSTR', 'BEARISH'], ['COIN', 'BEARISH']]],
+  ['andrei', 29, 'My updated price targets after the AI capex wave', [['NVDA', 'BULLISH'], ['GOOGL', 'BULLISH']]],
+  ['andrei', 33, 'Why GOOGL is my largest position right now', [['GOOGL', 'BULLISH']]],
+  ['bella', 38, 'COIN earnings breakdown — what actually matters', [['COIN', 'NEUTRAL']]],
+  ['joseph', 40, "I don't own Tesla — here's my honest take", [['TSLA', 'NEUTRAL']]],
+  ['mei', 44, '星链估值飙升，SpaceX 还有多少空间', [['SPACEX', 'BULLISH']]],
+  ['tom', 46, 'The NVIDIA setup nobody is talking about', [['NVDA', 'BEARISH']]],
+  ['mei', 55, '微策略：比特币的杠杆代理', [['MSTR', 'BULLISH']]],
+  ['mei', 58, '谷歌：被低估的AI赢家', [['GOOGL', 'BULLISH'], ['NVDA', 'BULLISH']]],
+  ['andrei', 64, 'Buying the Coinbase dip again', [['COIN', 'BULLISH']]],
+  ['andrei', 68, 'Cutting my Tesla position in half', [['TSLA', 'BEARISH']]],
+  ['kevin', 71, 'Loading up on NVDA going into earnings', [['NVDA', 'BULLISH']]],
+  ['bella', 79, 'SpaceX: the hype vs the numbers', [['SPACEX', 'NEUTRAL']]],
+]
+
+function daysAgo(n: number): Date {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return d
+}
+
+async function run() {
+  await connectDB()
+  console.log('Connected. Seeding...')
+
+  // Upsert creators
+  const creatorDocs: Record<string, InstanceType<typeof Creator>> = {}
+  for (const c of CREATORS) {
+    const doc = await Creator.findOneAndUpdate(
+      { slug: c.slug },
+      { $set: c },
+      { upsert: true, new: true },
+    )
+    creatorDocs[c.slug] = doc!
+  }
+  console.log(`Upserted ${CREATORS.length} creators`)
+
+  // Upsert stocks
+  const stockDocs: Record<string, InstanceType<typeof Stock>> = {}
+  for (const s of STOCKS) {
+    const doc = await Stock.findOneAndUpdate(
+      { ticker: s.ticker },
+      { $set: s },
+      { upsert: true, new: true },
+    )
+    stockDocs[s.ticker] = doc!
+  }
+  console.log(`Upserted ${STOCKS.length} stocks`)
+
+  // Upsert videos with embedded mentions
+  let videoCount = 0
+  for (const [creatorSlug, ago, title, mentionPairs] of VIDEOS) {
+    const creator = creatorDocs[creatorSlug]
+    if (!creator) continue
+
+    const ytId = `seed_${creatorSlug}_${ago}`
+    const mentions = mentionPairs.map(([ticker, sentiment], i) => ({
+      stockId: stockDocs[ticker]._id,
+      ticker,
+      sentiment,
+      isPrimary: i === 0,
+      note: '',
+    }))
+
+    await Video.findOneAndUpdate(
+      { youtubeVideoId: ytId },
+      {
+        $set: {
+          creatorId: creator._id,
+          creator: {
+            slug: creator.slug,
+            name: creator.name,
+            handle: creator.handle,
+            brandColor: creator.brandColor,
+            initial: creator.initial,
+          },
+          youtubeVideoId: ytId,
+          title,
+          url: `https://www.youtube.com/results?search_query=${encodeURIComponent(creator.name + ' ' + title)}`,
+          publishedAt: daysAgo(ago),
+          transcriptStatus: 'SKIPPED',
+          analysisStatus: 'ANALYZED',
+          language: creator.language,
+          mentions,
+        },
+      },
+      { upsert: true },
+    )
+    videoCount++
+  }
+  console.log(`Upserted ${videoCount} videos`)
+
+  await disconnectDB()
+  console.log('Done.')
+}
+
+run().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

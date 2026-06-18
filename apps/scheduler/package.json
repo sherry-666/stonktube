@@ -1,0 +1,22 @@
+{
+  "name": "@stonktube/scheduler",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stonktube/pipeline": "workspace:*",
+    "@stonktube/shared": "workspace:*",
+    "bullmq": "^5.12.12",
+    "pino": "^9.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.14",
+    "typescript": "^5.5.4"
+  }
+}
