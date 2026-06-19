@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
@@ -37,26 +38,31 @@ function scalePoints(values: number[], svgW: number, svgH: number) {
   return { pts, min: lo, max: hi, gridPrices, totalRange }
 }
 
+type PositionedMarker = Marker & { svgX: number; svgY: number; flip: boolean }
+
 interface MarkerTooltipProps {
-  marker: Marker
+  marker: PositionedMarker
+  style: CSSProperties
+  onMouseEnter: () => void
+  onMouseLeave: () => void
 }
 
-function MarkerTooltip({ marker }: MarkerTooltipProps) {
+function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTooltipProps) {
   const meta = SENTIMENT_META[marker.sentiment]
   return (
     <div
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       style={{
         position: 'absolute',
-        bottom: '100%',
-        left: '50%',
-        transform: 'translateX(-50%) translateY(-8px)',
         width: 218,
         background: '#14151A',
         borderRadius: 12,
         padding: '12px 14px',
         boxShadow: '0 12px 32px -8px rgba(20,21,26,0.4)',
-        zIndex: 10,
-        pointerEvents: 'none',
+        zIndex: 20,
+        pointerEvents: 'auto',
+        ...style,
       }}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -65,7 +71,7 @@ function MarkerTooltip({ marker }: MarkerTooltipProps) {
           style={{
             width: 28,
             height: 28,
-            background: marker.creatorBrandColor,
+            background: marker.creatorColor,
             fontSize: 11,
             border: '2px solid rgba(255,255,255,0.3)',
           }}
@@ -87,12 +93,12 @@ function MarkerTooltip({ marker }: MarkerTooltipProps) {
         </div>
       </div>
       <div className="text-[11px] leading-snug mb-1.5" style={{ color: '#B6B7BE' }}>
-        {marker.videoTitle}
+        {marker.title}
       </div>
       <div className="text-[10px]" style={{ color: '#6E6F78' }}>
         Price at mention ·{' '}
         <span style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}>
-          {fmtPrice(marker.price)}
+          {marker.priceLabel}
         </span>
       </div>
     </div>
@@ -100,12 +106,18 @@ function MarkerTooltip({ marker }: MarkerTooltipProps) {
 }
 
 interface MarkerDotProps {
-  marker: Marker
+  marker: PositionedMarker
+  onShow: () => void
+  onHide: () => void
 }
 
-function MarkerDot({ marker }: MarkerDotProps) {
-  const [hovered, setHovered] = useState(false)
+const STEM = 46
+// Distance from the dot to the centre of the floating avatar, along the stem.
+const AVATAR_REACH = 84
+
+function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
   const meta = SENTIMENT_META[marker.sentiment]
+  const flip = marker.flip
 
   return (
     <div
@@ -116,33 +128,33 @@ function MarkerDot({ marker }: MarkerDotProps) {
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'auto',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={onShow}
+      onMouseLeave={onHide}
     >
       {/* Stem */}
       <div
         style={{
           position: 'absolute',
           left: '50%',
-          bottom: '100%',
+          [flip ? 'top' : 'bottom']: '100%',
           transform: 'translateX(-50%)',
           width: 2,
-          height: 46,
-          background: marker.creatorBrandColor,
-          marginBottom: 4,
+          height: STEM,
+          background: marker.creatorColor,
+          [flip ? 'marginTop' : 'marginBottom']: 4,
         }}
       />
       {/* Avatar */}
       <div
         style={{
           position: 'absolute',
-          bottom: 'calc(100% + 50px)',
+          [flip ? 'top' : 'bottom']: `calc(100% + ${AVATAR_REACH - 34}px)`,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 34,
           height: 34,
           borderRadius: '50%',
-          background: marker.creatorBrandColor,
+          background: marker.creatorColor,
           border: '2.5px solid white',
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           display: 'flex',
@@ -179,21 +191,48 @@ function MarkerDot({ marker }: MarkerDotProps) {
           width: 9,
           height: 9,
           borderRadius: '50%',
-          background: marker.creatorBrandColor,
+          background: marker.creatorColor,
           border: '2px solid white',
           boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
         }}
       />
-      {/* Tooltip */}
-      {hovered && <MarkerTooltip marker={marker} />}
     </div>
   )
+}
+
+// Place the hover card to the side of the marker, vertically centred on the
+// avatar but clamped inside the 360px chart so it never spills over the legend
+// or off the bottom. Flips to the left when the marker sits in the right third.
+function tooltipPosition(marker: PositionedMarker): CSSProperties {
+  const CARD_H = 200
+  const PAD = 8
+  const GAP = 18
+  const dotXpct = marker.svgX / 10 // 0–100
+  const avatarY = marker.svgY + (marker.flip ? AVATAR_REACH : -AVATAR_REACH)
+  const top = Math.min(Math.max(avatarY - CARD_H / 2, PAD), 360 - CARD_H - PAD)
+  const placeLeft = dotXpct > 58
+  return placeLeft
+    ? { top, right: `calc(${100 - dotXpct}% + ${GAP}px)` }
+    : { top, left: `calc(${dotXpct}% + ${GAP}px)` }
 }
 
 export default function StockDetail() {
   const { ticker = '' } = useParams<{ ticker: string }>()
   const navigate = useNavigate()
   const [tf, setTf] = useState('3M')
+
+  // Hover state for marker tooltips. A short hide delay lets the pointer travel
+  // from the avatar across the gap onto the card without the card vanishing.
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const hideTimer = useRef<ReturnType<typeof setTimeout>>()
+  const showMarker = (id: string) => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    setActiveId(id)
+  }
+  const hideMarker = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    hideTimer.current = setTimeout(() => setActiveId(null), 140)
+  }
 
   const { data, isLoading, error } = useStockDetail(ticker, tf)
   const { data: markers } = useStockMarkers(ticker, tf)
@@ -213,7 +252,7 @@ export default function StockDetail() {
 
   const SVG_W = 1000
   const SVG_H = 360
-  const priceValues = priceSeries.map(p => p.price)
+  const priceValues = priceSeries.map(p => p.close)
   const { pts, gridPrices, totalRange, min: priceMin } = scalePoints(priceValues, SVG_W, SVG_H)
 
   // Date ticks: 6 evenly spaced
@@ -230,6 +269,34 @@ export default function StockDetail() {
     if (!totalRange) return SVG_H / 2
     return SVG_H - ((price - priceMin) / (hi - priceMin || 1)) * SVG_H
   }
+
+  // Snap each marker to the nearest price-series point so the dot sits exactly
+  // on the line. The line is drawn with index-based X spacing (trading days are
+  // evenly spaced, weekends skipped), so we match by index, not calendar time.
+  const positionedMarkers = (markers ?? []).map(m => {
+    const mMs = new Date(m.date).getTime()
+    let nearestIdx = 0
+    let bestDiff = Infinity
+    for (let i = 0; i < priceSeries.length; i++) {
+      const diff = Math.abs(new Date(priceSeries[i].date).getTime() - mMs)
+      if (diff < bestDiff) {
+        bestDiff = diff
+        nearestIdx = i
+      }
+    }
+    const n = priceSeries.length
+    const svgY = priceToSvgY(priceSeries[nearestIdx]?.close ?? 0)
+    return {
+      ...m,
+      svgX: n > 1 ? (nearestIdx / (n - 1)) * SVG_W : SVG_W / 2,
+      svgY,
+      // Not enough headroom above for the avatar → flip the marker downward so
+      // it doesn't clip the chart top or collide with the legend.
+      flip: svgY < AVATAR_REACH + 12,
+    }
+  })
+
+  const activeMarker = positionedMarkers.find(m => m.videoId === activeId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -300,7 +367,7 @@ export default function StockDetail() {
               lineHeight: 1,
             }}
           >
-            {fmtPrice(stock.price)}
+            {stock.priceStr}
           </div>
           <div className="flex items-center justify-end gap-2 mt-1">
             <span className="text-[14px] font-semibold" style={{ color: changeColor }}>
@@ -308,7 +375,7 @@ export default function StockDetail() {
             </span>
           </div>
           <div className="text-[12px] text-muted mt-1">
-            Tracked by {stock.trackedByCount} creator{stock.trackedByCount !== 1 ? 's' : ''}
+            Tracked by {stock.trackedBy} creator{stock.trackedBy !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
@@ -415,12 +482,25 @@ export default function StockDetail() {
           </svg>
 
           {/* Creator avatar markers overlay */}
-          {markers && markers.length > 0 && (
+          {positionedMarkers.length > 0 && (
             <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
               <div className="relative w-full h-full" style={{ pointerEvents: 'none' }}>
-                {markers.map(marker => (
-                  <MarkerDot key={marker.id} marker={marker} />
+                {positionedMarkers.map(marker => (
+                  <MarkerDot
+                    key={marker.videoId}
+                    marker={marker}
+                    onShow={() => showMarker(marker.videoId)}
+                    onHide={hideMarker}
+                  />
                 ))}
+                {activeMarker && (
+                  <MarkerTooltip
+                    marker={activeMarker}
+                    style={tooltipPosition(activeMarker)}
+                    onMouseEnter={() => showMarker(activeMarker.videoId)}
+                    onMouseLeave={hideMarker}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -460,7 +540,7 @@ export default function StockDetail() {
               const meta = SENTIMENT_META[event.sentiment]
               return (
                 <div
-                  key={event.id}
+                  key={event.videoId}
                   className="bg-white border border-[#ECEBE4] p-4 transition-colors duration-150"
                   style={{ borderRadius: 14 }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = '#D6D5CC')}
@@ -472,7 +552,7 @@ export default function StockDetail() {
                       style={{
                         width: 42,
                         height: 42,
-                        background: event.creatorBrandColor,
+                        background: event.creatorColor,
                         fontSize: 15,
                       }}
                     >
@@ -530,7 +610,7 @@ export default function StockDetail() {
               Overall sentiment
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">
-              Based on {overallSentiment.totalRatings} recent rating{overallSentiment.totalRatings !== 1 ? 's' : ''}
+              Based on {overallSentiment.total} recent rating{overallSentiment.total !== 1 ? 's' : ''}
             </p>
 
             <div className="flex items-baseline gap-2 mb-1">

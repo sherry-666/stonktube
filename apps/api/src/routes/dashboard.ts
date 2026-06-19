@@ -1,6 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video } from '@stonktube/db'
 
+// Strip Yahoo Finance suffix for crypto tickers (BTC-USD → BTC)
+function displayTicker(ticker: string): string {
+  return ticker.replace(/-USD$/, '')
+}
+
 function fmtPrice(n?: number): string {
   return n != null ? `$${n.toFixed(2)}` : ''
 }
@@ -30,7 +35,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
 
     // Pills: all stocks
     const pills = stocks.map((s) => ({
-      ticker: s.ticker,
+      ticker: displayTicker(s.ticker),
       name: s.name,
       isPrivate: s.isPrivate,
       brandColor: s.brandColor,

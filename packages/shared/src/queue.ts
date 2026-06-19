@@ -22,7 +22,7 @@ export interface AnalyzeJob {
 }
 
 export interface FillPricesJob {
-  stockId: string
+  stockId?: string // if omitted, fills all non-private stocks
 }
 
 export interface RebuildStatsJob {

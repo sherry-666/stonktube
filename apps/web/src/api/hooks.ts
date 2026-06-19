@@ -6,11 +6,14 @@ import { apiFetch } from './client.js'
 export interface DashboardPill {
   ticker: string
   name: string
+  isPrivate: boolean
   brandColor: string
-  logoBg?: string
+  logoBg: string
+  initials: string
   bullishPct: number
-  price: number
+  priceStr: string
   dayChangePct: number
+  dayChangeStr: string
   sparkline: number[]
 }
 
@@ -35,17 +38,14 @@ export interface FeedVideo {
 }
 
 export interface MostMentionedRow {
-  rank: number
   ticker: string
-  name: string
   brandColor: string
   mentions30d: number
+  maxMentions: number
 }
 
 export interface MostBullishRow {
-  rank: number
   ticker: string
-  name: string
   verdict: string
   bullishPct: number
 }
@@ -74,16 +74,14 @@ export interface StockRow {
   brandColor: string
   logoBg: string
   initials: string
-  price: number
+  priceStr: string
   dayChangePct: number
+  dayChangeStr: string
   change30dPct: number
   sparkline: number[]
-  bullCount: number
-  neutralCount: number
-  bearCount: number
-  bullishPct: number
-  mentions: number
-  creatorCount: number
+  sentiment: { bullCount: number; neutralCount: number; bearCount: number; bullishPct: number }
+  mentions30d: number
+  distinctCreators: number
 }
 
 export function useStocks(sort: string) {
@@ -103,28 +101,30 @@ export interface StockDetailStock {
   brandColor: string
   logoBg: string
   initials: string
-  price: number
+  priceStr: string
   dayChangePct: number
-  trackedByCount: number
+  dayChangeStr: string
+  trackedBy: number
 }
 
 export interface PricePoint {
   date: string
-  price: number
+  close: number
 }
 
 export interface RecentCoverageEvent {
-  id: string
+  videoId: string
   creatorName: string
   creatorHandle: string
-  creatorBrandColor: string
+  creatorColor: string
   creatorInitial: string
   creatorAvatarUrl?: string
   publishedAt: string
   title: string
   url: string
   sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'
-  priceAtMention: number
+  priceAtMention?: number
+  priceStr: string
 }
 
 export interface OverallSentiment {
@@ -132,7 +132,7 @@ export interface OverallSentiment {
   neutralCount: number
   bearCount: number
   bullishPct: number
-  totalRatings: number
+  total: number
   verdict: string
 }
 
@@ -154,19 +154,21 @@ export function useStockDetail(ticker: string, tf: string) {
 // ── Stock Markers ──────────────────────────────────────────────────────────
 
 export interface Marker {
-  id: string
+  videoId: string
   date: string
-  price: number
+  priceAtMention?: number
+  priceLabel: string
   sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'
+  creatorSlug: string
   creatorName: string
-  creatorHandle: string
-  creatorBrandColor: string
+  creatorColor: string
   creatorInitial: string
   creatorAvatarUrl?: string
-  videoTitle: string
-  videoUrl: string
-  svgX: number
-  svgY: number
+  title: string
+  url: string
+  // computed on the frontend from priceSeries before rendering
+  svgX?: number
+  svgY?: number
 }
 
 export function useStockMarkers(ticker: string, tf: string) {

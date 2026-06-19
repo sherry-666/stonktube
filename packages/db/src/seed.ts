@@ -26,6 +26,9 @@ const STOCKS = [
   { ticker: 'SPACEX', name: 'SpaceX', sector: 'Aerospace', brandColor: '#5B6BD6', logoBg: '#15172B', initials: 'SX', aliases: ['Space X', '星链'], isPrivate: true },
   { ticker: 'TSLA', name: 'Tesla Inc', sector: 'Autos · Energy', brandColor: '#E31937', logoBg: '#E31937', initials: 'TS', aliases: ['Tesla'] },
   { ticker: 'MSTR', name: 'Strategy', sector: 'Bitcoin Treasury', brandColor: '#F7931A', logoBg: '#0E1B33', initials: 'MS', aliases: ['MicroStrategy', 'Strategy', '微策略'] },
+  { ticker: 'BTC-USD', name: 'Bitcoin', sector: 'Cryptocurrency', brandColor: '#F7931A', logoBg: '#1A1A1A', initials: 'BT', aliases: ['Bitcoin', 'BTC', '比特币', 'bitcoin'] },
+  { ticker: 'ETH-USD', name: 'Ethereum', sector: 'Cryptocurrency', brandColor: '#627EEA', logoBg: '#1A1A1A', initials: 'ET', aliases: ['Ethereum', 'ETH', '以太坊', 'ethereum'] },
+  { ticker: 'GLD', name: 'Gold', sector: 'Commodity', brandColor: '#FFD700', logoBg: '#1A1A1A', initials: 'AU', aliases: ['Gold', 'gold', '黄金', 'XAUUSD'] },
 ]
 
 // Stock price generation configs
@@ -36,6 +39,9 @@ const STOCK_CONFIGS: Record<string, { seed: number; start: number; drift: number
   SPACEX: { seed: 44, start: 150, drift: 0.0016, vol: 0.026 },
   TSLA: { seed: 55, start: 300, drift: 0.0006, vol: 0.06 },
   MSTR: { seed: 66, start: 1300, drift: 0.0021, vol: 0.092 },
+  'BTC-USD': { seed: 77, start: 95000, drift: 0.0015, vol: 0.06 },
+  'ETH-USD': { seed: 88, start: 3200, drift: 0.0012, vol: 0.07 },
+  GLD: { seed: 99, start: 230, drift: 0.0003, vol: 0.012 },
 }
 
 // Prototype PRNG

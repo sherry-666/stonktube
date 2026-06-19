@@ -10,9 +10,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@stonktube/db": "workspace:*",
     "@stonktube/pipeline": "workspace:*",
     "@stonktube/shared": "workspace:*",
     "bullmq": "^5.12.12",
+    "dotenv": "^17.4.2",
     "pino": "^9.3.2"
   },
   "devDependencies": {

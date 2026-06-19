@@ -51,4 +51,4 @@ export type LLMExtraction = z.infer<typeof LLMExtractionSchema>
 
 export type TranscriptStatus = 'PENDING' | 'CAPTIONS' | 'TRANSCRIBED' | 'FAILED' | 'SKIPPED'
 export type AnalysisStatus = 'PENDING' | 'ANALYZED' | 'FAILED' | 'NO_MENTIONS'
-export type TranscriptSource = 'YOUTUBE_CAPTIONS' | 'WHISPER'
+export type TranscriptSource = 'YOUTUBE_CAPTIONS' | 'GEMINI'

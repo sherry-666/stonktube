@@ -183,7 +183,7 @@ export default function Stocks() {
                     color: '#14151A',
                   }}
                 >
-                  {fmtPrice(stock.price)}
+                  {stock.priceStr}
                 </span>
               </div>
 
@@ -200,21 +200,21 @@ export default function Stocks() {
               {/* Col 4: Sentiment */}
               <div>
                 <SentimentBar
-                  bullCount={stock.bullCount}
-                  neutralCount={stock.neutralCount}
-                  bearCount={stock.bearCount}
-                  bullishPct={stock.bullishPct}
+                  bullCount={stock.sentiment.bullCount}
+                  neutralCount={stock.sentiment.neutralCount}
+                  bearCount={stock.sentiment.bearCount}
+                  bullishPct={stock.sentiment.bullishPct}
                 />
               </div>
 
               {/* Col 5: Mentions */}
               <div className="text-right">
-                <span className="text-[13px] font-medium text-body">{stock.mentions}</span>
+                <span className="text-[13px] font-medium text-body">{stock.mentions30d}</span>
               </div>
 
               {/* Col 6: Creators */}
               <div className="text-right">
-                <span className="text-[13px] font-medium text-body">{stock.creatorCount}</span>
+                <span className="text-[13px] font-medium text-body">{stock.distinctCreators}</span>
               </div>
             </button>
           )

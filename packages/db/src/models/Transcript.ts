@@ -27,7 +27,7 @@ const TranscriptSchema = new Schema<ITranscript>(
         _id: false,
       },
     ],
-    source: { type: String, enum: ['YOUTUBE_CAPTIONS', 'WHISPER'], required: true },
+    source: { type: String, enum: ['YOUTUBE_CAPTIONS', 'GEMINI'], required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 )

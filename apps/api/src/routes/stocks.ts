@@ -2,6 +2,10 @@ import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video, getPrices } from '@stonktube/db'
 import { Types } from 'mongoose'
 
+function displayTicker(ticker: string): string {
+  return ticker.replace(/-USD$/, '')
+}
+
 function fmtPrice(n?: number): string {
   return n != null ? `$${n.toFixed(2)}` : ''
 }
@@ -49,7 +53,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
     })
 
     const rows = sorted.map((s) => ({
-      ticker: s.ticker,
+      ticker: displayTicker(s.ticker),
       name: s.name,
       sector: s.sector,
       isPrivate: s.isPrivate,
@@ -153,7 +157,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
 
       return reply.send({
         stock: {
-          ticker: stock.ticker,
+          ticker: displayTicker(stock.ticker),
           name: stock.name,
           sector: stock.sector,
           isPrivate: stock.isPrivate,

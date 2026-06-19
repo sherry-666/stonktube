@@ -10,11 +10,16 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@stonktube/db": "workspace:*",
     "@stonktube/pipeline": "workspace:*",
     "@stonktube/shared": "workspace:*",
     "bullmq": "^5.12.12",
-    "pino": "^9.3.2"
+    "dotenv": "^17.4.2",
+    "mongoose": "^8.5.4",
+    "pino": "^9.3.2",
+    "yahoo-finance2": "^3.15.3",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.14",

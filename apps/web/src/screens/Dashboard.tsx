@@ -113,7 +113,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                     color: '#14151A',
                   }}
                 >
-                  {fmtPrice(pill.price)}
+                  {pill.priceStr}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 500, color: changeColor }}>
                   {fmtPct(pill.dayChangePct)}
