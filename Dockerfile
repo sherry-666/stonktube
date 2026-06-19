@@ -12,6 +12,7 @@ COPY packages/pipeline/package.json ./packages/pipeline/
 COPY apps/api/package.json          ./apps/api/
 COPY apps/worker/package.json       ./apps/worker/
 COPY apps/scheduler/package.json    ./apps/scheduler/
+COPY apps/web/package.json          ./apps/web/
 
 RUN pnpm install --frozen-lockfile
 
@@ -20,6 +21,7 @@ COPY packages/ ./packages/
 COPY apps/api/       ./apps/api/
 COPY apps/worker/    ./apps/worker/
 COPY apps/scheduler/ ./apps/scheduler/
+COPY apps/web/       ./apps/web/
 
 # turbo respects dependsOn: ["^build"] — builds in topological order
 RUN pnpm run build
@@ -38,6 +40,9 @@ COPY --from=builder /app/packages            ./packages
 COPY --from=builder /app/apps/api            ./apps/api
 COPY --from=builder /app/apps/worker         ./apps/worker
 COPY --from=builder /app/apps/scheduler      ./apps/scheduler
+COPY --from=builder /app/apps/web/dist        ./apps/web/dist
+COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder /app/apps/web/vite.config.ts ./apps/web/vite.config.ts
 
 # Default to api; Railway overrides this per-service via Start Command
 CMD ["node", "apps/api/dist/index.js"]
