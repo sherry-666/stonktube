@@ -30,7 +30,7 @@ RUN pnpm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
-RUN corepack enable
+RUN corepack enable && npm install -g serve
 
 COPY --from=builder /app/package.json        ./
 COPY --from=builder /app/pnpm-lock.yaml      ./
