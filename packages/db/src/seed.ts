@@ -6,6 +6,9 @@ import { connectDB, disconnectDB } from './connection.js'
 import { Creator } from './models/Creator.js'
 import { Stock } from './models/Stock.js'
 import { Video } from './models/Video.js'
+import { deletePricesForStock, insertPrices } from './pricePoints.js'
+import { rebuildStats } from './rollup.js'
+import { ensureIndexes } from './bootstrap.js'
 
 const CREATORS = [
   { slug: 'bella', name: 'Bella Finance', handle: '@bellafinance', brandColor: '#DB2D7A', initial: 'B', youtubeChannelId: 'UC_bella', channelUrl: 'https://youtube.com/@bellafinance', subscriberCount: 612000, bio: 'Beginner-friendly breakdowns of growth and tech stocks for new investors.', language: 'en' },
@@ -24,6 +27,48 @@ const STOCKS = [
   { ticker: 'TSLA', name: 'Tesla Inc', sector: 'Autos · Energy', brandColor: '#E31937', logoBg: '#E31937', initials: 'TS', aliases: ['Tesla'] },
   { ticker: 'MSTR', name: 'Strategy', sector: 'Bitcoin Treasury', brandColor: '#F7931A', logoBg: '#0E1B33', initials: 'MS', aliases: ['MicroStrategy', 'Strategy', '微策略'] },
 ]
+
+// Stock price generation configs
+const STOCK_CONFIGS: Record<string, { seed: number; start: number; drift: number; vol: number }> = {
+  NVDA: { seed: 11, start: 118, drift: 0.0018, vol: 0.05 },
+  GOOGL: { seed: 22, start: 152, drift: 0.001, vol: 0.034 },
+  COIN: { seed: 33, start: 205, drift: 0.0017, vol: 0.072 },
+  SPACEX: { seed: 44, start: 150, drift: 0.0016, vol: 0.026 },
+  TSLA: { seed: 55, start: 300, drift: 0.0006, vol: 0.06 },
+  MSTR: { seed: 66, start: 1300, drift: 0.0021, vol: 0.092 },
+}
+
+// Prototype PRNG
+function rng(seed: number): () => number {
+  let s = seed
+  return () => {
+    s = (s + 0x6d2b79f5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+// Build 260 trading days back from today (skip weekends), oldest first
+function tradingDays(count: number): Date[] {
+  const days: Date[] = []
+  const cursor = new Date()
+  cursor.setHours(0, 0, 0, 0)
+  while (days.length < count) {
+    const dow = cursor.getDay()
+    if (dow !== 0 && dow !== 6) {
+      days.push(new Date(cursor))
+    }
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  days.reverse()
+  return days
+}
+
+// Video title hash for durationSeconds
+function titleHash(title: string): number {
+  return title.split('').reduce((h, c) => (h + c.charCodeAt(0) * 7) | 0, 0)
+}
 
 // Prototype video data: [creator_slug, days_ago, title, [[ticker, sentiment]]]
 const VIDEOS: [string, number, string, [string, string][]][] = [
@@ -62,6 +107,7 @@ function daysAgo(n: number): Date {
 
 async function run() {
   await connectDB()
+  await ensureIndexes()
   console.log('Connected. Seeding...')
 
   // Upsert creators
@@ -103,6 +149,9 @@ async function run() {
       note: '',
     }))
 
+    const h = titleHash(title)
+    const durationSeconds = (8 + (Math.abs(h) % 16)) * 60 + (Math.abs(h) % 60)
+
     await Video.findOneAndUpdate(
       { youtubeVideoId: ytId },
       {
@@ -123,6 +172,7 @@ async function run() {
           analysisStatus: 'ANALYZED',
           language: creator.language,
           mentions,
+          durationSeconds,
         },
       },
       { upsert: true },
@@ -130,6 +180,40 @@ async function run() {
     videoCount++
   }
   console.log(`Upserted ${videoCount} videos`)
+
+  // Generate price history
+  const days = tradingDays(260)
+  for (const [ticker, stock] of Object.entries(stockDocs)) {
+    const cfg = STOCK_CONFIGS[ticker]
+    if (!cfg) continue
+
+    await deletePricesForStock(stock._id)
+
+    const rand = rng(cfg.seed)
+    let price = cfg.start
+    const points = days.map((date) => {
+      const r = rand()
+      // GBM step: drift + vol * normalish noise (Box-Muller-ish via two uniform draws)
+      const r2 = rand()
+      // approximate normal using CLT: average of 6 uniforms scaled
+      const noise = (r + r2 - 1) * Math.sqrt(2)
+      price = price * Math.exp(cfg.drift + cfg.vol * noise)
+      return {
+        date,
+        meta: { stockId: stock._id, ticker },
+        close: Math.round(price * 100) / 100,
+        source: 'generated',
+      }
+    })
+
+    await insertPrices(points)
+    console.log(`Inserted ${points.length} price points for ${ticker}`)
+  }
+
+  // Rebuild all stock stats
+  console.log('Rebuilding stats...')
+  await rebuildStats()
+  console.log('Stats rebuilt.')
 
   await disconnectDB()
   console.log('Done.')

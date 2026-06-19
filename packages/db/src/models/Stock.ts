@@ -49,6 +49,4 @@ const StockSchema = new Schema<IStock>(
   { timestamps: true },
 )
 
-StockSchema.index({ ticker: 1 })
-
 export const Stock = model<IStock>('Stock', StockSchema)

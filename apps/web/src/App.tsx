@@ -1,29 +1,43 @@
-import { Routes, Route, useSearchParams } from 'react-router-dom'
+import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom'
 import Nav from './components/Nav.js'
-
-// TODO Phase 2: implement screens
-const Dashboard = () => <div className="p-8 font-display text-4xl font-bold">Dashboard — coming soon</div>
-const Stocks = () => <div className="p-8 font-display text-4xl font-bold">Stocks — coming soon</div>
-const StockDetail = () => <div className="p-8 font-display text-4xl font-bold">Stock Detail — coming soon</div>
-const Creators = () => <div className="p-8 font-display text-4xl font-bold">Creators — coming soon</div>
+import VideoSummaryModal from './components/VideoSummaryModal.js'
+import Dashboard from './screens/Dashboard.js'
+import Stocks from './screens/Stocks.js'
+import StockDetail from './screens/StockDetail.js'
+import Creators from './screens/Creators.js'
 
 export default function App() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const openVideoId = searchParams.get('video')
+
+  function handleSummaryClick(id: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('video', id)
+      return next
+    })
+  }
+
+  function handleModalClose() {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('video')
+      return next
+    })
+  }
 
   return (
     <div className="min-h-screen bg-page">
       <Nav />
       <main className="mx-auto max-w-container px-7 py-8">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard onSummaryClick={handleSummaryClick} />} />
           <Route path="/stocks" element={<Stocks />} />
           <Route path="/stocks/:ticker" element={<StockDetail />} />
-          <Route path="/creators" element={<Creators />} />
+          <Route path="/creators" element={<Creators onSummaryClick={handleSummaryClick} />} />
         </Routes>
       </main>
-      {/* TODO Phase 2: VideoSummaryModal when openVideoId is set */}
-      {openVideoId && null}
+      <VideoSummaryModal videoId={openVideoId} onClose={handleModalClose} />
     </div>
   )
 }
