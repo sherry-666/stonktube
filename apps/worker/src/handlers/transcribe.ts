@@ -1,18 +1,12 @@
 import type { Job } from 'bullmq'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { unlink, access } from 'fs/promises'
 import { Video, Transcript } from '@stonktube/db'
 import { analyzeQueue } from '@stonktube/pipeline'
 import type { TranscribeJob } from '@stonktube/shared'
 import { YoutubeTranscript } from 'youtube-transcript'
-import { getFileManager, getFlashModel } from '../lib/gemini.js'
+import { getFlashModel } from '../lib/gemini.js'
 import pino from 'pino'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
-const execFileAsync = promisify(execFile)
 
 async function fetchYouTubeCaptions(youtubeVideoId: string): Promise<string | null> {
   try {
@@ -24,40 +18,27 @@ async function fetchYouTubeCaptions(youtubeVideoId: string): Promise<string | nu
   }
 }
 
-async function downloadAudio(youtubeVideoId: string): Promise<string> {
-  const outPath = join(tmpdir(), `stonktube-${youtubeVideoId}.mp3`)
-  await execFileAsync('yt-dlp', [
-    '--extract-audio',
-    '--audio-format', 'mp3',
-    '--audio-quality', '5',
-    '-o', outPath,
-    '--no-playlist',
-    `https://www.youtube.com/watch?v=${youtubeVideoId}`,
-  ])
-  return outPath
-}
-
-async function transcribeWithGemini(audioPath: string): Promise<string> {
-  const uploadResult = await getFileManager().uploadFile(audioPath, {
-    mimeType: 'audio/mpeg',
-    displayName: 'video-audio',
-  })
-
+// Gemini ingests a public YouTube URL directly — Google fetches the video
+// server-side, so we avoid yt-dlp/audio downloads (which also get blocked from
+// datacenter IPs). Handles videos that have no captions.
+async function transcribeFromYouTube(youtubeVideoId: string): Promise<string | null> {
   try {
     const result = await getFlashModel().generateContent([
       {
         fileData: {
-          mimeType: uploadResult.file.mimeType,
-          fileUri: uploadResult.file.uri,
+          mimeType: 'video/*',
+          fileUri: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
         },
       },
       {
-        text: 'Transcribe this audio verbatim. Return only the spoken words with no timestamps, speaker labels, or formatting.',
+        text: 'Transcribe this video verbatim. Return only the spoken words with no timestamps, speaker labels, or formatting.',
       },
     ])
-    return result.response.text()
-  } finally {
-    await getFileManager().deleteFile(uploadResult.file.name).catch(() => undefined)
+    const text = result.response.text()
+    return text && text.trim().length >= 20 ? text : null
+  } catch (err) {
+    log.warn({ youtubeVideoId, err: (err as Error).message }, 'Gemini YouTube transcription failed')
+    return null
   }
 }
 
@@ -85,25 +66,22 @@ export async function handleTranscribe(job: Job<TranscribeJob>) {
     log.info({ videoId }, 'Got YouTube captions')
   }
 
-  // 2. Fall back: download audio → Gemini transcription
+  // 2. Fall back: let Gemini transcribe the YouTube video directly
   if (!text) {
-    log.info({ videoId }, 'Captions not available — using Gemini audio fallback')
-    let audioPath: string | undefined
-    try {
-      audioPath = await downloadAudio(video.youtubeVideoId)
-      text = await transcribeWithGemini(audioPath)
+    log.info({ videoId }, 'Captions not available — using Gemini YouTube transcription')
+    text = await transcribeFromYouTube(video.youtubeVideoId)
+    if (text) {
       source = 'GEMINI'
       log.info({ videoId }, 'Gemini transcription complete')
-    } finally {
-      if (audioPath) {
-        await access(audioPath).then(() => unlink(audioPath!)).catch(() => undefined)
-      }
     }
   }
 
+  // 3. Graceful skip: no transcript could be produced. Mark SKIPPED rather than
+  // FAILED so BullMQ doesn't retry it forever and it doesn't clog the queue.
   if (!text || text.trim().length < 20) {
-    await video.updateOne({ transcriptStatus: 'FAILED' })
-    throw new Error(`Transcript too short or empty for video ${videoId}`)
+    await video.updateOne({ transcriptStatus: 'SKIPPED' })
+    log.warn({ videoId }, 'No transcript available — marking SKIPPED')
+    return
   }
 
   await Transcript.findOneAndUpdate(
