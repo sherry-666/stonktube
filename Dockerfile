@@ -23,6 +23,11 @@ COPY apps/worker/    ./apps/worker/
 COPY apps/scheduler/ ./apps/scheduler/
 COPY apps/web/       ./apps/web/
 
+# VITE_API_URL must be present at build time — Vite inlines import.meta.env.VITE_*
+# into the bundle. Railway passes service variables as build args.
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # turbo respects dependsOn: ["^build"] — builds in topological order
 RUN pnpm run build
 
