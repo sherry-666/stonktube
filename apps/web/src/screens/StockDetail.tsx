@@ -92,9 +92,15 @@ function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTool
           {meta.label}
         </div>
       </div>
-      <div className="text-[11px] leading-snug mb-1.5" style={{ color: '#B6B7BE' }}>
+      <a
+        href={marker.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block text-[11px] leading-snug mb-1.5 hover:underline"
+        style={{ color: '#B6B7BE' }}
+      >
         {marker.title}
-      </div>
+      </a>
       <div className="text-[10px]" style={{ color: '#6E6F78' }}>
         Price at mention ·{' '}
         <span style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}>

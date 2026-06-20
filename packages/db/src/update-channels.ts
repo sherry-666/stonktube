@@ -12,6 +12,7 @@ const CHANNELS = [
   { slug: 'andrei', youtubeChannelId: 'UCGy7SkBjcIAgTiwkXEtPnYg', channelUrl: 'https://www.youtube.com/@andreijikh' },
   { slug: 'tom',    youtubeChannelId: 'UCORi3Jj7kSHcdHdckrjhOsg', channelUrl: 'https://www.youtube.com/@tomnash' },
   { slug: 'kevin',  youtubeChannelId: 'UCUvvj5lwue7PspotMDjk5UA', channelUrl: 'https://www.youtube.com/@meetkevin' },
+  { slug: 'rhino',  youtubeChannelId: 'UCFQsi7WaF5X41tcuOryDk8w', channelUrl: 'https://www.youtube.com/@RhinoFinance' },
 ]
 
 await connectDB()
