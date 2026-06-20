@@ -17,7 +17,9 @@ async function latestPriceDate(stockId: mongoose.Types.ObjectId): Promise<Date |
   return doc ? (doc.date as Date) : null
 }
 
-async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string }) {
+async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string; priceSymbol?: string }) {
+  // Display ticker (e.g. SPX) isn't always the Yahoo symbol (e.g. ^GSPC).
+  const symbol = stock.priceSymbol || stock.ticker
   const latest = await latestPriceDate(stock._id)
   const fromDate = latest
     ? new Date(latest.getTime() + 86_400_000)
@@ -30,7 +32,7 @@ async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string }) 
   }
 
   type Bar = { date: Date; close: number }
-  const bars: Bar[] = (await yahooFinance.historical(stock.ticker, {
+  const bars: Bar[] = (await yahooFinance.historical(symbol, {
     period1: fromDate.toISOString().slice(0, 10),
     period2: toDate.toISOString().slice(0, 10),
     interval: '1d',

@@ -3,6 +3,11 @@ import type { StockStats } from '@stonktube/shared'
 
 export interface IStock extends Document {
   ticker: string
+  /**
+   * Yahoo Finance symbol to fetch prices with, when it differs from the display
+   * `ticker` (e.g. SPX → ^GSPC). Falls back to `ticker` when unset.
+   */
+  priceSymbol?: string
   name: string
   sector: string
   aliases: string[]
@@ -36,6 +41,7 @@ const StockStatsSchema = new Schema<StockStats>(
 const StockSchema = new Schema<IStock>(
   {
     ticker: { type: String, required: true, unique: true },
+    priceSymbol: { type: String },
     name: { type: String, required: true },
     sector: { type: String, default: '' },
     aliases: { type: [String], default: [] },
