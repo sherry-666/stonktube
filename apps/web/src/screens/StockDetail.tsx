@@ -55,7 +55,7 @@ function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTool
       onMouseLeave={onMouseLeave}
       style={{
         position: 'absolute',
-        width: 218,
+        width: 248,
         background: '#14151A',
         borderRadius: 12,
         padding: '12px 14px',
@@ -92,14 +92,22 @@ function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTool
           {meta.label}
         </div>
       </div>
+      {marker.note && (
+        <p className="text-[11px] leading-snug mb-2" style={{ color: '#B6B7BE', fontStyle: 'italic' }}>
+          {marker.note}
+        </p>
+      )}
       <a
         href={marker.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-[11px] leading-snug mb-1.5 hover:underline"
-        style={{ color: '#B6B7BE' }}
+        className="flex items-center gap-1 text-[11px] font-medium mb-2 hover:underline"
+        style={{ color: '#6E6F78' }}
       >
-        {marker.title}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#FF0000', flexShrink: 0 }}>
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+        Watch on YouTube
       </a>
       <div className="text-[10px]" style={{ color: '#6E6F78' }}>
         Price at mention ·{' '}
@@ -210,7 +218,7 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
 // avatar but clamped inside the 360px chart so it never spills over the legend
 // or off the bottom. Flips to the left when the marker sits in the right third.
 function tooltipPosition(marker: PositionedMarker): CSSProperties {
-  const CARD_H = 200
+  const CARD_H = 240
   const PAD = 8
   const GAP = 18
   const dotXpct = marker.svgX / 10 // 0–100

@@ -44,6 +44,12 @@ export const LLMExtractionSchema = z.object({
       note: z.string(),
     }),
   ),
+  new_tickers: z.array(
+    z.object({
+      ticker: z.string(),
+      name: z.string(),
+    }),
+  ).optional().default([]),
 })
 export type LLMExtraction = z.infer<typeof LLMExtractionSchema>
 

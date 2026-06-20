@@ -210,6 +210,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           creatorInitial: v.creator.initial,
           creatorAvatarUrl: v.creator.avatarUrl,
           sentiment: mention?.sentiment ?? 'NEUTRAL',
+          note: mention?.note ?? '',
           title: v.title,
           url: v.url,
           priceAtMention: price,

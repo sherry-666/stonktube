@@ -159,6 +159,7 @@ export interface Marker {
   priceAtMention?: number
   priceLabel: string
   sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'
+  note: string
   creatorSlug: string
   creatorName: string
   creatorColor: string

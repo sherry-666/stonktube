@@ -6,7 +6,10 @@ import { LLMExtractionSchema } from '@stonktube/shared'
 import { getFlashModel, FunctionCallingMode } from '../lib/gemini.js'
 import { SchemaType } from '@google/generative-ai'
 import type { Types } from 'mongoose'
+import YahooFinance from 'yahoo-finance2'
 import pino from 'pino'
+
+const yahooFinance = new YahooFinance()
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 
@@ -48,6 +51,18 @@ const EXTRACT_TOOL = {
         type: SchemaType.STRING,
         description: 'One-sentence summary of what the video covers (max 150 chars)',
       },
+      new_tickers: {
+        type: SchemaType.ARRAY,
+        description: 'Tickers significantly mentioned that are NOT in the tracked list above',
+        items: {
+          type: SchemaType.OBJECT,
+          properties: {
+            ticker: { type: SchemaType.STRING, description: 'The ticker symbol (e.g. NVDA, BTC-USD)' },
+            name: { type: SchemaType.STRING, description: 'Company or asset name (e.g. NVIDIA Corporation)' },
+          },
+          required: ['ticker', 'name'],
+        },
+      },
     },
     required: ['mentions', 'summary'],
   },
@@ -80,13 +95,16 @@ export async function handleAnalyze(job: Job<AnalyzeJob>) {
 
   const prompt = `You are analyzing a financial YouTube video to extract stock/asset mentions.
 
-Tracked tickers you must use: ${trackedList}
-Only extract mentions for tickers in the list above. Ignore all others.
+Tracked tickers (use these for the mentions array): ${trackedList}
+
+For tickers in the tracked list: add them to mentions with full sentiment analysis.
+For significant stocks/crypto/assets NOT in the tracked list: add them to new_tickers (ticker symbol + name only).
+Ignore passing references — only include tickers the creator meaningfully discusses.
 
 Video title: ${video.title}
 
 Transcript:
-${transcript.text.slice(0, 30_000)}`
+${transcript.text}`
 
   log.info({ videoId, title: video.title }, 'Sending to Gemini for analysis')
 
@@ -115,7 +133,41 @@ ${transcript.text.slice(0, 30_000)}`
     return
   }
 
-  const { mentions: rawMentions, summary } = parsed.data
+  const { mentions: rawMentions, summary, new_tickers: newTickers } = parsed.data
+
+  // Create Stock entries for tickers Gemini found but we don't track yet
+  for (const { ticker, name } of newTickers ?? []) {
+    const upper = ticker.toUpperCase()
+    if (tickerMap.has(upper.toLowerCase())) continue
+    try {
+      const quote = await yahooFinance.quote(upper)
+      if (!quote) continue
+      const resolvedName = quote.shortName ?? quote.longName ?? name
+      const stock = await Stock.findOneAndUpdate(
+        { ticker: upper },
+        {
+          $setOnInsert: {
+            ticker: upper,
+            name: resolvedName,
+            sector: (quote as any).sector ?? '',
+            aliases: [],
+            isPrivate: false,
+            brandColor: '#6B7280',
+            logoBg: '#F3F4F6',
+            initials: upper.slice(0, 4),
+          },
+        },
+        { upsert: true, new: true },
+      )
+      if (stock) {
+        tickerMap.set(upper.toLowerCase(), stock)
+        stocks.push(stock)
+        log.info({ ticker: upper, name: resolvedName }, 'Auto-created new stock from video mention')
+      }
+    } catch (err) {
+      log.warn({ ticker, err: (err as Error).message }, 'Could not validate new ticker via Yahoo Finance — skipping')
+    }
+  }
 
   if (rawMentions.length === 0) {
     await video.updateOne({ analysisStatus: 'NO_MENTIONS', summary })
