@@ -258,6 +258,15 @@ export default function StockDetail() {
     hideTimer.current = setTimeout(() => setActiveDate(null), 140)
   }
 
+  // Crosshair — index into priceSeries while mouse is over chart
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+  const handleChartMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (priceSeries.length < 2) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const idx = Math.round(((e.clientX - rect.left) / rect.width) * (priceSeries.length - 1))
+    setHoverIdx(Math.max(0, Math.min(priceSeries.length - 1, idx)))
+  }
+
   const { data, isLoading, error } = useStockDetail(ticker, tf)
   const { data: markers } = useStockMarkers(ticker, tf)
 
@@ -294,19 +303,32 @@ export default function StockDetail() {
     return SVG_H - ((price - priceMin) / (hi - priceMin || 1)) * SVG_H
   }
 
+  const isPrivate = priceSeries.length === 0
+
+  // For private stocks, compute a date range from the markers themselves
+  const markerMs = (markers ?? []).map(m => new Date(m.date).getTime())
+  const markerMinMs = markerMs.length > 0 ? Math.min(...markerMs) : Date.now()
+  const markerMaxMs = markerMs.length > 0 ? Math.max(...markerMs) : Date.now()
+  const markerDateRange = markerMaxMs - markerMinMs || 1
+
   // Snap each marker to the nearest price-series point so the dot sits exactly
   // on the line. The line is drawn with index-based X spacing (trading days are
   // evenly spaced, weekends skipped), so we match by index, not calendar time.
+  // For private stocks (no price data) position by calendar date along a baseline.
   const positionedMarkers = (markers ?? []).map(m => {
     const mMs = new Date(m.date).getTime()
+    if (isPrivate) {
+      const pad = markerMs.length > 1 ? markerDateRange * 0.08 : 0
+      const svgX = markerMs.length > 1
+        ? ((mMs - markerMinMs + pad) / (markerDateRange + 2 * pad)) * SVG_W
+        : SVG_W / 2
+      return { ...m, svgX, svgY: SVG_H / 2, flip: false }
+    }
     let nearestIdx = 0
     let bestDiff = Infinity
     for (let i = 0; i < priceSeries.length; i++) {
       const diff = Math.abs(new Date(priceSeries[i].date).getTime() - mMs)
-      if (diff < bestDiff) {
-        bestDiff = diff
-        nearestIdx = i
-      }
+      if (diff < bestDiff) { bestDiff = diff; nearestIdx = i }
     }
     const n = priceSeries.length
     const svgY = priceToSvgY(priceSeries[nearestIdx]?.close ?? 0)
@@ -314,8 +336,6 @@ export default function StockDetail() {
       ...m,
       svgX: n > 1 ? (nearestIdx / (n - 1)) * SVG_W : SVG_W / 2,
       svgY,
-      // Not enough headroom above for the avatar → flip the marker downward so
-      // it doesn't clip the chart top or collide with the legend.
       flip: svgY < AVATAR_REACH + 12,
     }
   })
@@ -399,22 +419,26 @@ export default function StockDetail() {
           </div>
         </div>
         <div className="text-right">
-          <div
-            style={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-              fontSize: 30,
-              color: '#14151A',
-              lineHeight: 1,
-            }}
-          >
-            {stock.priceStr}
-          </div>
-          <div className="flex items-center justify-end gap-2 mt-1">
-            <span className="text-[14px] font-semibold" style={{ color: changeColor }}>
-              {fmtPct(stock.dayChangePct)} today
-            </span>
-          </div>
+          {!isPrivate && (
+            <>
+              <div
+                style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontWeight: 600,
+                  fontSize: 30,
+                  color: '#14151A',
+                  lineHeight: 1,
+                }}
+              >
+                {stock.priceStr}
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-1">
+                <span className="text-[14px] font-semibold" style={{ color: changeColor }}>
+                  {fmtPct(stock.dayChangePct)} today
+                </span>
+              </div>
+            </>
+          )}
           <div className="text-[12px] text-muted mt-1">
             Tracked by {stock.trackedBy} creator{stock.trackedBy !== 1 ? 's' : ''}
           </div>
@@ -458,69 +482,125 @@ export default function StockDetail() {
         </div>
 
         {/* Chart SVG with overlay */}
-        <div className="relative" style={{ height: 360 }}>
-          <svg
-            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-            preserveAspectRatio="none"
-            style={{ width: '100%', height: '100%', display: 'block' }}
-          >
-            <defs>
-              <linearGradient id={`area-${ticker}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stock.brandColor} stopOpacity="0.16" />
-                <stop offset="100%" stopColor={stock.brandColor} stopOpacity="0" />
-              </linearGradient>
-            </defs>
+        <div
+          className="relative"
+          style={{ height: 360 }}
+          onMouseMove={handleChartMouseMove}
+          onMouseLeave={() => setHoverIdx(null)}
+        >
+          {isPrivate ? (
+            /* Private company — no price data: show a simple horizontal timeline */
+            <svg
+              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+              preserveAspectRatio="none"
+              style={{ width: '100%', height: '100%', display: 'block' }}
+            >
+              {/* Baseline */}
+              <line x1={0} y1={SVG_H / 2} x2={SVG_W} y2={SVG_H / 2} stroke="#E8E7E0" strokeWidth={2} />
+            </svg>
+          ) : (
+            <svg
+              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+              preserveAspectRatio="none"
+              style={{ width: '100%', height: '100%', display: 'block' }}
+            >
+              <defs>
+                <linearGradient id={`area-${ticker}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={stock.brandColor} stopOpacity="0.16" />
+                  <stop offset="100%" stopColor={stock.brandColor} stopOpacity="0" />
+                </linearGradient>
+              </defs>
 
-            {/* Gridlines */}
-            {gridPrices && gridPrices.map((gp, i) => {
-              const y = priceToSvgY(gp)
-              return (
-                <g key={i}>
-                  <line
-                    x1={0}
-                    y1={y}
-                    x2={SVG_W - 50}
-                    y2={y}
-                    stroke="#F0EFE8"
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={SVG_W - 4}
-                    y={y + 4}
-                    textAnchor="end"
-                    style={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: 11,
-                      fill: '#B6B7BE',
-                    }}
-                  >
-                    {fmtPrice(gp)}
-                  </text>
-                </g>
-              )
-            })}
+              {/* Gridlines */}
+              {gridPrices && gridPrices.map((gp, i) => {
+                const y = priceToSvgY(gp)
+                return (
+                  <g key={i}>
+                    <line x1={0} y1={y} x2={SVG_W - 50} y2={y} stroke="#F0EFE8" strokeWidth={1} />
+                    <text
+                      x={SVG_W - 4}
+                      y={y + 4}
+                      textAnchor="end"
+                      style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, fill: '#B6B7BE' }}
+                    >
+                      {fmtPrice(gp)}
+                    </text>
+                  </g>
+                )
+              })}
 
-            {/* Area fill */}
-            {pts && (
-              <polygon
-                points={`0,${SVG_H} ${pts} ${SVG_W},${SVG_H}`}
-                fill={`url(#area-${ticker})`}
-              />
-            )}
+              {/* Area fill */}
+              {pts && (
+                <polygon points={`0,${SVG_H} ${pts} ${SVG_W},${SVG_H}`} fill={`url(#area-${ticker})`} />
+              )}
 
-            {/* Price line */}
-            {pts && (
-              <polyline
-                points={pts}
-                fill="none"
-                stroke={stock.brandColor}
-                strokeWidth={2.4}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-          </svg>
+              {/* Price line */}
+              {pts && (
+                <polyline
+                  points={pts}
+                  fill="none"
+                  stroke={stock.brandColor}
+                  strokeWidth={2.4}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+
+              {/* Crosshair */}
+              {hoverIdx !== null && priceSeries.length > 1 && (() => {
+                const cx = (hoverIdx / (priceSeries.length - 1)) * SVG_W
+                const cy = priceToSvgY(priceSeries[hoverIdx].close)
+                return (
+                  <g>
+                    <line
+                      x1={cx} y1={0} x2={cx} y2={SVG_H}
+                      stroke="#9A9BA4"
+                      strokeWidth={1}
+                      strokeDasharray="4 3"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <circle
+                      cx={cx} cy={cy} r={4}
+                      fill={stock.brandColor}
+                      stroke="white"
+                      strokeWidth={2}
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </g>
+                )
+              })()}
+            </svg>
+          )}
+
+          {/* Crosshair date/price label */}
+          {!isPrivate && hoverIdx !== null && priceSeries.length > 1 && (() => {
+            const pt = priceSeries[hoverIdx]
+            const xPct = (hoverIdx / (priceSeries.length - 1)) * 100
+            const flipLeft = xPct > 65
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  ...(flipLeft
+                    ? { right: `${100 - xPct}%`, marginRight: 10 }
+                    : { left: `${xPct}%`, marginLeft: 10 }),
+                  background: '#14151A',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontFamily: '"JetBrains Mono", monospace',
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  zIndex: 10,
+                }}
+              >
+                {fmtDate(pt.date)} · {fmtPrice(pt.close)}
+              </div>
+            )
+          })()}
 
           {/* Creator avatar markers overlay */}
           {markerGroups.length > 0 && (
@@ -548,17 +628,19 @@ export default function StockDetail() {
         </div>
 
         {/* Date ticks */}
-        <div className="flex justify-between mt-2 px-1">
-          {dateTicks.map((tick, i) => (
-            <span
-              key={i}
-              className="text-[11px]"
-              style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}
-            >
-              {tick ? fmtDate(tick.date).replace(/,\s*\d{4}$/, '') : ''}
-            </span>
-          ))}
-        </div>
+        {!isPrivate && (
+          <div className="flex justify-between mt-2 px-1">
+            {dateTicks.map((tick, i) => (
+              <span
+                key={i}
+                className="text-[11px]"
+                style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}
+              >
+                {tick ? fmtDate(tick.date).replace(/,\s*\d{4}$/, '') : ''}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bottom grid */}
