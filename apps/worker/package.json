@@ -7,7 +7,8 @@
     "build": "tsc",
     "dev": "node --watch dist/index.js",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "backfill": "tsc && node dist/backfill-apr2026.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
