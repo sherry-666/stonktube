@@ -10,7 +10,7 @@ const search: FastifyPluginAsync = async (fastify) => {
 
     const [stockDocs, creatorDocs] = await Promise.all([
       Stock.find({ $or: [{ ticker: regex }, { name: regex }] })
-        .select('ticker name brandColor initials')
+        .select('ticker name brandColor logoBg initials')
         .lean(),
       Creator.find({
         isActive: true,
@@ -25,6 +25,7 @@ const search: FastifyPluginAsync = async (fastify) => {
         ticker: s.ticker,
         name: s.name,
         brandColor: s.brandColor,
+        logoBg: s.logoBg,
         initials: s.initials,
       })),
       creators: creatorDocs.map((c) => ({

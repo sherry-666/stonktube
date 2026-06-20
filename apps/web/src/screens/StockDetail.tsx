@@ -680,8 +680,8 @@ export default function StockDetail() {
 
       {/* Bottom grid */}
       <div className="grid gap-7" style={{ gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr' }}>
-        {/* Left: Recent coverage */}
-        <div className="flex flex-col gap-4">
+        {/* Left: Recent coverage — on mobile shown second */}
+        <div className="flex flex-col gap-4" style={{ order: isMobile ? 2 : 1 }}>
           <h2
             style={{
               fontFamily: '"Space Grotesk", sans-serif',
@@ -750,8 +750,8 @@ export default function StockDetail() {
           </div>
         </div>
 
-        {/* Right: Overall sentiment */}
-        <div className="sticky top-[90px]">
+        {/* Right: Overall sentiment — on mobile shown first */}
+        <div className={isMobile ? '' : 'sticky top-[90px]'} style={{ order: isMobile ? 1 : 2 }}>
           <div
             className="bg-white border border-[#ECEBE4] p-5"
             style={{ borderRadius: 18 }}
