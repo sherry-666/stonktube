@@ -116,7 +116,7 @@ export default function Stocks() {
 
           return (
             <button
-              key={stock.ticker}
+              key={stock.id}
               onClick={() => navigate(`/stocks/${stock.ticker}`)}
               className="grid items-center w-full text-left transition-colors duration-150"
               style={{

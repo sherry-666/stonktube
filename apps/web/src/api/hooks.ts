@@ -67,6 +67,7 @@ export function useDashboard() {
 // ── Stocks ─────────────────────────────────────────────────────────────────
 
 export interface StockRow {
+  id: string
   ticker: string
   name: string
   sector: string

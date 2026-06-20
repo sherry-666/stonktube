@@ -54,6 +54,9 @@ const stocks: FastifyPluginAsync = async (fastify) => {
     })
 
     const rows = sorted.map((s) => ({
+      // Raw ticker — unique per stock; use as a stable React key. (The display
+      // ticker strips -USD and can collide, e.g. XAG vs XAG-USD.)
+      id: s.ticker,
       ticker: displayTicker(s.ticker),
       name: s.name,
       sector: s.sector,
