@@ -39,23 +39,31 @@ function scalePoints(values: number[], svgW: number, svgH: number) {
 }
 
 type PositionedMarker = Marker & { svgX: number; svgY: number; flip: boolean }
+type MarkerGroup = { date: string; markers: PositionedMarker[]; svgX: number; svgY: number; flip: boolean }
 
-interface MarkerTooltipProps {
-  marker: PositionedMarker
+const STEM = 46
+const AVATAR_REACH = 84
+
+const YT_ICON = (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#FF0000', flexShrink: 0 }}>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+)
+
+function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
+  group: MarkerGroup
   style: CSSProperties
   onMouseEnter: () => void
   onMouseLeave: () => void
-}
-
-function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTooltipProps) {
-  const meta = SENTIMENT_META[marker.sentiment]
+}) {
+  const multi = group.markers.length > 1
   return (
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
         position: 'absolute',
-        width: 248,
+        width: 260,
         background: '#14151A',
         borderRadius: 12,
         padding: '12px 14px',
@@ -65,80 +73,81 @@ function MarkerTooltip({ marker, style, onMouseEnter, onMouseLeave }: MarkerTool
         ...style,
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <div
-          className="flex items-center justify-center rounded-full text-white font-bold shrink-0"
-          style={{
-            width: 28,
-            height: 28,
-            background: marker.creatorColor,
-            fontSize: 11,
-            border: '2px solid rgba(255,255,255,0.3)',
-          }}
-        >
-          {marker.creatorInitial}
+      {/* Date header for multi-marker groups */}
+      {multi && (
+        <div className="text-[11px] font-semibold mb-2" style={{ color: '#9A9BA4' }}>
+          {fmtDate(group.date)} · {group.markers.length} calls
         </div>
-        <div>
-          <div className="text-white text-[12px] font-semibold">{marker.creatorName}</div>
-          <div className="text-[10px]" style={{ color: '#9A9BA4' }}>
-            {fmtDate(marker.date)}
-          </div>
-        </div>
-        <div
-          className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full"
-          style={{ background: meta.bg, color: meta.color, fontSize: 11, fontWeight: 600 }}
-        >
-          <SentimentIcon sentiment={marker.sentiment} size={10} color={meta.color} />
-          {meta.label}
-        </div>
-      </div>
-      {marker.note && (
-        <p className="text-[11px] leading-snug mb-2" style={{ color: '#B6B7BE', fontStyle: 'italic' }}>
-          {marker.note}
-        </p>
       )}
-      <a
-        href={marker.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1 text-[11px] font-medium mb-2 hover:underline"
-        style={{ color: '#6E6F78' }}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#FF0000', flexShrink: 0 }}>
-          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-        </svg>
-        Watch on YouTube
-      </a>
-      <div className="text-[10px]" style={{ color: '#6E6F78' }}>
+
+      {group.markers.map((marker, i) => {
+        const meta = SENTIMENT_META[marker.sentiment]
+        return (
+          <div key={marker.videoId}>
+            {i > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '10px 0' }} />}
+            <div className="flex items-center gap-2 mb-1.5">
+              <div
+                className="flex items-center justify-center rounded-full text-white font-bold shrink-0"
+                style={{ width: 26, height: 26, background: marker.creatorColor, fontSize: 10, border: '2px solid rgba(255,255,255,0.25)' }}
+              >
+                {marker.creatorInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white text-[11px] font-semibold truncate">{marker.creatorName}</div>
+                {!multi && <div className="text-[10px]" style={{ color: '#9A9BA4' }}>{fmtDate(marker.date)}</div>}
+              </div>
+              <div
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full shrink-0"
+                style={{ background: meta.bg, color: meta.color, fontSize: 10, fontWeight: 600 }}
+              >
+                <SentimentIcon sentiment={marker.sentiment} size={9} color={meta.color} />
+                {meta.label}
+              </div>
+            </div>
+            {marker.note && (
+              <p className="text-[11px] leading-snug mb-1.5" style={{ color: '#B6B7BE', fontStyle: 'italic' }}>
+                {marker.note}
+              </p>
+            )}
+            <a
+              href={marker.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[11px] font-medium hover:underline"
+              style={{ color: '#6E6F78' }}
+            >
+              {YT_ICON}
+              Watch on YouTube
+            </a>
+          </div>
+        )
+      })}
+
+      <div className="text-[10px] mt-2" style={{ color: '#6E6F78' }}>
         Price at mention ·{' '}
         <span style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}>
-          {marker.priceLabel}
+          {group.markers[0].priceLabel}
         </span>
       </div>
     </div>
   )
 }
 
-interface MarkerDotProps {
-  marker: PositionedMarker
-  onShow: () => void
-  onHide: () => void
-}
+function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () => void; onHide: () => void }) {
+  const multi = group.markers.length > 1
+  const first = group.markers[0]
+  const flip = group.flip
 
-const STEM = 46
-// Distance from the dot to the centre of the floating avatar, along the stem.
-const AVATAR_REACH = 84
-
-function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
-  const meta = SENTIMENT_META[marker.sentiment]
-  const flip = marker.flip
+  const avatarBg = multi ? '#3D3F4A' : first.creatorColor
+  const stemColor = multi ? '#6E6F78' : first.creatorColor
+  const dotColor = multi ? '#6E6F78' : first.creatorColor
 
   return (
     <div
       style={{
         position: 'absolute',
-        left: `${marker.svgX / 10}%`,
-        top: `${marker.svgY / 3.6}%`,
+        left: `${group.svgX / 10}%`,
+        top: `${group.svgY / 3.6}%`,
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'auto',
       }}
@@ -154,11 +163,11 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
           transform: 'translateX(-50%)',
           width: 2,
           height: STEM,
-          background: marker.creatorColor,
+          background: stemColor,
           [flip ? 'marginTop' : 'marginBottom']: 4,
         }}
       />
-      {/* Avatar */}
+      {/* Avatar / multi-badge */}
       <div
         style={{
           position: 'absolute',
@@ -168,7 +177,7 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
           width: 34,
           height: 34,
           borderRadius: '50%',
-          background: marker.creatorColor,
+          background: avatarBg,
           border: '2.5px solid white',
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           display: 'flex',
@@ -176,27 +185,32 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
           justifyContent: 'center',
           color: 'white',
           fontWeight: 700,
-          fontSize: 12,
+          fontSize: multi ? 14 : 12,
+          letterSpacing: multi ? '-1px' : undefined,
         }}
       >
-        {marker.creatorInitial}
-        {/* Sentiment badge */}
+        {multi ? '···' : first.creatorInitial}
+        {/* Badge: count for multi, sentiment icon for single */}
         <div
           style={{
             position: 'absolute',
             bottom: -3,
             right: -3,
-            width: 18,
+            minWidth: 18,
             height: 18,
-            borderRadius: '50%',
-            background: meta.color,
+            borderRadius: 9,
+            background: multi ? '#4F46E5' : SENTIMENT_META[first.sentiment].color,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             border: '1.5px solid white',
+            fontSize: 9,
+            fontWeight: 700,
+            color: 'white',
+            padding: '0 3px',
           }}
         >
-          <SentimentIcon sentiment={marker.sentiment} size={10} color="white" />
+          {multi ? group.markers.length : <SentimentIcon sentiment={first.sentiment} size={10} color="white" />}
         </div>
       </div>
       {/* Dot at price point */}
@@ -205,7 +219,7 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
           width: 9,
           height: 9,
           borderRadius: '50%',
-          background: marker.creatorColor,
+          background: dotColor,
           border: '2px solid white',
           boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
         }}
@@ -214,15 +228,12 @@ function MarkerDot({ marker, onShow, onHide }: MarkerDotProps) {
   )
 }
 
-// Place the hover card to the side of the marker, vertically centred on the
-// avatar but clamped inside the 360px chart so it never spills over the legend
-// or off the bottom. Flips to the left when the marker sits in the right third.
-function tooltipPosition(marker: PositionedMarker): CSSProperties {
-  const CARD_H = 240
+function tooltipPosition(group: MarkerGroup): CSSProperties {
+  const CARD_H = group.markers.length === 1 ? 200 : Math.min(group.markers.length * 110 + 50, 340)
   const PAD = 8
   const GAP = 18
-  const dotXpct = marker.svgX / 10 // 0–100
-  const avatarY = marker.svgY + (marker.flip ? AVATAR_REACH : -AVATAR_REACH)
+  const dotXpct = group.svgX / 10
+  const avatarY = group.svgY + (group.flip ? AVATAR_REACH : -AVATAR_REACH)
   const top = Math.min(Math.max(avatarY - CARD_H / 2, PAD), 360 - CARD_H - PAD)
   const placeLeft = dotXpct > 58
   return placeLeft
@@ -235,17 +246,16 @@ export default function StockDetail() {
   const navigate = useNavigate()
   const [tf, setTf] = useState('3M')
 
-  // Hover state for marker tooltips. A short hide delay lets the pointer travel
-  // from the avatar across the gap onto the card without the card vanishing.
-  const [activeId, setActiveId] = useState<string | null>(null)
+  // Hover state keyed by date string so grouped markers share one active state.
+  const [activeDate, setActiveDate] = useState<string | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout>>()
-  const showMarker = (id: string) => {
+  const showMarker = (date: string) => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
-    setActiveId(id)
+    setActiveDate(date)
   }
   const hideMarker = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
-    hideTimer.current = setTimeout(() => setActiveId(null), 140)
+    hideTimer.current = setTimeout(() => setActiveDate(null), 140)
   }
 
   const { data, isLoading, error } = useStockDetail(ticker, tf)
@@ -310,7 +320,24 @@ export default function StockDetail() {
     }
   })
 
-  const activeMarker = positionedMarkers.find(m => m.videoId === activeId)
+  // Group markers by date — multiple calls on the same day share one dot
+  const markerGroups: MarkerGroup[] = (() => {
+    const map = new Map<string, PositionedMarker[]>()
+    for (const m of positionedMarkers) {
+      const arr = map.get(m.date) ?? []
+      arr.push(m)
+      map.set(m.date, arr)
+    }
+    return [...map.values()].map(markers => ({
+      date: markers[0].date,
+      markers,
+      svgX: markers[0].svgX,
+      svgY: markers[0].svgY,
+      flip: markers[0].flip,
+    }))
+  })()
+
+  const activeGroup = markerGroups.find(g => g.date === activeDate)
 
   return (
     <div className="flex flex-col gap-6">
@@ -496,22 +523,22 @@ export default function StockDetail() {
           </svg>
 
           {/* Creator avatar markers overlay */}
-          {positionedMarkers.length > 0 && (
+          {markerGroups.length > 0 && (
             <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
               <div className="relative w-full h-full" style={{ pointerEvents: 'none' }}>
-                {positionedMarkers.map(marker => (
+                {markerGroups.map(group => (
                   <MarkerDot
-                    key={marker.videoId}
-                    marker={marker}
-                    onShow={() => showMarker(marker.videoId)}
+                    key={group.date}
+                    group={group}
+                    onShow={() => showMarker(group.date)}
                     onHide={hideMarker}
                   />
                 ))}
-                {activeMarker && (
+                {activeGroup && (
                   <MarkerTooltip
-                    marker={activeMarker}
-                    style={tooltipPosition(activeMarker)}
-                    onMouseEnter={() => showMarker(activeMarker.videoId)}
+                    group={activeGroup}
+                    style={tooltipPosition(activeGroup)}
+                    onMouseEnter={() => showMarker(activeGroup.date)}
                     onMouseLeave={hideMarker}
                   />
                 )}

@@ -140,25 +140,6 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
               </div>
             </div>
 
-            {/* Covers tickers */}
-            {creator.coversTickers && creator.coversTickers.length > 0 && (
-              <p className="text-[12px]" style={{ color: '#B6B7BE' }}>
-                Covers{' '}
-                {creator.coversTickers.map((t, i) => (
-                  <span key={t}>
-                    <span
-                      style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 500, color: '#9A9BA4' }}
-                    >
-                      {t}
-                    </span>
-                    {i < creator.coversTickers.length - 1 && (
-                      <span style={{ color: '#ECEBE4' }}> · </span>
-                    )}
-                  </span>
-                ))}
-              </p>
-            )}
-
             {/* Recent calls */}
             {creator.recentCalls && creator.recentCalls.length > 0 && (
               <div className="flex flex-col gap-2">
