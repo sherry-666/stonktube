@@ -22,7 +22,6 @@ async function run() {
   const creators = await Creator.find({ isActive: true }, '_id name')
   // Job IDs use - not : because BullMQ uses : as a Redis key separator
   const hour = runId.slice(0, 13).replace(/:/g, '-')
-  const day = runId.slice(0, 10)
 
   for (const c of creators) {
     await discoverQueue.add(
@@ -43,7 +42,7 @@ async function run() {
   await rollupQueue.add(
     'rollup',
     {},
-    { jobId: `rollup-all-${day}` },
+    { jobId: `rollup-all-${hour}` },
   )
   log.info('Rollup job enqueued')
 

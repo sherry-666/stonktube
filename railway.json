@@ -14,7 +14,7 @@
     "scheduler": {
       "buildCommand": "pnpm install && pnpm turbo run build --filter=scheduler...",
       "startCommand": "node apps/scheduler/dist/index.js",
-      "cronSchedule": "*/30 * * * *"
+      "cronSchedule": "0 */4 * * *"
     }
   }
 }
