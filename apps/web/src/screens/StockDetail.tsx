@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
@@ -55,6 +55,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
   style: CSSProperties
   onMouseEnter: () => void
   onMouseLeave: () => void
+  isMobile?: boolean
 }) {
   const multi = group.markers.length > 1
   return (
@@ -133,7 +134,9 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
   )
 }
 
-function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () => void; onHide: () => void }) {
+function MarkerDot({ group, onShow, onHide, isMobile = false }: {
+  group: MarkerGroup; onShow: () => void; onHide: () => void; isMobile?: boolean
+}) {
   const multi = group.markers.length > 1
   const first = group.markers[0]
   const flip = group.flip
@@ -141,6 +144,12 @@ function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () =
   const avatarBg = multi ? '#3D3F4A' : first.creatorColor
   const stemColor = multi ? '#6E6F78' : first.creatorColor
   const dotColor = multi ? '#6E6F78' : first.creatorColor
+
+  // Scaled sizes for mobile
+  const AVATAR_SIZE = isMobile ? 22 : 34
+  const STEM_H = isMobile ? 24 : STEM
+  const REACH = isMobile ? 48 : AVATAR_REACH
+  const DOT_SIZE = isMobile ? 7 : 9
 
   return (
     <div
@@ -153,6 +162,7 @@ function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () =
       }}
       onMouseEnter={onShow}
       onMouseLeave={onHide}
+      onClick={onShow}
     >
       {/* Stem */}
       <div
@@ -161,31 +171,32 @@ function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () =
           left: '50%',
           [flip ? 'top' : 'bottom']: '100%',
           transform: 'translateX(-50%)',
-          width: 2,
-          height: STEM,
+          width: 1.5,
+          height: STEM_H,
           background: stemColor,
-          [flip ? 'marginTop' : 'marginBottom']: 4,
+          [flip ? 'marginTop' : 'marginBottom']: 3,
+          opacity: isMobile ? 0.6 : 1,
         }}
       />
       {/* Avatar / multi-badge */}
       <div
         style={{
           position: 'absolute',
-          [flip ? 'top' : 'bottom']: `calc(100% + ${AVATAR_REACH - 34}px)`,
+          [flip ? 'top' : 'bottom']: `calc(100% + ${REACH - AVATAR_SIZE}px)`,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 34,
-          height: 34,
+          width: AVATAR_SIZE,
+          height: AVATAR_SIZE,
           borderRadius: '50%',
           background: avatarBg,
-          border: '2.5px solid white',
+          border: `${isMobile ? 1.5 : 2.5}px solid white`,
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
           fontWeight: 700,
-          fontSize: multi ? 14 : 12,
+          fontSize: isMobile ? (multi ? 9 : 8) : (multi ? 14 : 12),
           letterSpacing: multi ? '-1px' : undefined,
         }}
       >
@@ -194,30 +205,30 @@ function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () =
         <div
           style={{
             position: 'absolute',
-            bottom: -3,
-            right: -3,
-            minWidth: 18,
-            height: 18,
+            bottom: -2,
+            right: -2,
+            minWidth: isMobile ? 13 : 18,
+            height: isMobile ? 13 : 18,
             borderRadius: 9,
             background: multi ? '#4F46E5' : SENTIMENT_META[first.sentiment].color,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             border: '1.5px solid white',
-            fontSize: 9,
+            fontSize: isMobile ? 7 : 9,
             fontWeight: 700,
             color: 'white',
-            padding: '0 3px',
+            padding: '0 2px',
           }}
         >
-          {multi ? group.markers.length : <SentimentIcon sentiment={first.sentiment} size={10} color="white" />}
+          {multi ? group.markers.length : <SentimentIcon sentiment={first.sentiment} size={isMobile ? 7 : 10} color="white" />}
         </div>
       </div>
       {/* Dot at price point */}
       <div
         style={{
-          width: 9,
-          height: 9,
+          width: DOT_SIZE,
+          height: DOT_SIZE,
           borderRadius: '50%',
           background: dotColor,
           border: '2px solid white',
@@ -228,13 +239,21 @@ function MarkerDot({ group, onShow, onHide }: { group: MarkerGroup; onShow: () =
   )
 }
 
-function tooltipPosition(group: MarkerGroup): CSSProperties {
+function tooltipPosition(group: MarkerGroup, isMobile = false): CSSProperties {
   const CARD_H = group.markers.length === 1 ? 200 : Math.min(group.markers.length * 110 + 50, 340)
-  const PAD = 8
-  const GAP = 18
+  const PAD = 4
+  const GAP = isMobile ? 6 : 18
+  const REACH = isMobile ? 48 : AVATAR_REACH
   const dotXpct = group.svgX / 10
-  const avatarY = group.svgY + (group.flip ? AVATAR_REACH : -AVATAR_REACH)
-  const top = Math.min(Math.max(avatarY - CARD_H / 2, PAD), 360 - CARD_H - PAD)
+  const avatarY = group.svgY + (group.flip ? REACH : -REACH)
+  const CHART_H = isMobile ? 240 : 360
+  const top = Math.min(Math.max(avatarY - CARD_H / 2, PAD), CHART_H - CARD_H - PAD)
+  if (isMobile) {
+    // On mobile pin the card to the sides to avoid overflow
+    return dotXpct > 50
+      ? { top, right: 4, maxWidth: 'calc(100% - 8px)' }
+      : { top, left: 4, maxWidth: 'calc(100% - 8px)' }
+  }
   const placeLeft = dotXpct > 58
   return placeLeft
     ? { top, right: `calc(${100 - dotXpct}% + ${GAP}px)` }
@@ -245,6 +264,19 @@ export default function StockDetail() {
   const { ticker = '' } = useParams<{ ticker: string }>()
   const navigate = useNavigate()
   const [tf, setTf] = useState('3M')
+
+  // Detect container width to adapt marker sizes on mobile
+  const chartContainerRef = useRef<HTMLDivElement>(null)
+  const [containerW, setContainerW] = useState(600)
+  useEffect(() => {
+    const el = chartContainerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width))
+    ro.observe(el)
+    setContainerW(el.offsetWidth)
+    return () => ro.disconnect()
+  }, [])
+  const isMobile = containerW < 560
 
   // Hover state keyed by date string so grouped markers share one active state.
   const [activeDate, setActiveDate] = useState<string | null>(null)
@@ -483,8 +515,9 @@ export default function StockDetail() {
 
         {/* Chart SVG with overlay */}
         <div
+          ref={chartContainerRef}
           className="relative"
-          style={{ height: 360 }}
+          style={{ height: isMobile ? 240 : 360 }}
           onMouseMove={handleChartMouseMove}
           onMouseLeave={() => setHoverIdx(null)}
         >
@@ -612,14 +645,16 @@ export default function StockDetail() {
                     group={group}
                     onShow={() => showMarker(group.date)}
                     onHide={hideMarker}
+                    isMobile={isMobile}
                   />
                 ))}
                 {activeGroup && (
                   <MarkerTooltip
                     group={activeGroup}
-                    style={tooltipPosition(activeGroup)}
+                    style={tooltipPosition(activeGroup, isMobile)}
                     onMouseEnter={() => showMarker(activeGroup.date)}
                     onMouseLeave={hideMarker}
+                    isMobile={isMobile}
                   />
                 )}
               </div>
@@ -644,7 +679,7 @@ export default function StockDetail() {
       </div>
 
       {/* Bottom grid */}
-      <div className="grid gap-7" style={{ gridTemplateColumns: '1.5fr 1fr' }}>
+      <div className="grid gap-7" style={{ gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr' }}>
         {/* Left: Recent coverage */}
         <div className="flex flex-col gap-4">
           <h2
