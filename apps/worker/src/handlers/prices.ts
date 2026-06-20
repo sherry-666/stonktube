@@ -40,8 +40,13 @@ async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string; pr
 
   if (!bars || bars.length === 0) return 0
 
+  // Time-series collection: insert-only. Drop bars on/before the latest stored
+  // day (and any null closes) so overlapping refetches don't create duplicates.
+  const fresh = bars.filter(b => b.close != null && (!latest || b.date > latest))
+  if (fresh.length === 0) return 0
+
   await insertPrices(
-    bars.map(b => ({
+    fresh.map(b => ({
       date: b.date,
       meta: { stockId: stock._id, ticker: stock.ticker },
       close: b.close,
@@ -49,8 +54,8 @@ async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string; pr
     })),
   )
 
-  log.info({ ticker: stock.ticker, inserted: bars.length }, 'Prices inserted')
-  return bars.length
+  log.info({ ticker: stock.ticker, inserted: fresh.length }, 'Prices inserted')
+  return fresh.length
 }
 
 export async function handleFillPrices(job: Job<FillPricesJob>) {

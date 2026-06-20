@@ -34,22 +34,10 @@ export async function getPrices(stockId: Types.ObjectId, startDate: Date): Promi
 
 export async function insertPrices(points: PricePoint[]): Promise<void> {
   if (points.length === 0) return
-  // Upsert on (stockId, day) so re-running the fill job over an overlapping
-  // date range refreshes existing points instead of duplicating them.
-  await collection().bulkWrite(
-    points.map((p) => {
-      const start = new Date(`${dayKey(p.date)}T00:00:00.000Z`)
-      const end = new Date(start.getTime() + 86_400_000)
-      return {
-        updateOne: {
-          filter: { 'meta.stockId': p.meta.stockId, date: { $gte: start, $lt: end } },
-          update: { $set: p },
-          upsert: true,
-        },
-      }
-    }),
-    { ordered: false },
-  )
+  // `pricepoints` is a time-series collection, which only supports inserts (no
+  // upserts/updates). Callers must avoid re-inserting an already-stored day;
+  // getPrices() and the rollup also collapse duplicate days defensively on read.
+  await collection().insertMany(points)
 }
 
 export async function deletePricesForStock(stockId: Types.ObjectId): Promise<void> {
