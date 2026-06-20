@@ -63,19 +63,6 @@ export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
             background: 'linear-gradient(135deg, rgba(20,21,26,0.45) 0%, rgba(20,21,26,0.05) 60%)',
           }}
         />
-        {/* Primary ticker top-left */}
-        <span
-          className="absolute top-[8px] left-[10px]"
-          style={{
-            fontFamily: '"JetBrains Mono", monospace',
-            fontWeight: 700,
-            fontSize: 27,
-            color: 'rgba(255,255,255,0.95)',
-            lineHeight: 1,
-          }}
-        >
-          {video.primaryTicker}
-        </span>
         {/* Creator name bottom-left */}
         <span
           className="absolute bottom-[8px] left-[10px]"
