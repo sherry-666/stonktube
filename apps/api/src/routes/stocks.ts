@@ -108,12 +108,16 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         close: p.close as number,
       }))
 
-      // Overall sentiment across all videos mentioning this stock
+      // Overall sentiment: last 7 days only
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
       let bullCount = 0
       let neutralCount = 0
       let bearCount = 0
 
       for (const video of videos) {
+        if (video.publishedAt < sevenDaysAgo) continue
         for (const mention of video.mentions) {
           if (!mention.stockId.equals(stock._id as Types.ObjectId)) continue
           if (mention.sentiment === 'BULLISH') bullCount++

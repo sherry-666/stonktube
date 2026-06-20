@@ -1,16 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { Video, Stock } from '@stonktube/db'
+import { Video } from '@stonktube/db'
 import { Types } from 'mongoose'
-
-// Map ticker → display name (fallback to DB name)
-const TICKER_NAMES: Record<string, string> = {
-  NVDA: 'NVIDIA',
-  GOOGL: 'Alphabet',
-  COIN: 'Coinbase',
-  SPACEX: 'SpaceX',
-  TSLA: 'Tesla',
-  MSTR: 'Strategy',
-}
 
 const videos: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Params: { id: string } }>('/api/videos/:id', async (req, reply) => {
@@ -23,21 +13,11 @@ const videos: FastifyPluginAsync = async (fastify) => {
     const video = await Video.findById(id).lean()
     if (!video) return reply.code(404).send({ error: 'Video not found' })
 
-    // Build stock name map from DB for any unknown tickers
-    const tickers = video.mentions.map((m) => m.ticker)
-    const stockDocs = await Stock.find({ ticker: { $in: tickers } })
-      .select('ticker name')
-      .lean()
-    const stockNameMap: Record<string, string> = {}
-    for (const s of stockDocs) {
-      stockNameMap[s.ticker] = TICKER_NAMES[s.ticker] ?? s.name
-    }
-
     const primaryMention = video.mentions.find((m) => m.isPrimary)
 
-    const takeaways = video.mentions.map((m) => ({
+    const mentions = video.mentions.map((m) => ({
       ticker: m.ticker,
-      name: stockNameMap[m.ticker] ?? m.ticker,
+      stockId: m.stockId.toString(),
       sentiment: m.sentiment,
       note: m.note,
     }))
@@ -60,7 +40,7 @@ const videos: FastifyPluginAsync = async (fastify) => {
       },
       primaryTicker: primaryMention?.ticker ?? '',
       thumbBg: video.creator.brandColor,
-      takeaways,
+      mentions,
     })
   })
 }

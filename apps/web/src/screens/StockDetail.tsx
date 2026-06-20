@@ -624,7 +624,7 @@ export default function StockDetail() {
               Overall sentiment
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">
-              Based on {overallSentiment.total} recent rating{overallSentiment.total !== 1 ? 's' : ''}
+              Based on {overallSentiment.total} rating{overallSentiment.total !== 1 ? 's' : ''} in the last 7 days
             </p>
 
             <div className="flex items-baseline gap-2 mb-1">

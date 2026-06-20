@@ -26,6 +26,8 @@ export async function rebuildStats(stockId?: string): Promise<void> {
   const now = new Date()
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const sevenDaysAgo = new Date(now)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
   for (const stock of stocks) {
     // ── 1. Aggregate mentions ─────────────────────────────────────────────────
@@ -37,6 +39,9 @@ export async function rebuildStats(stockId?: string): Promise<void> {
     let bullCount = 0
     let neutralCount = 0
     let bearCount = 0
+    let bull7d = 0
+    let neutral7d = 0
+    let bear7d = 0
     let mentions30d = 0
     const creatorSet = new Set<string>()
 
@@ -48,11 +53,16 @@ export async function rebuildStats(stockId?: string): Promise<void> {
         else if (mention.sentiment === 'BEARISH') bearCount++
         creatorSet.add(video.creatorId.toString())
         if (video.publishedAt >= thirtyDaysAgo) mentions30d++
+        if (video.publishedAt >= sevenDaysAgo) {
+          if (mention.sentiment === 'BULLISH') bull7d++
+          else if (mention.sentiment === 'NEUTRAL') neutral7d++
+          else if (mention.sentiment === 'BEARISH') bear7d++
+        }
       }
     }
 
-    const total = bullCount + neutralCount + bearCount
-    const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
+    const total7d = bull7d + neutral7d + bear7d
+    const bullishPct = total7d > 0 ? Math.round((bull7d / total7d) * 100) : 0
     const distinctCreators = creatorSet.size
 
     // ── 2. Price series ───────────────────────────────────────────────────────
