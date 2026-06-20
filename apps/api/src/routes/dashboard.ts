@@ -33,20 +33,23 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         .lean(),
     ])
 
-    // Pills: all stocks
-    const pills = stocks.map((s) => ({
-      ticker: displayTicker(s.ticker),
-      name: s.name,
-      isPrivate: s.isPrivate,
-      brandColor: s.brandColor,
-      logoBg: s.logoBg,
-      initials: s.initials,
-      priceStr: fmtPrice(s.stats?.latestClose),
-      dayChangePct: s.stats?.dayChangePct ?? 0,
-      dayChangeStr: fmtPct(s.stats?.dayChangePct),
-      bullishPct: s.stats?.bullishPct ?? 0,
-      sparkline: s.stats?.sparkline ?? [],
-    }))
+    // Pills: top 8 by recent mentions
+    const pills = stocks
+      .sort((a, b) => (b.stats?.mentions30d ?? 0) - (a.stats?.mentions30d ?? 0))
+      .slice(0, 8)
+      .map((s) => ({
+        ticker: displayTicker(s.ticker),
+        name: s.name,
+        isPrivate: s.isPrivate,
+        brandColor: s.brandColor,
+        logoBg: s.logoBg,
+        initials: s.initials,
+        priceStr: fmtPrice(s.stats?.latestClose),
+        dayChangePct: s.stats?.dayChangePct ?? 0,
+        dayChangeStr: fmtPct(s.stats?.dayChangePct),
+        bullishPct: s.stats?.bullishPct ?? 0,
+        sparkline: s.stats?.sparkline ?? [],
+      }))
 
     // Feed: latest 8 analyzed videos as VideoCardDTO
     const feed = videos.map((v) => {
