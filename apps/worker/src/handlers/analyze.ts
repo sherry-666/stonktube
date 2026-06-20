@@ -1,9 +1,10 @@
-import type { Job } from 'bullmq'
+import { Worker, type Job } from 'bullmq'
 import { Video, Stock, Transcript } from '@stonktube/db'
 import { pricesQueue } from '@stonktube/pipeline'
 import type { AnalyzeJob } from '@stonktube/shared'
 import { LLMExtractionSchema } from '@stonktube/shared'
 import { getFlashModel, FunctionCallingMode } from '../lib/gemini.js'
+import { TokenBucket } from '../lib/token-bucket.js'
 import { SchemaType } from '@google/generative-ai'
 import type { Types } from 'mongoose'
 import YahooFinance from 'yahoo-finance2'
@@ -14,33 +15,47 @@ const yahooFinance = new YahooFinance()
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 
 /**
- * App-side rate limit for Gemini calls. Gemini's binding limit is tokens/min,
- * and a 429 returns almost instantly — so once the quota is exceeded the worker
- * would otherwise hammer it many times per second and never recover. BullMQ's
- * Worker `limiter` proved unreliable here, so we gate every call through a
- * module-level minimum interval. With the analyze worker at concurrency 1 this
- * hard-caps the call rate (success OR fast failure) to 1 per interval.
+ * App-side rate limit for Gemini, whose binding limit is input tokens/min (TPM).
+ * We pace every call through a token bucket sized below the quota, charging each
+ * call its estimated token cost — so neither many small calls nor a few large
+ * ones can exceed the cap. Tunable via env; defaults stay well under 1M TPM.
  */
-const MIN_CALL_INTERVAL_MS = Number(process.env.ANALYZE_MIN_INTERVAL_MS ?? 6000)
-let nextCallAt = 0
-async function throttleGeminiCall(): Promise<void> {
-  const now = Date.now()
-  const wait = nextCallAt - now
-  if (wait > 0) await new Promise(r => setTimeout(r, wait))
-  nextCallAt = Math.max(now, nextCallAt) + MIN_CALL_INTERVAL_MS
+const GEMINI_TPM = Number(process.env.GEMINI_TPM ?? 1_000_000)
+const GEMINI_TPM_SAFETY = Number(process.env.GEMINI_TPM_SAFETY ?? 0.5)
+const effectiveTpm = GEMINI_TPM * GEMINI_TPM_SAFETY
+// Refill at the sustained per-second rate; allow ~15s of burst slack.
+const geminiBucket = new TokenBucket(effectiveTpm * 0.25, effectiveTpm / 60)
+
+/** Rough input-token cost of a request: prompt chars/4 + tool-schema/output overhead. */
+function estimateRequestTokens(prompt: string): number {
+  return Math.ceil(prompt.length / 4) + 2000
 }
 
 /**
- * Transient errors (Gemini 429 rate-limit/quota, 5xx) should be retried by
- * BullMQ rather than permanently marking the video FAILED. The Google SDK
- * surfaces these in the error message (e.g. "[429 Too Many Requests] ... quota").
+ * Transient errors (Gemini 429 rate-limit/quota, 5xx) should be retried rather
+ * than permanently marking the video FAILED. The Google SDK surfaces these in
+ * the error message (e.g. "[429 Too Many Requests] ... quota").
  */
 function isRetryable(err: unknown): boolean {
   const status = (err as { status?: number; response?: { status?: number } })?.status
     ?? (err as { response?: { status?: number } })?.response?.status
   if (status === 429 || status === 500 || status === 503) return true
   const msg = (err as Error)?.message ?? ''
-  return /\b429\b|too many requests|quota|rate limit|\b503\b|\b500\b|overloaded|unavailable/i.test(msg)
+  return /\b429\b|too many requests|quota|rate limit|exhausted|\b503\b|\b500\b|overloaded|unavailable/i.test(msg)
+}
+
+/** Whether the error is specifically a rate-limit/quota (429) we should pause for. */
+function isRateLimited(err: unknown): boolean {
+  const status = (err as { status?: number })?.status
+  if (status === 429) return true
+  return /\b429\b|too many requests|quota|rate limit|exhausted/i.test((err as Error)?.message ?? '')
+}
+
+/** Parse the retry-after hint from a Gemini 429 (retryDelay / "retry in Ns"); ms, or null. */
+function parseRetryDelayMs(err: unknown): number | null {
+  const msg = (err as Error)?.message ?? ''
+  const m = msg.match(/retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s/i) ?? msg.match(/retry in (\d+(?:\.\d+)?)\s*s/i)
+  return m ? Math.ceil(parseFloat(m[1]) * 1000) : null
 }
 
 const EXTRACT_TOOL = {
@@ -111,7 +126,7 @@ const EXTRACT_TOOL = {
   },
 }
 
-export async function handleAnalyze(job: Job<AnalyzeJob>) {
+export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
   const { videoId, force } = job.data
 
   const [video, transcript] = await Promise.all([
@@ -159,8 +174,8 @@ ${transcript.text}`
 
   log.info({ videoId, title: video.title }, 'Sending to Gemini for analysis')
 
-  // Pace calls so a 429 storm can't re-saturate the token quota (see above).
-  await throttleGeminiCall()
+  // Charge the token budget before calling so we stay under Gemini's TPM quota.
+  await geminiBucket.acquire(estimateRequestTokens(prompt))
 
   let result
   try {
@@ -170,14 +185,22 @@ ${transcript.text}`
       toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     })
   } catch (err) {
-    // Don't burn the video as permanently FAILED on a transient 429/5xx — let
-    // BullMQ retry (it leaves the status as-is, so the retry re-runs it). Only
-    // mark FAILED on a non-retryable error or once retries are exhausted.
+    // On a 429, honor Gemini's own retry-after by pausing the whole worker for
+    // that long and re-queueing the job without counting an attempt (the token
+    // bucket then meters jobs back out smoothly). This never marks FAILED.
+    if (isRateLimited(err) && worker) {
+      const ms = (parseRetryDelayMs(err) ?? 30_000) + 1000
+      log.warn({ videoId, pauseMs: ms }, 'Gemini rate limited — pausing analyze worker')
+      await worker.rateLimit(ms)
+      throw Worker.RateLimitError()
+    }
+    // Other transient errors (5xx, or 429 without a worker handle) retry via
+    // BullMQ attempts without burning the video; only mark FAILED on a
+    // non-retryable error or once retries are exhausted. A forced re-analysis
+    // keeps its existing good analysis rather than degrading to FAILED.
     const attempts = job.opts.attempts ?? 1
     const isLastAttempt = (job.attemptsMade ?? 0) >= attempts - 1
     if (!isRetryable(err) || isLastAttempt) {
-      // A forced re-analysis keeps the existing (previously good) analysis on
-      // terminal failure rather than degrading the video to FAILED.
       if (!force) await video.updateOne({ analysisStatus: 'FAILED' })
     } else {
       log.warn(

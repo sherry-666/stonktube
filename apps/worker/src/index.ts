@@ -21,14 +21,19 @@ async function start() {
   await connectDB()
   log.info('Worker connected to DB')
 
+  // Analyze is rate-limited against Gemini's TPM quota by a token bucket in the
+  // handler, plus BullMQ's native rateLimit() on a 429 — which needs the worker
+  // handle, so we pass it into the processor. Concurrency 1 keeps pacing exact.
+  const analyzeWorker: Worker = new Worker(
+    QUEUES.ANALYZE,
+    job => handleAnalyze(job, analyzeWorker),
+    { connection, concurrency: 1 },
+  )
+
   const workers = [
     new Worker(QUEUES.DISCOVER, handleDiscover, { connection, concurrency: 2 }),
     new Worker(QUEUES.TRANSCRIBE, handleTranscribe, { connection, concurrency: 2 }),
-    // Concurrency 1 + an in-handler minimum-interval throttle (see analyze.ts)
-    // keep Gemini calls under its tokens/min quota. BullMQ's Worker `limiter`
-    // was unreliable here (it didn't cap fast-failing 429s), so the rate cap
-    // lives in the handler instead.
-    new Worker(QUEUES.ANALYZE, handleAnalyze, { connection, concurrency: 1 }),
+    analyzeWorker,
     new Worker(QUEUES.PRICES, handleFillPrices, { connection, concurrency: 5 }),
     new Worker(QUEUES.ROLLUP, handleRollup, { connection, concurrency: 1 }),
   ]
