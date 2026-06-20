@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "backfill": "tsc && node dist/backfill-apr2026.js",
-    "reanalyze": "tsc && node dist/reanalyze.js"
+    "reanalyze": "tsc && node dist/reanalyze.js",
+    "backfill-durations": "tsc && node dist/backfill-durations.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

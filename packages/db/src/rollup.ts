@@ -1,5 +1,5 @@
 import mongoose, { Types } from 'mongoose'
-import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
+import { mentionQualifies, mentionExpressesView, isTooShort } from '@stonktube/shared'
 import { Stock } from './models/Stock.js'
 import { Video } from './models/Video.js'
 
@@ -47,6 +47,7 @@ export async function rebuildStats(stockId?: string): Promise<void> {
     const creatorSet = new Set<string>()
 
     for (const video of videos) {
+      if (isTooShort(video.durationSeconds)) continue
       for (const mention of video.mentions) {
         if (!mention.stockId.equals(stock._id)) continue
         // Only count mentions that reflect real discussion, not passing name-drops.

@@ -2,6 +2,7 @@ import type { Job } from 'bullmq'
 import { Creator, Video } from '@stonktube/db'
 import { transcribeQueue } from '@stonktube/pipeline'
 import type { DiscoverJob } from '@stonktube/shared'
+import { MIN_VIDEO_SECONDS, isTooShort, parseIso8601Duration } from '@stonktube/shared'
 import pino from 'pino'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
@@ -14,6 +15,21 @@ async function ytGet<T>(path: string): Promise<T> {
   const res = await fetch(`${YT_API}${path}${sep}key=${key}`)
   if (!res.ok) throw new Error(`YouTube API ${res.status}: ${path}`)
   return res.json() as Promise<T>
+}
+
+/** Map of videoId → duration in seconds, fetched in batches of 50 (API max). */
+async function fetchDurations(videoIds: string[]): Promise<Map<string, number>> {
+  const durations = new Map<string, number>()
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50)
+    const data = await ytGet<{ items: { id: string; contentDetails: { duration: string } }[] }>(
+      `/videos?part=contentDetails&id=${batch.join(',')}`,
+    )
+    for (const item of data.items ?? []) {
+      durations.set(item.id, parseIso8601Duration(item.contentDetails.duration))
+    }
+  }
+  return durations
 }
 
 async function getUploadsPlaylistId(channelId: string): Promise<string> {
@@ -80,11 +96,20 @@ export async function handleDiscover(job: Job<DiscoverJob>) {
   log.info({ creatorId: creator.name, since: since.toISOString() }, 'Discovering since')
 
   const items = await fetchRecentVideos(uploadsPlaylistId, since)
+  const durations = await fetchDurations(items.map(i => i.snippet.resourceId.videoId))
 
   let created = 0
+  let skippedShort = 0
   for (const item of items) {
     const { title, publishedAt, thumbnails, resourceId } = item.snippet
     const youtubeVideoId = resourceId.videoId
+    const durationSeconds = durations.get(youtubeVideoId)
+
+    // Skip Shorts / trivial clips — don't ingest, transcribe, or analyze them.
+    if (isTooShort(durationSeconds)) {
+      skippedShort++
+      continue
+    }
 
     // new: false → returns old doc (or null if freshly upserted)
     const existing = await Video.findOneAndUpdate(
@@ -104,6 +129,7 @@ export async function handleDiscover(job: Job<DiscoverJob>) {
           title,
           url: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
           thumbnailUrl: thumbnails?.medium?.url,
+          durationSeconds,
           publishedAt: new Date(publishedAt),
           transcriptStatus: 'PENDING',
           analysisStatus: 'PENDING',
@@ -128,5 +154,5 @@ export async function handleDiscover(job: Job<DiscoverJob>) {
     }
   }
 
-  log.info({ creatorId, found: items.length, created }, 'Discovery complete')
+  log.info({ creatorId, found: items.length, created, skippedShort, minSeconds: MIN_VIDEO_SECONDS }, 'Discovery complete')
 }

@@ -2,7 +2,7 @@ import { Worker, type Job } from 'bullmq'
 import { Video, Stock, Transcript } from '@stonktube/db'
 import { pricesQueue } from '@stonktube/pipeline'
 import type { AnalyzeJob } from '@stonktube/shared'
-import { LLMExtractionSchema } from '@stonktube/shared'
+import { LLMExtractionSchema, isTooShort } from '@stonktube/shared'
 import { getFlashModel, FunctionCallingMode } from '../lib/gemini.js'
 import { TokenBucket } from '../lib/token-bucket.js'
 import { SchemaType } from '@google/generative-ai'
@@ -136,6 +136,14 @@ export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
 
   if (!video) throw new Error(`Video not found: ${videoId}`)
   if (!transcript) throw new Error(`No transcript for video: ${videoId}`)
+
+  // Safety net: never analyze a Short / trivial clip (discovery already skips
+  // these, but guard against any that predate the duration gate).
+  if (isTooShort(video.durationSeconds)) {
+    log.info({ videoId, durationSeconds: video.durationSeconds }, 'Too short — skipping analysis')
+    await video.updateOne({ analysisStatus: 'NO_MENTIONS', mentions: [] })
+    return
+  }
 
   if (video.analysisStatus === 'ANALYZED' && !force) {
     log.info({ videoId }, 'Already analyzed — skipping')
