@@ -37,20 +37,32 @@ const stocks: FastifyPluginAsync = async (fastify) => {
     const sort = req.query.sort ?? 'mentions'
     const all = await Stock.find({}).lean()
 
-    const sorted = [...all].sort((a, b) => {
+    // Value + whether the stock actually has data for the active sort, so
+    // data-less stocks (no price / no mentions) sink to the bottom instead of
+    // being treated as 0 and floating to the top of e.g. "Top movers".
+    const metric = (s: (typeof all)[number]): { v: number; has: boolean } => {
+      const st = s.stats
       switch (sort) {
-        case 'bull':
-          return (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0)
+        case 'bull': {
+          const total = (st?.bullCount ?? 0) + (st?.neutralCount ?? 0) + (st?.bearCount ?? 0)
+          return { v: st?.bullishPct ?? 0, has: total > 0 }
+        }
         case 'chg':
-          return (b.stats?.change30dPct ?? 0) - (a.stats?.change30dPct ?? 0)
+          return { v: st?.change30dPct ?? 0, has: st?.change30dPct != null }
         case 'price':
-          return (b.stats?.latestClose ?? 0) - (a.stats?.latestClose ?? 0)
-        case 'ticker':
-          return a.ticker.localeCompare(b.ticker)
+          return { v: st?.latestClose ?? 0, has: st?.latestClose != null }
         case 'mentions':
         default:
-          return (b.stats?.mentions30d ?? 0) - (a.stats?.mentions30d ?? 0)
+          return { v: st?.mentions30d ?? 0, has: (st?.mentions30d ?? 0) > 0 }
       }
+    }
+
+    const sorted = [...all].sort((a, b) => {
+      if (sort === 'ticker') return a.ticker.localeCompare(b.ticker)
+      const A = metric(a)
+      const B = metric(b)
+      if (A.has !== B.has) return A.has ? -1 : 1 // data-less to the bottom
+      return B.v - A.v
     })
 
     const rows = sorted.map((s) => ({
