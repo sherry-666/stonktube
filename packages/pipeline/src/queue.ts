@@ -17,7 +17,9 @@ const defaultJobOptions = {
 const analyzeJobOptions = {
   ...defaultJobOptions,
   attempts: 5,
-  backoff: { type: 'exponential' as const, delay: 30000 },
+  // 'custom' backoff is exponential WITH jitter — defined as backoffStrategy on
+  // the analyze worker (apps/worker/src/index.ts) so retries don't synchronize.
+  backoff: { type: 'custom' as const },
 }
 
 export const discoverQueue = new Queue(QUEUES.DISCOVER, { connection, defaultJobOptions })

@@ -185,19 +185,19 @@ ${transcript.text}`
       toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     })
   } catch (err) {
-    // On a 429, honor Gemini's own retry-after by pausing the whole worker for
-    // that long and re-queueing the job without counting an attempt (the token
-    // bucket then meters jobs back out smoothly). This never marks FAILED.
-    if (isRateLimited(err) && worker) {
-      const ms = (parseRetryDelayMs(err) ?? 30_000) + 1000
-      log.warn({ videoId, pauseMs: ms }, 'Gemini rate limited — pausing analyze worker')
-      await worker.rateLimit(ms)
+    // 429 WITH an explicit Retry-After: honor Gemini's hint — pause the whole
+    // queue for exactly that long and re-queue without burning an attempt.
+    const retryAfterMs = isRateLimited(err) ? parseRetryDelayMs(err) : null
+    if (retryAfterMs != null && worker) {
+      log.warn({ videoId, pauseMs: retryAfterMs + 1000 }, 'Gemini rate limited (Retry-After) — pausing worker')
+      await worker.rateLimit(retryAfterMs + 1000)
       throw Worker.RateLimitError()
     }
-    // Other transient errors (5xx, or 429 without a worker handle) retry via
-    // BullMQ attempts without burning the video; only mark FAILED on a
-    // non-retryable error or once retries are exhausted. A forced re-analysis
-    // keeps its existing good analysis rather than degrading to FAILED.
+    // Otherwise (5xx, or a 429 with no Retry-After hint) retry via BullMQ
+    // attempts using exponential backoff WITH jitter (see the analyze worker's
+    // backoffStrategy in index.ts), so retries don't synchronize into bursts.
+    // Don't burn the video: only mark FAILED on a non-retryable error or once
+    // attempts are exhausted, and never for a forced re-analysis.
     const attempts = job.opts.attempts ?? 1
     const isLastAttempt = (job.attemptsMade ?? 0) >= attempts - 1
     if (!isRetryable(err) || isLastAttempt) {
@@ -205,7 +205,7 @@ ${transcript.text}`
     } else {
       log.warn(
         { videoId, attempt: (job.attemptsMade ?? 0) + 1, attempts, err: (err as Error).message },
-        'Transient analyze error — will retry',
+        'Transient analyze error — backing off',
       )
     }
     throw err
