@@ -24,16 +24,11 @@ async function start() {
   const workers = [
     new Worker(QUEUES.DISCOVER, handleDiscover, { connection, concurrency: 2 }),
     new Worker(QUEUES.TRANSCRIBE, handleTranscribe, { connection, concurrency: 2 }),
-    // Gemini's binding limit is tokens/min (TPM = 1M for gemini-2.5-flash), not
-    // requests/min. Concurrency 1 means only one transcript's tokens are ever in
-    // flight, so calls never stack into a token burst. Bulk backfills pace
-    // themselves further via staggered enqueue delays (see reanalyze.ts). The
-    // limiter is a coarse backstop; with concurrency 1 a small burst is harmless.
-    new Worker(QUEUES.ANALYZE, handleAnalyze, {
-      connection,
-      concurrency: 1,
-      limiter: { max: 6, duration: 60_000 },
-    }),
+    // Concurrency 1 + an in-handler minimum-interval throttle (see analyze.ts)
+    // keep Gemini calls under its tokens/min quota. BullMQ's Worker `limiter`
+    // was unreliable here (it didn't cap fast-failing 429s), so the rate cap
+    // lives in the handler instead.
+    new Worker(QUEUES.ANALYZE, handleAnalyze, { connection, concurrency: 1 }),
     new Worker(QUEUES.PRICES, handleFillPrices, { connection, concurrency: 5 }),
     new Worker(QUEUES.ROLLUP, handleRollup, { connection, concurrency: 1 }),
   ]

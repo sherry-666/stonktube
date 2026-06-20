@@ -14,6 +14,23 @@ const yahooFinance = new YahooFinance()
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 
 /**
+ * App-side rate limit for Gemini calls. Gemini's binding limit is tokens/min,
+ * and a 429 returns almost instantly — so once the quota is exceeded the worker
+ * would otherwise hammer it many times per second and never recover. BullMQ's
+ * Worker `limiter` proved unreliable here, so we gate every call through a
+ * module-level minimum interval. With the analyze worker at concurrency 1 this
+ * hard-caps the call rate (success OR fast failure) to 1 per interval.
+ */
+const MIN_CALL_INTERVAL_MS = Number(process.env.ANALYZE_MIN_INTERVAL_MS ?? 6000)
+let nextCallAt = 0
+async function throttleGeminiCall(): Promise<void> {
+  const now = Date.now()
+  const wait = nextCallAt - now
+  if (wait > 0) await new Promise(r => setTimeout(r, wait))
+  nextCallAt = Math.max(now, nextCallAt) + MIN_CALL_INTERVAL_MS
+}
+
+/**
  * Transient errors (Gemini 429 rate-limit/quota, 5xx) should be retried by
  * BullMQ rather than permanently marking the video FAILED. The Google SDK
  * surfaces these in the error message (e.g. "[429 Too Many Requests] ... quota").
@@ -141,6 +158,9 @@ Transcript:
 ${transcript.text}`
 
   log.info({ videoId, title: video.title }, 'Sending to Gemini for analysis')
+
+  // Pace calls so a 429 storm can't re-saturate the token quota (see above).
+  await throttleGeminiCall()
 
   let result
   try {
