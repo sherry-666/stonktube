@@ -265,18 +265,18 @@ export default function StockDetail() {
   const navigate = useNavigate()
   const [tf, setTf] = useState('3M')
 
-  // Detect container width to adapt marker sizes on mobile
-  const chartContainerRef = useRef<HTMLDivElement>(null)
-  const [containerW, setContainerW] = useState(600)
+  // Adapt marker sizes / layout on mobile. Keyed off the viewport rather than a
+  // measured element so it stays correct even though the chart only mounts after
+  // data loads (an element-based observer would miss that first render).
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 640,
+  )
   useEffect(() => {
-    const el = chartContainerRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width))
-    ro.observe(el)
-    setContainerW(el.offsetWidth)
-    return () => ro.disconnect()
+    const onResize = () => setIsMobile(window.innerWidth < 640)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
-  const isMobile = containerW < 560
 
   // Hover state keyed by date string so grouped markers share one active state.
   const [activeDate, setActiveDate] = useState<string | null>(null)
@@ -515,7 +515,6 @@ export default function StockDetail() {
 
         {/* Chart SVG with overlay */}
         <div
-          ref={chartContainerRef}
           className="relative"
           style={{ height: isMobile ? 240 : 360 }}
           onMouseMove={handleChartMouseMove}

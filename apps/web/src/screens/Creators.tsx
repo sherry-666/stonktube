@@ -35,11 +35,8 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
           The Network
         </p>
         <h1
+          className="font-display font-bold text-[30px] sm:text-[36px] md:text-[42px] tracking-[-0.03em]"
           style={{
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontWeight: 700,
-            fontSize: 42,
-            letterSpacing: '-0.03em',
             color: '#14151A',
             lineHeight: 1.05,
           }}
@@ -52,7 +49,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
         {data.map(creator => (
           <div
             key={creator.slug}

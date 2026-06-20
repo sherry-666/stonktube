@@ -26,15 +26,12 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
     : 1
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6 md:gap-8">
       {/* Header */}
       <h1
+        className="font-display font-bold text-[30px] sm:text-[36px] md:text-[42px] tracking-[-0.03em]"
         style={{
-          fontFamily: '"Space Grotesk", sans-serif',
-          fontWeight: 700,
-          fontSize: 42,
           lineHeight: 1.05,
-          letterSpacing: '-0.03em',
           color: '#14151A',
           maxWidth: 680,
         }}
@@ -43,7 +40,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
       </h1>
 
       {/* Stock pills row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {data.pills.map(pill => {
           const isUp = pill.dayChangePct >= 0
           const changeColor = isUp ? '#0F9D63' : '#E5484D'
@@ -125,7 +122,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
       </div>
 
       {/* Body grid */}
-      <div className="grid gap-7" style={{ gridTemplateColumns: '1.55fr 1fr' }}>
+      <div className="grid gap-6 lg:gap-7 grid-cols-1 lg:grid-cols-[1.55fr_1fr]">
         {/* Left: Latest analysis */}
         <div className="flex flex-col gap-4">
           <div>

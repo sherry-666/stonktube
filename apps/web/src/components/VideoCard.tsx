@@ -43,13 +43,9 @@ export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
         href={video.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="shrink-0 relative overflow-hidden"
+        className="shrink-0 relative overflow-hidden block w-[120px] sm:w-[176px] aspect-video rounded-[10px]"
         style={{
-          width: 176,
-          height: 99,
-          borderRadius: 10,
           background: video.thumbBg,
-          display: 'block',
         }}
         onClick={e => e.stopPropagation()}
       >

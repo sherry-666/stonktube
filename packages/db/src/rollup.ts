@@ -66,10 +66,23 @@ export async function rebuildStats(stockId?: string): Promise<void> {
     const distinctCreators = creatorSet.size
 
     // ── 2. Price series ───────────────────────────────────────────────────────
+    // Collapse duplicate points per calendar day before limiting, otherwise
+    // repeated bars for recent dates (the fill job stores overlapping ranges)
+    // crowd out real history and flat-line the stats.
     const allPrices = await collection()
-      .find({ 'meta.stockId': stock._id })
-      .sort({ date: -1 })
-      .limit(260)
+      .aggregate([
+        { $match: { 'meta.stockId': stock._id } },
+        { $sort: { date: 1 } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: 'UTC' } },
+            close: { $last: '$close' },
+            date: { $last: '$date' },
+          },
+        },
+        { $sort: { date: -1 } },
+        { $limit: 260 },
+      ])
       .toArray()
 
     // allPrices is newest-first, reverse to oldest-first

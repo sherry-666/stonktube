@@ -29,7 +29,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-page">
       <Nav />
-      <main className="mx-auto max-w-container px-7 py-8">
+      <main className="mx-auto max-w-container px-4 py-6 md:px-7 md:py-8">
         <Routes>
           <Route path="/" element={<Dashboard onSummaryClick={handleSummaryClick} />} />
           <Route path="/stocks" element={<Stocks />} />
