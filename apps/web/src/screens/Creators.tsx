@@ -167,11 +167,9 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                 </h3>
                 {creator.recentCalls.slice(0, 3).map(call => (
                   <div key={call.videoId} className="flex items-start gap-2">
-                    {/* Mini thumbnail */}
-                    <a
-                      href={call.videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    {/* Mini thumbnail — clicking opens summary modal */}
+                    <button
+                      onClick={() => onSummaryClick(call.videoId)}
                       className="relative shrink-0 overflow-hidden"
                       style={{
                         width: 66,
@@ -180,7 +178,6 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                         background: creator.brandColor,
                         display: 'block',
                       }}
-                      onClick={e => e.stopPropagation()}
                     >
                       {call.thumbnailUrl && (
                         <img
@@ -209,23 +206,20 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                           {fmtDuration(call.durationSeconds)}
                         </span>
                       )}
-                    </a>
+                    </button>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <a
-                          href={call.videoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[12px] font-semibold text-primary hover:text-accent transition-colors duration-150 line-clamp-1 flex-1"
-                          onClick={e => e.stopPropagation()}
+                        <button
+                          onClick={() => onSummaryClick(call.videoId)}
+                          className="text-[12px] font-semibold text-primary hover:text-accent transition-colors duration-150 line-clamp-1 flex-1 text-left"
                         >
                           {call.videoTitle}
-                        </a>
+                        </button>
                         <span className="text-[10px] text-faint shrink-0">{fmtRelDate(call.publishedAt)}</span>
                       </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
                         {call.mentions.slice(0, 3).map(m => (
                           <StockChip
                             key={m.ticker}
@@ -234,6 +228,15 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                             stockId={m.stockId}
                           />
                         ))}
+                        <button
+                          onClick={() => onSummaryClick(call.videoId)}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors duration-150"
+                          style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
+                        >
+                          Summary ↗
+                        </button>
                       </div>
                     </div>
                   </div>

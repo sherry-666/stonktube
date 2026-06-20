@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Creator, Video } from '@stonktube/db'
-import { Types } from 'mongoose'
 
 const creators: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/creators', async (_req, reply) => {
@@ -30,47 +29,33 @@ const creators: FastifyPluginAsync = async (fastify) => {
         const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
         const coveredTickers = Array.from(tickerSet)
 
-        const recentCalls = videos.slice(0, 3).map((v) => {
-          const primaryMention = v.mentions.find((m) => m.isPrimary)
-          return {
-            id: v._id.toString(),
-            title: v.title,
-            url: v.url,
-            thumbnailUrl: v.thumbnailUrl,
-            publishedAt: v.publishedAt.toISOString(),
-            durationSeconds: v.durationSeconds,
-            creator: {
-              slug: v.creator.slug,
-              name: v.creator.name,
-              handle: v.creator.handle,
-              brandColor: v.creator.brandColor,
-              initial: v.creator.initial,
-              avatarUrl: v.creator.avatarUrl,
-            },
-            primaryTicker: primaryMention?.ticker ?? '',
-            thumbBg: v.creator.brandColor,
-            mentions: v.mentions.map((m) => ({
-              ticker: m.ticker,
-              sentiment: m.sentiment,
-              stockId: m.stockId.toString(),
-            })),
-          }
-        })
+        const recentCalls = videos.slice(0, 3).map((v) => ({
+          videoId: v._id.toString(),
+          videoTitle: v.title,
+          videoUrl: v.url,
+          thumbnailUrl: v.thumbnailUrl,
+          publishedAt: v.publishedAt.toISOString(),
+          durationSeconds: v.durationSeconds,
+          mentions: v.mentions.map((m) => ({
+            ticker: m.ticker,
+            sentiment: m.sentiment,
+            stockId: m.stockId.toString(),
+          })),
+        }))
 
         return {
-          id: (c._id as Types.ObjectId).toString(),
           slug: c.slug,
           name: c.name,
           handle: c.handle,
           brandColor: c.brandColor,
           initial: c.initial,
           avatarUrl: c.avatarUrl,
-          subscriberCount: c.subscriberCount,
+          subscribers: c.subscriberCount,
           bio: c.bio,
           channelUrl: c.channelUrl,
-          videoCount: videos.length,
+          videosTracked: videos.length,
           bullishPct,
-          coveredTickers,
+          coversTickers: coveredTickers,
           recentCalls,
         }
       }),
