@@ -19,6 +19,13 @@ export interface TranscribeJob {
 
 export interface AnalyzeJob {
   videoId: string
+  /**
+   * Re-analyze a video that's already ANALYZED (e.g. backfilling new fields).
+   * Skips the "already analyzed" short-circuit and, on failure, preserves the
+   * existing analysis instead of marking the video FAILED — so a re-analysis
+   * never degrades data that was previously good.
+   */
+  force?: boolean
 }
 
 export interface FillPricesJob {

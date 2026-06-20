@@ -24,7 +24,13 @@ async function start() {
   const workers = [
     new Worker(QUEUES.DISCOVER, handleDiscover, { connection, concurrency: 2 }),
     new Worker(QUEUES.TRANSCRIBE, handleTranscribe, { connection, concurrency: 2 }),
-    new Worker(QUEUES.ANALYZE, handleAnalyze, { connection, concurrency: 3 }),
+    // Throttle Gemini calls: ≤10 analyses/min keeps us comfortably under the
+    // 1M input-tokens/min quota for gemini-2.5-flash even on long transcripts.
+    new Worker(QUEUES.ANALYZE, handleAnalyze, {
+      connection,
+      concurrency: 2,
+      limiter: { max: 10, duration: 60_000 },
+    }),
     new Worker(QUEUES.PRICES, handleFillPrices, { connection, concurrency: 5 }),
     new Worker(QUEUES.ROLLUP, handleRollup, { connection, concurrency: 1 }),
   ]

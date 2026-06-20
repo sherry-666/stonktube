@@ -1,8 +1,12 @@
 /**
  * Re-run Gemini analysis on already-analyzed videos so they pick up the latest
- * extraction logic (e.g. the OPINION/FACTUAL stance gate). Resets their
- * analysisStatus to PENDING — otherwise handleAnalyze early-returns on ANALYZED —
- * and enqueues an analyze job for each.
+ * extraction logic (e.g. the OPINION/FACTUAL stance gate).
+ *
+ * Enqueues each job with `force: true`, which re-analyzes in place WITHOUT
+ * changing analysisStatus — so videos stay ANALYZED (and visible) throughout the
+ * backfill, and a failed re-run preserves the existing analysis instead of
+ * degrading it. The worker's rate limiter (≤10/min) keeps Gemini under quota, so
+ * a large backfill simply drips through over several minutes.
  *
  * Requires the worker to be running to drain the queue. After it finishes,
  * recompute stats:  node packages/db/dist/recompute-stats.js
@@ -29,13 +33,12 @@ const videos = await Video.find({
 console.log('Videos to re-analyze:', videos.length)
 
 for (const v of videos) {
-  await v.updateOne({ analysisStatus: 'PENDING' })
-  const jobId = `analyze-${v._id}-${Date.now()}`
-  await analyzeQueue.add('analyze', { videoId: v._id.toString() }, { jobId })
+  const jobId = `reanalyze-${v._id}-${Date.now()}`
+  await analyzeQueue.add('analyze', { videoId: v._id.toString(), force: true }, { jobId })
   console.log(' -', v.title?.slice(0, 60))
 }
 
-console.log('Enqueued. Let the worker drain, then run recompute-stats.')
+console.log('Enqueued (force re-analysis). Worker drips through at ≤10/min; then run recompute-stats.')
 
 await analyzeQueue.close()
 await disconnectDB()

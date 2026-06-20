@@ -13,6 +13,19 @@ const yahooFinance = new YahooFinance()
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 
+/**
+ * Transient errors (Gemini 429 rate-limit/quota, 5xx) should be retried by
+ * BullMQ rather than permanently marking the video FAILED. The Google SDK
+ * surfaces these in the error message (e.g. "[429 Too Many Requests] ... quota").
+ */
+function isRetryable(err: unknown): boolean {
+  const status = (err as { status?: number; response?: { status?: number } })?.status
+    ?? (err as { response?: { status?: number } })?.response?.status
+  if (status === 429 || status === 500 || status === 503) return true
+  const msg = (err as Error)?.message ?? ''
+  return /\b429\b|too many requests|quota|rate limit|\b503\b|\b500\b|overloaded|unavailable/i.test(msg)
+}
+
 const EXTRACT_TOOL = {
   name: 'extract_stock_mentions',
   description:
@@ -82,7 +95,7 @@ const EXTRACT_TOOL = {
 }
 
 export async function handleAnalyze(job: Job<AnalyzeJob>) {
-  const { videoId } = job.data
+  const { videoId, force } = job.data
 
   const [video, transcript] = await Promise.all([
     Video.findById(videoId),
@@ -92,7 +105,7 @@ export async function handleAnalyze(job: Job<AnalyzeJob>) {
   if (!video) throw new Error(`Video not found: ${videoId}`)
   if (!transcript) throw new Error(`No transcript for video: ${videoId}`)
 
-  if (video.analysisStatus === 'ANALYZED') {
+  if (video.analysisStatus === 'ANALYZED' && !force) {
     log.info({ videoId }, 'Already analyzed — skipping')
     return
   }
@@ -137,7 +150,21 @@ ${transcript.text}`
       toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     })
   } catch (err) {
-    await video.updateOne({ analysisStatus: 'FAILED' })
+    // Don't burn the video as permanently FAILED on a transient 429/5xx — let
+    // BullMQ retry (it leaves the status as-is, so the retry re-runs it). Only
+    // mark FAILED on a non-retryable error or once retries are exhausted.
+    const attempts = job.opts.attempts ?? 1
+    const isLastAttempt = (job.attemptsMade ?? 0) >= attempts - 1
+    if (!isRetryable(err) || isLastAttempt) {
+      // A forced re-analysis keeps the existing (previously good) analysis on
+      // terminal failure rather than degrading the video to FAILED.
+      if (!force) await video.updateOne({ analysisStatus: 'FAILED' })
+    } else {
+      log.warn(
+        { videoId, attempt: (job.attemptsMade ?? 0) + 1, attempts, err: (err as Error).message },
+        'Transient analyze error — will retry',
+      )
+    }
     throw err
   }
 
