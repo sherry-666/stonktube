@@ -1,5 +1,5 @@
 import mongoose, { Types } from 'mongoose'
-import { mentionQualifies } from '@stonktube/shared'
+import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
 import { Stock } from './models/Stock.js'
 import { Video } from './models/Video.js'
 
@@ -51,11 +51,14 @@ export async function rebuildStats(stockId?: string): Promise<void> {
         if (!mention.stockId.equals(stock._id)) continue
         // Only count mentions that reflect real discussion, not passing name-drops.
         if (!mentionQualifies(mention)) continue
+        // Coverage (mention/creator counts) includes factual recaps; only
+        // mentions that express the creator's own view feed sentiment counts.
+        creatorSet.add(video.creatorId.toString())
+        if (video.publishedAt >= thirtyDaysAgo) mentions30d++
+        if (!mentionExpressesView(mention)) continue
         if (mention.sentiment === 'BULLISH') bullCount++
         else if (mention.sentiment === 'NEUTRAL') neutralCount++
         else if (mention.sentiment === 'BEARISH') bearCount++
-        creatorSet.add(video.creatorId.toString())
-        if (video.publishedAt >= thirtyDaysAgo) mentions30d++
         if (video.publishedAt >= sevenDaysAgo) {
           if (mention.sentiment === 'BULLISH') bull7d++
           else if (mention.sentiment === 'NEUTRAL') neutral7d++

@@ -6,6 +6,12 @@ import { SentimentSchema } from './sentiment.js'
 export const RelevanceSchema = z.enum(['PASSING', 'MENTIONED', 'DISCUSSED', 'FEATURED'])
 export type Relevance = z.infer<typeof RelevanceSchema>
 
+// ── Stance (is the sentiment the creator's own view, or a bare factual recap) ─
+// OPINION = forward-looking view / prediction / recommendation / judgment.
+// FACTUAL = only reports facts (price moves, earnings, news) with no view.
+export const StanceSchema = z.enum(['OPINION', 'FACTUAL'])
+export type Stance = z.infer<typeof StanceSchema>
+
 // ── Mention (embedded in Video) ─────────────────────────────────────────────
 
 export const MentionSchema = z.object({
@@ -14,6 +20,7 @@ export const MentionSchema = z.object({
   sentiment: SentimentSchema,
   confidence: z.number().min(0).max(1).optional(),
   relevance: RelevanceSchema.optional(),
+  stance: StanceSchema.optional(),
   note: z.string(),
   isPrimary: z.boolean(),
   priceAtMention: z.number().optional(),
@@ -47,6 +54,7 @@ export const LLMExtractionSchema = z.object({
       sentiment: SentimentSchema,
       confidence: z.number().min(0).max(1).default(1),
       relevance: RelevanceSchema.optional(),
+      stance: StanceSchema.optional(),
       isPrimary: z.boolean(),
       note: z.string(),
     }),

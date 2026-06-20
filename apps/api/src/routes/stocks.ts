@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video, getPrices } from '@stonktube/db'
-import { mentionQualifies } from '@stonktube/shared'
+import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
 import { Types } from 'mongoose'
 
 function displayTicker(ticker: string): string {
@@ -122,6 +122,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         for (const mention of video.mentions) {
           if (!mention.stockId.equals(stock._id as Types.ObjectId)) continue
           if (!mentionQualifies(mention)) continue
+          // Exclude bare factual recaps — only the creator's own view counts.
+          if (!mentionExpressesView(mention)) continue
           if (mention.sentiment === 'BULLISH') bullCount++
           else if (mention.sentiment === 'NEUTRAL') neutralCount++
           else if (mention.sentiment === 'BEARISH') bearCount++
@@ -154,6 +156,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           title: v.title,
           url: v.url,
           sentiment: mention?.sentiment ?? 'NEUTRAL',
+          stance: mention?.stance,
           priceAtMention: mention?.priceAtMention,
           priceStr: fmtPrice(mention?.priceAtMention),
         }

@@ -1,4 +1,4 @@
-import type { Relevance } from './types.js'
+import type { Relevance, Stance } from './types.js'
 
 /** Ordering for relevance levels — higher means more in-depth coverage. */
 export const RELEVANCE_RANK: Record<Relevance, number> = {
@@ -36,4 +36,14 @@ export function mentionQualifies(m: QualifiableMention): boolean {
     return (RELEVANCE_RANK[m.relevance] ?? 0) >= RELEVANCE_RANK[MENTION_MIN_RELEVANCE]
   }
   return Boolean(m.isPrimary) || (m.confidence ?? 0) >= MENTION_MIN_CONFIDENCE
+}
+
+/**
+ * Whether a mention reflects the creator's own forward-looking view (vs a bare
+ * factual recap of price moves / earnings / news). Only such mentions should
+ * count toward bull/bear sentiment. Missing stance (legacy data, pre-backfill)
+ * is treated as a view so old data isn't silently dropped before re-analysis.
+ */
+export function mentionExpressesView(m: { stance?: Stance | null }): boolean {
+  return m.stance == null || m.stance === 'OPINION'
 }

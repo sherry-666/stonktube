@@ -29,7 +29,14 @@ const EXTRACT_TOOL = {
             sentiment: {
               type: SchemaType.STRING,
               enum: ['BULLISH', 'NEUTRAL', 'BEARISH'],
-              description: "Creator's stance: BULLISH=buy/positive, BEARISH=sell/negative, NEUTRAL=mentioned without clear bias",
+              description:
+                "Directional tone toward the asset: BULLISH=positive/buy, BEARISH=negative/sell, NEUTRAL=no clear bias. Note: merely describing a past price move ('it fell 13%') is NOT itself bullish/bearish — judge the creator's actual view.",
+            },
+            stance: {
+              type: SchemaType.STRING,
+              enum: ['OPINION', 'FACTUAL'],
+              description:
+                "OPINION=the creator gives their own forward-looking view, prediction, recommendation, or judgment (buy/sell/hold, 'this will run', 'overvalued'). FACTUAL=the creator only reports facts (past/current price moves, earnings numbers, news) without taking a side of their own.",
             },
             confidence: {
               type: SchemaType.NUMBER,
@@ -50,7 +57,7 @@ const EXTRACT_TOOL = {
               description: 'True if this is the main subject of the video',
             },
           },
-          required: ['ticker', 'sentiment', 'confidence', 'relevance', 'note', 'isPrimary'],
+          required: ['ticker', 'sentiment', 'stance', 'confidence', 'relevance', 'note', 'isPrimary'],
         },
       },
       summary: {
@@ -109,6 +116,11 @@ For significant stocks/crypto/assets NOT in the tracked list: add them to new_ti
 Set "relevance" honestly per the definitions, and be conservative: most assets a
 creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
 when the creator gives real reasoning or spends meaningful time on the asset.
+
+Set "stance" per mention. If the creator only states facts — e.g. "NVDA fell 13%
+along with other semis" or "earnings were up 20%" — that is FACTUAL, even when it
+sounds positive or negative. Only mark OPINION when the creator gives their own
+forward-looking view, prediction, recommendation, or judgment about the asset.
 
 Video title: ${video.title}
 
@@ -202,6 +214,7 @@ ${transcript.text}`
         sentiment: m.sentiment,
         confidence: m.confidence,
         relevance: m.relevance,
+        stance: m.stance,
         note: m.note,
         isPrimary: m.isPrimary,
       }

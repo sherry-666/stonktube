@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Creator, Video } from '@stonktube/db'
+import { mentionExpressesView } from '@stonktube/shared'
 
 const creators: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/creators', async (_req, reply) => {
@@ -20,9 +21,11 @@ const creators: FastifyPluginAsync = async (fastify) => {
 
         for (const v of videos) {
           for (const m of v.mentions) {
+            tickerSet.add(m.ticker)
+            // Only the creator's own views feed bullishPct, not factual recaps.
+            if (!mentionExpressesView(m)) continue
             total++
             if (m.sentiment === 'BULLISH') bullCount++
-            tickerSet.add(m.ticker)
           }
         }
 
