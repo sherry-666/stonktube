@@ -24,12 +24,15 @@ async function start() {
   const workers = [
     new Worker(QUEUES.DISCOVER, handleDiscover, { connection, concurrency: 2 }),
     new Worker(QUEUES.TRANSCRIBE, handleTranscribe, { connection, concurrency: 2 }),
-    // Throttle Gemini calls: ≤10 analyses/min keeps us comfortably under the
-    // 1M input-tokens/min quota for gemini-2.5-flash even on long transcripts.
+    // Gemini's binding limit is tokens/min (TPM = 1M for gemini-2.5-flash), not
+    // requests/min. Concurrency 1 means only one transcript's tokens are ever in
+    // flight, so calls never stack into a token burst. Bulk backfills pace
+    // themselves further via staggered enqueue delays (see reanalyze.ts). The
+    // limiter is a coarse backstop; with concurrency 1 a small burst is harmless.
     new Worker(QUEUES.ANALYZE, handleAnalyze, {
       connection,
-      concurrency: 2,
-      limiter: { max: 10, duration: 60_000 },
+      concurrency: 1,
+      limiter: { max: 6, duration: 60_000 },
     }),
     new Worker(QUEUES.PRICES, handleFillPrices, { connection, concurrency: 5 }),
     new Worker(QUEUES.ROLLUP, handleRollup, { connection, concurrency: 1 }),

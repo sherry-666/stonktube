@@ -32,13 +32,25 @@ const videos = await Video.find({
 
 console.log('Videos to re-analyze:', videos.length)
 
+// Gemini's limit is tokens/min (1M TPM). Spacing jobs ~15s apart (≈4/min) keeps
+// even large transcripts well under that. Combined with worker concurrency 1,
+// token usage never bursts. Tunable via REANALYZE_SPACING_MS.
+const spacingMs = Number(process.env.REANALYZE_SPACING_MS ?? 15_000)
+
+let i = 0
 for (const v of videos) {
   const jobId = `reanalyze-${v._id}-${Date.now()}`
-  await analyzeQueue.add('analyze', { videoId: v._id.toString(), force: true }, { jobId })
+  await analyzeQueue.add(
+    'analyze',
+    { videoId: v._id.toString(), force: true },
+    { jobId, delay: i * spacingMs },
+  )
   console.log(' -', v.title?.slice(0, 60))
+  i++
 }
 
-console.log('Enqueued (force re-analysis). Worker drips through at ≤10/min; then run recompute-stats.')
+const mins = Math.ceil((videos.length * spacingMs) / 60_000)
+console.log(`Enqueued ${videos.length} (force, ${spacingMs}ms apart ≈ ${mins} min). Then run recompute-stats.`)
 
 await analyzeQueue.close()
 await disconnectDB()
