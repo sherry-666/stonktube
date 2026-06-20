@@ -35,6 +35,12 @@ const EXTRACT_TOOL = {
               type: SchemaType.NUMBER,
               description: 'How confident you are 0.0–1.0',
             },
+            relevance: {
+              type: SchemaType.STRING,
+              enum: ['PASSING', 'MENTIONED', 'DISCUSSED', 'FEATURED'],
+              description:
+                'How much the creator actually covers this asset: PASSING=named once in passing/a list, no view; MENTIONED=brief comment with a stance but little reasoning; DISCUSSED=several sentences of real analysis/reasoning; FEATURED=a main subject of the video',
+            },
             note: {
               type: SchemaType.STRING,
               description: 'One-sentence reason for the sentiment (max 100 chars)',
@@ -44,7 +50,7 @@ const EXTRACT_TOOL = {
               description: 'True if this is the main subject of the video',
             },
           },
-          required: ['ticker', 'sentiment', 'confidence', 'note', 'isPrimary'],
+          required: ['ticker', 'sentiment', 'confidence', 'relevance', 'note', 'isPrimary'],
         },
       },
       summary: {
@@ -99,7 +105,10 @@ Tracked tickers (use these for the mentions array): ${trackedList}
 
 For tickers in the tracked list: add them to mentions with full sentiment analysis.
 For significant stocks/crypto/assets NOT in the tracked list: add them to new_tickers (ticker symbol + name only).
-Ignore passing references — only include tickers the creator meaningfully discusses.
+
+Set "relevance" honestly per the definitions, and be conservative: most assets a
+creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
+when the creator gives real reasoning or spends meaningful time on the asset.
 
 Video title: ${video.title}
 
@@ -192,6 +201,7 @@ ${transcript.text}`
         ticker: stock.ticker,
         sentiment: m.sentiment,
         confidence: m.confidence,
+        relevance: m.relevance,
         note: m.note,
         isPrimary: m.isPrimary,
       }

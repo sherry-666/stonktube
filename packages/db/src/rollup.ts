@@ -1,4 +1,5 @@
 import mongoose, { Types } from 'mongoose'
+import { mentionQualifies } from '@stonktube/shared'
 import { Stock } from './models/Stock.js'
 import { Video } from './models/Video.js'
 
@@ -48,6 +49,8 @@ export async function rebuildStats(stockId?: string): Promise<void> {
     for (const video of videos) {
       for (const mention of video.mentions) {
         if (!mention.stockId.equals(stock._id)) continue
+        // Only count mentions that reflect real discussion, not passing name-drops.
+        if (!mentionQualifies(mention)) continue
         if (mention.sentiment === 'BULLISH') bullCount++
         else if (mention.sentiment === 'NEUTRAL') neutralCount++
         else if (mention.sentiment === 'BEARISH') bearCount++

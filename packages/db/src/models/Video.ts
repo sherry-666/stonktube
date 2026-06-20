@@ -6,6 +6,7 @@ export interface IMention {
   ticker: string
   sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'
   confidence?: number
+  relevance?: 'PASSING' | 'MENTIONED' | 'DISCUSSED' | 'FEATURED'
   note: string
   isPrimary: boolean
   priceAtMention?: number
@@ -44,6 +45,7 @@ const MentionSchema = new Schema<IMention>(
     ticker: { type: String, required: true },
     sentiment: { type: String, enum: ['BULLISH', 'NEUTRAL', 'BEARISH'], required: true },
     confidence: Number,
+    relevance: { type: String, enum: ['PASSING', 'MENTIONED', 'DISCUSSED', 'FEATURED'] },
     note: { type: String, default: '' },
     isPrimary: { type: Boolean, default: false },
     priceAtMention: Number,

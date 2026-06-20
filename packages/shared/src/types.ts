@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { SentimentSchema } from './sentiment.js'
 
+// ── Relevance (how much the creator actually discussed the asset) ────────────
+// Ordered from a passing name-drop to the main subject of the video.
+export const RelevanceSchema = z.enum(['PASSING', 'MENTIONED', 'DISCUSSED', 'FEATURED'])
+export type Relevance = z.infer<typeof RelevanceSchema>
+
 // ── Mention (embedded in Video) ─────────────────────────────────────────────
 
 export const MentionSchema = z.object({
@@ -8,6 +13,7 @@ export const MentionSchema = z.object({
   ticker: z.string(),
   sentiment: SentimentSchema,
   confidence: z.number().min(0).max(1).optional(),
+  relevance: RelevanceSchema.optional(),
   note: z.string(),
   isPrimary: z.boolean(),
   priceAtMention: z.number().optional(),
@@ -40,6 +46,7 @@ export const LLMExtractionSchema = z.object({
       ticker: z.string(),
       sentiment: SentimentSchema,
       confidence: z.number().min(0).max(1).default(1),
+      relevance: RelevanceSchema.optional(),
       isPrimary: z.boolean(),
       note: z.string(),
     }),
