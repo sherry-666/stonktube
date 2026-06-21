@@ -261,7 +261,12 @@ const stocks: FastifyPluginAsync = async (fastify) => {
 
       const markers = videos.flatMap((v) => {
         const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-        if (!mention || !mentionQualifies(mention) || !mentionExpressesView(mention)) return []
+        // Show all BULLISH/BEARISH mentions that clear the relevance/confidence bar —
+        // both OPINION and FACTUAL. The mentionExpressesView gate stays on sentiment
+        // percentages only (rollup, overallSentiment) where we only want the creator's
+        // own forward-looking view to count. Chart markers are purely for visualization
+        // of when a creator talked about the stock and what tone they used.
+        if (!mention || !mentionQualifies(mention)) return []
         const price = mention.priceAtMention
         return [{
           videoId: v._id.toString(),
