@@ -230,10 +230,14 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         .sort({ publishedAt: -1 })
         .lean()
 
-      const markers = videos.map((v) => {
+      // The chart shows "creator sentiment at time of video", so only plot
+      // mentions that express the creator's own view (not factual recaps) and
+      // clear the relevance bar — same gate that feeds the sentiment numbers.
+      const markers = videos.flatMap((v) => {
         const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-        const price = mention?.priceAtMention
-        return {
+        if (!mention || !mentionQualifies(mention) || !mentionExpressesView(mention)) return []
+        const price = mention.priceAtMention
+        return [{
           videoId: v._id.toString(),
           date: v.publishedAt.toISOString().split('T')[0],
           creatorSlug: v.creator.slug,
@@ -247,7 +251,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           url: v.url,
           priceAtMention: price,
           priceLabel: price != null ? `@ $${price.toFixed(2)}` : '',
-        }
+        }]
       })
 
       return reply.send(markers)

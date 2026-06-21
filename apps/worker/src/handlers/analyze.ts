@@ -58,7 +58,7 @@ function parseRetryDelayMs(err: unknown): number | null {
   return m ? Math.ceil(parseFloat(m[1]) * 1000) : null
 }
 
-const EXTRACT_TOOL = {
+export const EXTRACT_TOOL = {
   name: 'extract_stock_mentions',
   description:
     'Extract every stock/crypto/asset mention from a financial YouTube video with creator sentiment.',
@@ -126,6 +126,31 @@ const EXTRACT_TOOL = {
   },
 }
 
+/** Builds the Gemini extraction prompt. Shared by the queue handler and the
+ *  queue-free re-analysis script so both use identical instructions. */
+export function buildAnalysisPrompt(trackedList: string, title: string, transcriptText: string): string {
+  return `You are analyzing a financial YouTube video to extract stock/asset mentions.
+
+Tracked tickers (use these for the mentions array): ${trackedList}
+
+For tickers in the tracked list: add them to mentions with full sentiment analysis.
+For significant stocks/crypto/assets NOT in the tracked list: add them to new_tickers (ticker symbol + name only).
+
+Set "relevance" honestly per the definitions, and be conservative: most assets a
+creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
+when the creator gives real reasoning or spends meaningful time on the asset.
+
+Set "stance" per mention. If the creator only states facts — e.g. "NVDA fell 13%
+along with other semis" or "earnings were up 20%" — that is FACTUAL, even when it
+sounds positive or negative. Only mark OPINION when the creator gives their own
+forward-looking view, prediction, recommendation, or judgment about the asset.
+
+Video title: ${title}
+
+Transcript:
+${transcriptText}`
+}
+
 export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
   const { videoId, force } = job.data
 
@@ -159,26 +184,7 @@ export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
 
   const trackedList = stocks.map(s => `${s.ticker} (${s.name})`).join(', ')
 
-  const prompt = `You are analyzing a financial YouTube video to extract stock/asset mentions.
-
-Tracked tickers (use these for the mentions array): ${trackedList}
-
-For tickers in the tracked list: add them to mentions with full sentiment analysis.
-For significant stocks/crypto/assets NOT in the tracked list: add them to new_tickers (ticker symbol + name only).
-
-Set "relevance" honestly per the definitions, and be conservative: most assets a
-creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
-when the creator gives real reasoning or spends meaningful time on the asset.
-
-Set "stance" per mention. If the creator only states facts — e.g. "NVDA fell 13%
-along with other semis" or "earnings were up 20%" — that is FACTUAL, even when it
-sounds positive or negative. Only mark OPINION when the creator gives their own
-forward-looking view, prediction, recommendation, or judgment about the asset.
-
-Video title: ${video.title}
-
-Transcript:
-${transcript.text}`
+  const prompt = buildAnalysisPrompt(trackedList, video.title, transcript.text)
 
   log.info({ videoId, title: video.title }, 'Sending to Gemini for analysis')
 
