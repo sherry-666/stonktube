@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { apiFetch } from '../api/client.js'
+import StockIcon from './StockIcon.js'
 
 interface SearchStock {
   ticker: string
@@ -9,6 +10,7 @@ interface SearchStock {
   brandColor: string
   logoBg: string
   initials: string
+  logoUrl?: string
 }
 
 interface SearchCreator {
@@ -17,6 +19,7 @@ interface SearchCreator {
   handle: string
   brandColor: string
   initial: string
+  avatarUrl?: string
 }
 
 interface SearchResults {
@@ -165,14 +168,15 @@ export default function Nav() {
                           onMouseEnter={e => (e.currentTarget.style.background = '#F8F8F4')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
-                          <div
-                            className="flex items-center justify-center shrink-0 rounded-[8px]"
-                            style={{ width: 32, height: 32, background: s.logoBg || '#F0EFE8' }}
-                          >
-                            <span style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: 11, color: s.brandColor }}>
-                              {s.initials}
-                            </span>
-                          </div>
+                          <StockIcon
+                            logoUrl={s.logoUrl}
+                            initials={s.initials}
+                            brandColor={s.brandColor}
+                            logoBg={s.logoBg}
+                            size={32}
+                            radius={8}
+                            fontSize={11}
+                          />
                           <div className="min-w-0">
                             <div style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: 13, color: '#14151A' }}>
                               {s.ticker}
@@ -198,14 +202,23 @@ export default function Nav() {
                           onMouseEnter={e => (e.currentTarget.style.background = '#F8F8F4')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
-                          <div
-                            className="flex items-center justify-center shrink-0 rounded-full"
-                            style={{ width: 32, height: 32, background: c.brandColor }}
-                          >
-                            <span style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: 13, color: 'white' }}>
-                              {c.initial}
-                            </span>
-                          </div>
+                          {c.avatarUrl ? (
+                            <img
+                              src={c.avatarUrl}
+                              alt={c.name}
+                              className="shrink-0 rounded-full object-cover"
+                              style={{ width: 32, height: 32 }}
+                            />
+                          ) : (
+                            <div
+                              className="flex items-center justify-center shrink-0 rounded-full"
+                              style={{ width: 32, height: 32, background: c.brandColor }}
+                            >
+                              <span style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: 13, color: 'white' }}>
+                                {c.initial}
+                              </span>
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="text-[13px] font-semibold truncate" style={{ color: '#14151A' }}>{c.name}</div>
                             <div className="text-[11px]" style={{ color: '#9A9BA4' }}>{c.handle}</div>

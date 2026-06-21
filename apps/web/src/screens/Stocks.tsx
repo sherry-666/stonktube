@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStocks } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import SentimentBar from '../components/SentimentBar.js'
+import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
 
 const SORT_PILLS = [
@@ -132,27 +133,15 @@ export default function Stocks() {
             >
               {/* Col 1: Stock */}
               <div className="flex items-center gap-2 min-w-0">
-                <div
-                  className="flex items-center justify-center shrink-0"
-                  style={{
-                    width: isMobile ? 32 : 40,
-                    height: isMobile ? 32 : 40,
-                    borderRadius: isMobile ? 9 : 11,
-                    background: stock.logoBg || '#F0EFE8',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: '"Space Grotesk", sans-serif',
-                      fontWeight: 700,
-                      fontSize: isMobile ? 11 : 13,
-                      color: stock.brandColor || '#14151A',
-                    }}
-                  >
-                    {stock.initials}
-                  </span>
-                </div>
+                <StockIcon
+                  logoUrl={stock.logoUrl}
+                  initials={stock.initials}
+                  brandColor={stock.brandColor}
+                  logoBg={stock.logoBg}
+                  size={isMobile ? 32 : 40}
+                  radius={isMobile ? 9 : 11}
+                  fontSize={isMobile ? 11 : 13}
+                />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
                     <span

@@ -7,6 +7,12 @@ function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
 }
 
+// Company logo by ticker (Financial Modeling Prep). 404s for indices/odd
+// symbols, so the client falls back to the initials badge on image error.
+function fmpLogo(ticker: string): string {
+  return `https://financialmodelingprep.com/image-stock/${displayTicker(ticker)}.png`
+}
+
 function fmtPrice(n?: number): string {
   return n != null ? `$${n.toFixed(2)}` : ''
 }
@@ -76,6 +82,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       brandColor: s.brandColor,
       logoBg: s.logoBg,
       initials: s.initials,
+      logoUrl: s.logoUrl || fmpLogo(s.ticker),
       priceStr: fmtPrice(s.stats?.latestClose),
       dayChangePct: s.stats?.dayChangePct ?? 0,
       dayChangeStr: fmtPct(s.stats?.dayChangePct),
@@ -196,6 +203,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           brandColor: stock.brandColor,
           logoBg: stock.logoBg,
           initials: stock.initials,
+          logoUrl: stock.logoUrl || fmpLogo(stock.ticker),
           priceStr: fmtPrice(stock.stats?.latestClose),
           dayChangePct: stock.stats?.dayChangePct ?? 0,
           dayChangeStr: fmtPct(stock.stats?.dayChangePct),

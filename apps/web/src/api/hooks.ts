@@ -75,6 +75,7 @@ export interface StockRow {
   brandColor: string
   logoBg: string
   initials: string
+  logoUrl?: string
   priceStr: string
   dayChangePct: number
   dayChangeStr: string
@@ -102,6 +103,7 @@ export interface StockDetailStock {
   brandColor: string
   logoBg: string
   initials: string
+  logoUrl?: string
   priceStr: string
   dayChangePct: number
   dayChangeStr: string

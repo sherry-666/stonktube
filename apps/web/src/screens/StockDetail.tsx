@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
 import SentimentBar from '../components/SentimentBar.js'
+import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
 import type { Marker } from '../api/hooks.js'
@@ -427,26 +428,15 @@ export default function StockDetail() {
       {/* Header row */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div
-            className="flex items-center justify-center shrink-0"
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: 14,
-              background: stock.logoBg || '#F0EFE8',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: '"Space Grotesk", sans-serif',
-                fontWeight: 700,
-                fontSize: 16,
-                color: stock.brandColor,
-              }}
-            >
-              {stock.initials}
-            </span>
-          </div>
+          <StockIcon
+            logoUrl={stock.logoUrl}
+            initials={stock.initials}
+            brandColor={stock.brandColor}
+            logoBg={stock.logoBg}
+            size={54}
+            radius={14}
+            fontSize={16}
+          />
           <div>
             <div className="flex items-center gap-2">
               <span

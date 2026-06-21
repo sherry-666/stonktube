@@ -10,13 +10,13 @@ const search: FastifyPluginAsync = async (fastify) => {
 
     const [stockDocs, creatorDocs] = await Promise.all([
       Stock.find({ $or: [{ ticker: regex }, { name: regex }] })
-        .select('ticker name brandColor logoBg initials')
+        .select('ticker name brandColor logoBg initials logoUrl')
         .lean(),
       Creator.find({
         isActive: true,
         $or: [{ name: regex }, { handle: regex }],
       })
-        .select('slug name handle brandColor initial')
+        .select('slug name handle brandColor initial avatarUrl')
         .lean(),
     ])
 
@@ -27,6 +27,7 @@ const search: FastifyPluginAsync = async (fastify) => {
         brandColor: s.brandColor,
         logoBg: s.logoBg,
         initials: s.initials,
+        logoUrl: s.logoUrl || `https://financialmodelingprep.com/image-stock/${s.ticker.replace(/-USD$/, '')}.png`,
       })),
       creators: creatorDocs.map((c) => ({
         slug: c.slug,
@@ -34,6 +35,7 @@ const search: FastifyPluginAsync = async (fastify) => {
         handle: c.handle,
         brandColor: c.brandColor,
         initial: c.initial,
+        avatarUrl: c.avatarUrl,
       })),
     })
   })
