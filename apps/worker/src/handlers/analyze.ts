@@ -81,7 +81,7 @@ export const EXTRACT_TOOL = {
               type: SchemaType.STRING,
               enum: ['OPINION', 'FACTUAL'],
               description:
-                "OPINION=the creator gives their own forward-looking view, prediction, recommendation, or judgment (buy/sell/hold, 'this will run', 'overvalued'). FACTUAL=the creator only reports facts (past/current price moves, earnings numbers, news) without taking a side of their own.",
+                "OPINION=the creator expresses their OWN forward-looking view, prediction, recommendation, or judgment about the asset (e.g. 'I'm bullish', 'this will run', 'overvalued', 'I'd buy here'). FACTUAL=anything else: reporting price moves/earnings/news, historical references ('GE was huge in 2000'), contextual mentions ('TSLA is part of Musk's ecosystem'), citing what another analyst or person said ('Chanos thinks...', 'Klarman invested in...'), or any statement that does not reflect the creator's own forward-looking view.",
             },
             confidence: {
               type: SchemaType.NUMBER,
@@ -140,10 +140,17 @@ Set "relevance" honestly per the definitions, and be conservative: most assets a
 creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
 when the creator gives real reasoning or spends meaningful time on the asset.
 
-Set "stance" per mention. If the creator only states facts — e.g. "NVDA fell 13%
-along with other semis" or "earnings were up 20%" — that is FACTUAL, even when it
-sounds positive or negative. Only mark OPINION when the creator gives their own
-forward-looking view, prediction, recommendation, or judgment about the asset.
+Set "stance" per mention. FACTUAL covers a wide range — use it for:
+- Price/market moves: "NVDA fell 13%", "gold gained then dropped after hours"
+- Historical references: "GE was a profitable giant in the 2000 dot-com era"
+- Contextual/ecosystem mentions: "TSLA is part of Musk's ecosystem supporting xAI"
+- Reporting another person's view: "Chanos believes...", "Klarman invested in...", "the Fed said..."
+- News/announcements: earnings results, product launches, acquisitions
+
+Only use OPINION when the creator is expressing THEIR OWN forward-looking view,
+prediction, recommendation, or judgment — "I think NVDA will run", "I'm bearish on
+this", "I'd buy here", "this looks overvalued to me". If the creator is reporting,
+describing, or citing — even in strong language — it is FACTUAL.
 
 Video title: ${title}
 
