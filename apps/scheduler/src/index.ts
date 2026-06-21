@@ -6,8 +6,8 @@ import { config } from 'dotenv'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env') })
-import { connectDB, disconnectDB, Creator, Stock } from '@stonktube/db'
-import { discoverQueue, pricesQueue, rollupQueue } from '@stonktube/pipeline'
+import { connectDB, disconnectDB, Creator, Video, Transcript } from '@stonktube/db'
+import { discoverQueue, transcribeQueue, analyzeQueue, pricesQueue, rollupQueue } from '@stonktube/pipeline'
 import pino from 'pino'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
@@ -45,6 +45,39 @@ async function run() {
     { jobId: `rollup-all-${hour}` },
   )
   log.info('Rollup job enqueued')
+
+  // ── Retry sweep: re-enqueue FAILED videos ──────────────────────────────────
+  // Use a date-scoped jobId so each video is retried at most once per day.
+  const today = runId.slice(0, 10)
+
+  // 1. Videos whose transcript failed — re-enqueue transcription
+  const failedTranscripts = await Video.find(
+    { transcriptStatus: 'FAILED' },
+    '_id',
+  ).lean()
+  for (const v of failedTranscripts) {
+    await transcribeQueue.add(
+      'transcribe',
+      { videoId: v._id.toString() },
+      { jobId: `retry-transcribe-${v._id}-${today}`, attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
+    )
+  }
+  if (failedTranscripts.length) log.info({ count: failedTranscripts.length }, 'Retry transcribe jobs enqueued')
+
+  // 2. Videos whose analysis failed and still have a transcript — re-enqueue analysis
+  const transcriptVideoIds = await Transcript.distinct('videoId')
+  const failedAnalyses = await Video.find(
+    { analysisStatus: 'FAILED', _id: { $in: transcriptVideoIds } },
+    '_id',
+  ).lean()
+  for (const v of failedAnalyses) {
+    await analyzeQueue.add(
+      'analyze',
+      { videoId: v._id.toString() },
+      { jobId: `retry-analyze-${v._id}-${today}`, attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
+    )
+  }
+  if (failedAnalyses.length) log.info({ count: failedAnalyses.length }, 'Retry analyze jobs enqueued')
 
   await disconnectDB()
   log.info('Scheduler done — exiting')

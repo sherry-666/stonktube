@@ -241,13 +241,23 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       // The chart shows "creator sentiment at time of video", so only plot
       // mentions that express the creator's own view (not factual recaps) and
       // clear the relevance bar — same gate that feeds the sentiment numbers.
+      // Snap weekend dates to the previous Friday so the marker lands on a
+      // trading day that exists in the price series x-axis.
+      const snapToTradingDay = (d: Date): string => {
+        const out = new Date(d)
+        const dow = out.getUTCDay()
+        if (dow === 6) out.setUTCDate(out.getUTCDate() - 1) // Sat → Fri
+        else if (dow === 0) out.setUTCDate(out.getUTCDate() - 2) // Sun → Fri
+        return out.toISOString().split('T')[0]
+      }
+
       const markers = videos.flatMap((v) => {
         const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
         if (!mention || !mentionQualifies(mention) || !mentionExpressesView(mention)) return []
         const price = mention.priceAtMention
         return [{
           videoId: v._id.toString(),
-          date: v.publishedAt.toISOString().split('T')[0],
+          date: snapToTradingDay(v.publishedAt),
           creatorSlug: v.creator.slug,
           creatorName: v.creator.name,
           creatorColor: v.creator.brandColor,
