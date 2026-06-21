@@ -230,25 +230,33 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - tfDays * 1.5) // buffer for weekends
 
-      const videos = await Video.find({
-        'mentions.stockId': stock._id,
-        publishedAt: { $gte: startDate },
-        analysisStatus: 'ANALYZED',
-      })
-        .sort({ publishedAt: -1 })
-        .lean()
+      const [videos, prices] = await Promise.all([
+        Video.find({
+          'mentions.stockId': stock._id,
+          publishedAt: { $gte: startDate },
+          analysisStatus: 'ANALYZED',
+        })
+          .sort({ publishedAt: -1 })
+          .lean(),
+        // Load price dates so we can snap each marker to an actual trading day,
+        // not just the nearest weekday (holidays can also have no price).
+        getPrices(stock._id, startDate),
+      ])
 
-      // The chart shows "creator sentiment at time of video", so only plot
-      // mentions that express the creator's own view (not factual recaps) and
-      // clear the relevance bar — same gate that feeds the sentiment numbers.
-      // Snap weekend dates to the previous Friday so the marker lands on a
-      // trading day that exists in the price series x-axis.
+      // Sorted ascending list of actual trading dates for this stock.
+      const tradingDates = prices.map((p) => (p.date as Date).toISOString().split('T')[0]).sort()
+
+      // Find the nearest actual trading date on or before publishedAt.
       const snapToTradingDay = (d: Date): string => {
-        const out = new Date(d)
-        const dow = out.getUTCDay()
-        if (dow === 6) out.setUTCDate(out.getUTCDate() - 1) // Sat → Fri
-        else if (dow === 0) out.setUTCDate(out.getUTCDate() - 2) // Sun → Fri
-        return out.toISOString().split('T')[0]
+        const iso = d.toISOString().split('T')[0]
+        // Binary-search for the last date ≤ iso
+        let lo = 0, hi = tradingDates.length - 1, result = tradingDates[0] ?? iso
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1
+          if (tradingDates[mid] <= iso) { result = tradingDates[mid]; lo = mid + 1 }
+          else hi = mid - 1
+        }
+        return result
       }
 
       const markers = videos.flatMap((v) => {
