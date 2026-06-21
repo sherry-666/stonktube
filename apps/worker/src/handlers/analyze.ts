@@ -1,4 +1,4 @@
-import { Worker, type Job } from 'bullmq'
+import { Worker, UnrecoverableError, type Job } from 'bullmq'
 import { Video, Stock, Transcript } from '@stonktube/db'
 import { pricesQueue } from '@stonktube/pipeline'
 import type { AnalyzeJob } from '@stonktube/shared'
@@ -36,6 +36,11 @@ function estimateRequestTokens(prompt: string): number {
  * than permanently marking the video FAILED. The Google SDK surfaces these in
  * the error message (e.g. "[429 Too Many Requests] ... quota").
  */
+/** Monthly spending cap is a hard human-action blocker — retrying won't help. */
+function isSpendingCapExceeded(err: unknown): boolean {
+  return /monthly spending cap/i.test((err as Error)?.message ?? '')
+}
+
 function isRetryable(err: unknown): boolean {
   const status = (err as { status?: number; response?: { status?: number } })?.status
     ?? (err as { response?: { status?: number } })?.response?.status
@@ -206,6 +211,11 @@ export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
       toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     })
   } catch (err) {
+    // Monthly spending cap: non-retryable — only a human can raise the cap.
+    if (isSpendingCapExceeded(err)) {
+      log.error({ videoId }, 'Gemini monthly spending cap exceeded — aborting (raise cap at aistudio.google.com/spend)')
+      throw new UnrecoverableError((err as Error).message)
+    }
     // 429 WITH an explicit Retry-After: honor Gemini's hint — pause the whole
     // queue for exactly that long and re-queue without burning an attempt.
     const retryAfterMs = isRateLimited(err) ? parseRetryDelayMs(err) : null
