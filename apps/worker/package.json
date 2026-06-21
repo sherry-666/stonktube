@@ -10,7 +10,9 @@
     "clean": "rm -rf dist",
     "backfill": "tsc && node dist/backfill-apr2026.js",
     "reanalyze": "tsc && node dist/reanalyze.js",
-    "backfill-durations": "tsc && node dist/backfill-durations.js"
+    "backfill-durations": "tsc && node dist/backfill-durations.js",
+    "backfill-channel": "tsc && node dist/backfill-channel.js",
+    "retranscribe-creator": "tsc && node dist/retranscribe-creator.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
