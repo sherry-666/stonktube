@@ -295,8 +295,15 @@ export default function StockDetail() {
   const handleChartMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (priceSeries.length < 2) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const idx = Math.round(((e.clientX - rect.left) / rect.width) * (priceSeries.length - 1))
-    setHoverIdx(Math.max(0, Math.min(priceSeries.length - 1, idx)))
+    // Map cursor X → calendar date → nearest price point (X is calendar-based).
+    const targetMs = domainStart + ((e.clientX - rect.left) / rect.width) * domainSpan
+    let nearestIdx = 0
+    let bestDiff = Infinity
+    for (let i = 0; i < priceMsList.length; i++) {
+      const diff = Math.abs(priceMsList[i] - targetMs)
+      if (diff < bestDiff) { bestDiff = diff; nearestIdx = i }
+    }
+    setHoverIdx(nearestIdx)
   }
 
   const { data, isLoading, error } = useStockDetail(ticker, tf)
@@ -318,15 +325,7 @@ export default function StockDetail() {
   const SVG_W = 1000
   const SVG_H = 360
   const priceValues = priceSeries.map(p => p.close)
-  const { pts, gridPrices, totalRange, min: priceMin } = scalePoints(priceValues, SVG_W, SVG_H)
-
-  // Date ticks: 6 evenly spaced
-  const dateTicks = priceSeries.length >= 2
-    ? Array.from({ length: 6 }, (_, i) => {
-        const idx = Math.round((i / 5) * (priceSeries.length - 1))
-        return priceSeries[idx]
-      })
-    : []
+  const { gridPrices, totalRange, min: priceMin } = scalePoints(priceValues, SVG_W, SVG_H)
 
   const hi = priceMin + (totalRange ?? 1)
 
@@ -337,39 +336,63 @@ export default function StockDetail() {
 
   const isPrivate = priceSeries.length === 0
 
-  // For private stocks, compute a date range from the markers themselves
+  // ── Calendar-based X axis ──────────────────────────────────────────────────
+  // The X axis maps real dates (not trading-day indices) so mentions that
+  // predate the price history — e.g. pre-IPO calls — land on their actual date
+  // instead of snapping to the first available price point. The domain spans
+  // both the price series and the markers.
+  const priceMsList = priceSeries.map(p => new Date(p.date).getTime())
+  const firstPriceMs = priceMsList.length ? priceMsList[0] : null
+  const lastPriceMs = priceMsList.length ? priceMsList[priceMsList.length - 1] : null
   const markerMs = (markers ?? []).map(m => new Date(m.date).getTime())
-  const markerMinMs = markerMs.length > 0 ? Math.min(...markerMs) : Date.now()
-  const markerMaxMs = markerMs.length > 0 ? Math.max(...markerMs) : Date.now()
-  const markerDateRange = markerMaxMs - markerMinMs || 1
+  const markerMinMs = markerMs.length ? Math.min(...markerMs) : null
+  const markerMaxMs = markerMs.length ? Math.max(...markerMs) : null
 
-  // Snap each marker to the nearest price-series point so the dot sits exactly
-  // on the line. The line is drawn with index-based X spacing (trading days are
-  // evenly spaced, weekends skipped), so we match by index, not calendar time.
-  // For private stocks (no price data) position by calendar date along a baseline.
+  let domainStart = firstPriceMs ?? markerMinMs ?? Date.now()
+  let domainEnd = lastPriceMs ?? markerMaxMs ?? Date.now()
+  if (markerMinMs != null) domainStart = Math.min(domainStart, markerMinMs)
+  if (markerMaxMs != null) domainEnd = Math.max(domainEnd, markerMaxMs)
+  // Pad the side(s) where markers run past the price line so avatars aren't clipped.
+  const rawSpan = domainEnd - domainStart || 1
+  if (firstPriceMs == null || (markerMinMs != null && markerMinMs < firstPriceMs)) domainStart -= rawSpan * 0.05
+  if (lastPriceMs == null || (markerMaxMs != null && markerMaxMs > lastPriceMs)) domainEnd += rawSpan * 0.05
+  const domainSpan = domainEnd - domainStart || 1
+  const dateToSvgX = (ms: number) => ((ms - domainStart) / domainSpan) * SVG_W
+
+  // Price line / area, positioned by calendar date.
+  const pricePts = priceSeries.map((p, i) => `${dateToSvgX(priceMsList[i])},${priceToSvgY(p.close)}`).join(' ')
+  const firstPriceX = firstPriceMs != null ? dateToSvgX(firstPriceMs) : 0
+  const lastPriceX = lastPriceMs != null ? dateToSvgX(lastPriceMs) : SVG_W
+
+  // Date ticks: 6 evenly spaced across the calendar domain.
+  const dateTicks = priceSeries.length >= 2 || (markers?.length ?? 0) > 0
+    ? Array.from({ length: 6 }, (_, i) => new Date(domainStart + (i / 5) * domainSpan))
+    : []
+
+  // Position each marker by calendar date. In-range markers snap to the nearest
+  // price vertex so the dot sits on the line; markers outside the price range
+  // (e.g. pre-IPO) sit at the nearest endpoint's price level.
   const positionedMarkers = (markers ?? []).map(m => {
     const mMs = new Date(m.date).getTime()
     if (isPrivate) {
-      const pad = markerMs.length > 1 ? markerDateRange * 0.08 : 0
-      const svgX = markerMs.length > 1
-        ? ((mMs - markerMinMs + pad) / (markerDateRange + 2 * pad)) * SVG_W
-        : SVG_W / 2
-      return { ...m, svgX, svgY: SVG_H / 2, flip: false }
+      return { ...m, svgX: dateToSvgX(mMs), svgY: SVG_H / 2, flip: false }
+    }
+    if (firstPriceMs != null && mMs < firstPriceMs) {
+      const svgY = priceToSvgY(priceSeries[0].close)
+      return { ...m, svgX: dateToSvgX(mMs), svgY, flip: svgY < AVATAR_REACH + 12 }
+    }
+    if (lastPriceMs != null && mMs > lastPriceMs) {
+      const svgY = priceToSvgY(priceSeries[priceSeries.length - 1].close)
+      return { ...m, svgX: dateToSvgX(mMs), svgY, flip: svgY < AVATAR_REACH + 12 }
     }
     let nearestIdx = 0
     let bestDiff = Infinity
     for (let i = 0; i < priceSeries.length; i++) {
-      const diff = Math.abs(new Date(priceSeries[i].date).getTime() - mMs)
+      const diff = Math.abs(priceMsList[i] - mMs)
       if (diff < bestDiff) { bestDiff = diff; nearestIdx = i }
     }
-    const n = priceSeries.length
-    const svgY = priceToSvgY(priceSeries[nearestIdx]?.close ?? 0)
-    return {
-      ...m,
-      svgX: n > 1 ? (nearestIdx / (n - 1)) * SVG_W : SVG_W / 2,
-      svgY,
-      flip: svgY < AVATAR_REACH + 12,
-    }
+    const svgY = priceToSvgY(priceSeries[nearestIdx].close)
+    return { ...m, svgX: dateToSvgX(priceMsList[nearestIdx]), svgY, flip: svgY < AVATAR_REACH + 12 }
   })
 
   // Group markers by date — multiple calls on the same day share one dot
@@ -562,14 +585,14 @@ export default function StockDetail() {
               })}
 
               {/* Area fill */}
-              {pts && (
-                <polygon points={`0,${SVG_H} ${pts} ${SVG_W},${SVG_H}`} fill={`url(#area-${ticker})`} />
+              {pricePts && (
+                <polygon points={`${firstPriceX},${SVG_H} ${pricePts} ${lastPriceX},${SVG_H}`} fill={`url(#area-${ticker})`} />
               )}
 
               {/* Price line */}
-              {pts && (
+              {pricePts && (
                 <polyline
-                  points={pts}
+                  points={pricePts}
                   fill="none"
                   stroke={stock.brandColor}
                   strokeWidth={2.4}
@@ -581,7 +604,7 @@ export default function StockDetail() {
 
               {/* Crosshair */}
               {hoverIdx !== null && priceSeries.length > 1 && (() => {
-                const cx = (hoverIdx / (priceSeries.length - 1)) * SVG_W
+                const cx = dateToSvgX(priceMsList[hoverIdx])
                 const cy = priceToSvgY(priceSeries[hoverIdx].close)
                 return (
                   <g>
@@ -608,7 +631,7 @@ export default function StockDetail() {
           {/* Crosshair date/price label */}
           {!isPrivate && hoverIdx !== null && priceSeries.length > 1 && (() => {
             const pt = priceSeries[hoverIdx]
-            const xPct = (hoverIdx / (priceSeries.length - 1)) * 100
+            const xPct = (dateToSvgX(priceMsList[hoverIdx]) / SVG_W) * 100
             const flipLeft = xPct > 65
             return (
               <div
@@ -670,7 +693,7 @@ export default function StockDetail() {
                 className="text-[11px]"
                 style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}
               >
-                {tick ? fmtDate(tick.date).replace(/,\s*\d{4}$/, '') : ''}
+                {tick ? fmtDate(tick).replace(/,\s*\d{4}$/, '') : ''}
               </span>
             ))}
           </div>
