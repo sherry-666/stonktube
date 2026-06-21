@@ -36,6 +36,8 @@ export const StockStatsSchema = z.object({
   neutralCount: z.number().int(),
   bearCount: z.number().int(),
   bullishPct: z.number(),
+  /** Number of view-expressing ratings in the last 7 days that bullishPct is based on. */
+  recentRatings: z.number().int().optional(),
   latestClose: z.number().optional(),
   dayChangePct: z.number().optional(),
   change30dPct: z.number().optional(),

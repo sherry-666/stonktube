@@ -11,6 +11,7 @@ export interface DashboardPill {
   logoBg: string
   initials: string
   bullishPct: number
+  recentRatings: number
   priceStr: string
   dayChangePct: number
   dayChangeStr: string

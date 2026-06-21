@@ -148,6 +148,7 @@ export async function rebuildStats(stockId?: string): Promise<void> {
           neutralCount,
           bearCount,
           bullishPct,
+          recentRatings: total7d,
           latestClose,
           dayChangePct,
           change30dPct,

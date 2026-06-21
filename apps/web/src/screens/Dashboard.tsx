@@ -81,13 +81,13 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                 <span
                   className="text-[11px] font-semibold px-2 py-0.5"
                   style={{
-                    background: '#E7F6EE',
-                    color: '#0F9D63',
+                    background: pill.recentRatings > 0 ? '#E7F6EE' : '#F0EFE8',
+                    color: pill.recentRatings > 0 ? '#0F9D63' : '#9A9BA4',
                     borderRadius: 8,
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {pill.bullishPct.toFixed(0)}% bullish
+                  {pill.recentRatings > 0 ? `${pill.bullishPct.toFixed(0)}% bullish` : '— no recent calls'}
                 </span>
               </div>
 

@@ -48,6 +48,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         dayChangePct: s.stats?.dayChangePct ?? 0,
         dayChangeStr: fmtPct(s.stats?.dayChangePct),
         bullishPct: s.stats?.bullishPct ?? 0,
+        recentRatings: s.stats?.recentRatings ?? 0,
         sparkline: s.stats?.sparkline ?? [],
       }))
 
@@ -92,10 +93,10 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
       maxMentions,
     }))
 
-    // mostBullish: top 6 by bullishPct
-    const sortedByBull = [...stocks].sort(
-      (a, b) => (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0),
-    )
+    // mostBullish: top 6 by bullishPct, among stocks with recent ratings only
+    const sortedByBull = [...stocks]
+      .filter((s) => (s.stats?.recentRatings ?? 0) > 0)
+      .sort((a, b) => (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0))
     const mostBullish = sortedByBull.slice(0, 6).map((s) => ({
       ticker: s.ticker,
       bullishPct: s.stats?.bullishPct ?? 0,

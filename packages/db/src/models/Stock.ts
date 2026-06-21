@@ -29,6 +29,7 @@ const StockStatsSchema = new Schema<StockStats>(
     neutralCount: { type: Number, default: 0 },
     bearCount: { type: Number, default: 0 },
     bullishPct: { type: Number, default: 0 },
+    recentRatings: { type: Number, default: 0 },
     latestClose: Number,
     dayChangePct: Number,
     change30dPct: Number,
