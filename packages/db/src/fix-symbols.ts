@@ -22,6 +22,14 @@ import { Stock } from './models/Stock.js'
 const FIXES: { ticker: string; set: Record<string, unknown> }[] = [
   { ticker: 'SPX', set: { priceSymbol: '^GSPC' } },
   { ticker: 'SPACEX', set: { priceSymbol: 'SPCX', isPrivate: false } },
+  // Index tickers whose Yahoo symbol differs from the display ticker.
+  { ticker: 'DJI', set: { priceSymbol: '^DJI' } },
+  { ticker: 'NASDAQ', set: { priceSymbol: '^IXIC' } },
+  { ticker: 'RUT', set: { priceSymbol: '^RUT' } },
+  { ticker: 'RUA', set: { priceSymbol: '^RUA' } },
+  { ticker: 'VIX', set: { priceSymbol: '^VIX' } },
+  // SOX was auto-created against the wrong company ("Scanbox Asia Pacific").
+  { ticker: 'SOX', set: { priceSymbol: '^SOX', name: 'PHLX Semiconductor Index', sector: 'Index' } },
 ]
 
 await connectDB()

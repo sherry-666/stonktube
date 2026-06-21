@@ -45,15 +45,20 @@ for (const stock of stocks) {
       continue
     }
 
-    const bars = (await yahooFinance.historical(symbol, {
+    // Use chart() rather than historical(): historical() throws when Yahoo
+    // returns any null closes (e.g. VIX), chart() just returns them so we filter.
+    const chart = await yahooFinance.chart(symbol, {
       period1: fromDate.toISOString().slice(0, 10),
       period2: toDate.toISOString().slice(0, 10),
       interval: '1d',
-    })) as { date: Date; close: number }[]
+    })
+    const bars = (chart?.quotes ?? []) as { date: Date; close: number | null }[]
 
     // Time-series collection: insert-only. Keep only bars after the latest
     // stored day (and with a real close) so we never duplicate existing points.
-    const valid = (bars ?? []).filter((b) => b.close != null && (!latest || b.date > latest))
+    const valid = (bars ?? []).filter(
+      (b): b is { date: Date; close: number } => b.close != null && (!latest || b.date > latest),
+    )
     if (valid.length === 0) {
       log.warn({ ticker: stock.ticker, symbol }, 'no new bars returned')
       continue
