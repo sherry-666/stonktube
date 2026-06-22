@@ -178,6 +178,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           publishedAt: v.publishedAt.toISOString(),
           title: v.title,
           url: v.url,
+          // The creator's own take on THIS stock in the video, beyond the title.
+          note: mention?.note ?? '',
           sentiment: mention?.sentiment ?? 'NEUTRAL',
           stance: mention?.stance,
           priceAtMention: mention?.priceAtMention,

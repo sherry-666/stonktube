@@ -759,6 +759,14 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                       >
                         {event.title}
                       </button>
+                      {event.note && (
+                        <p
+                          className="mt-1.5 text-[12.5px] leading-snug"
+                          style={{ color: '#6E6F78', fontStyle: 'italic' }}
+                        >
+                          “{event.note}”
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <div
                           className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"

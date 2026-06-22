@@ -127,6 +127,7 @@ export interface RecentCoverageEvent {
   publishedAt: string
   title: string
   url: string
+  note: string
   sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'
   priceAtMention?: number
   priceStr: string
