@@ -58,6 +58,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
   onMouseLeave: () => void
   isMobile?: boolean
 }) {
+  const navigate = useNavigate()
   const multi = group.markers.length > 1
   return (
     <div
@@ -88,14 +89,21 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
           <div key={marker.videoId}>
             {i > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '10px 0' }} />}
             <div className="flex items-center gap-2 mb-1.5">
-              <div
-                className="flex items-center justify-center rounded-full text-white font-bold shrink-0"
+              <button
+                onClick={() => navigate(`/creators/${marker.creatorSlug}`)}
+                className="flex items-center justify-center rounded-full text-white font-bold shrink-0 transition-transform duration-150 hover:scale-105"
                 style={{ width: 26, height: 26, background: marker.creatorColor, fontSize: 10, border: '2px solid rgba(255,255,255,0.25)' }}
+                title={`View ${marker.creatorName}'s profile`}
               >
                 {marker.creatorInitial}
-              </div>
+              </button>
               <div className="flex-1 min-w-0">
-                <div className="text-white text-[11px] font-semibold truncate">{marker.creatorName}</div>
+                <button
+                  onClick={() => navigate(`/creators/${marker.creatorSlug}`)}
+                  className="text-white text-[11px] font-semibold truncate hover:underline text-left block w-full"
+                >
+                  {marker.creatorName}
+                </button>
                 {!multi && <div className="text-[10px]" style={{ color: '#9A9BA4' }}>{fmtDate(marker.date)}</div>}
               </div>
               <div
@@ -261,7 +269,11 @@ function tooltipPosition(group: MarkerGroup, isMobile = false): CSSProperties {
     : { top, left: `calc(${dotXpct}% + ${GAP}px)` }
 }
 
-export default function StockDetail() {
+interface StockDetailProps {
+  onSummaryClick: (id: string) => void
+}
+
+export default function StockDetail({ onSummaryClick }: StockDetailProps) {
   const { ticker = '' } = useParams<{ ticker: string }>()
   const navigate = useNavigate()
   const [tf, setTf] = useState('3M')
@@ -717,31 +729,36 @@ export default function StockDetail() {
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#ECEBE4')}
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className="flex items-center justify-center rounded-full shrink-0 text-white font-bold"
+                    <button
+                      onClick={() => navigate(`/creators/${event.creatorSlug}`)}
+                      className="flex items-center justify-center rounded-full shrink-0 text-white font-bold transition-transform duration-150 hover:scale-105"
                       style={{
                         width: 42,
                         height: 42,
                         background: event.creatorColor,
                         fontSize: 15,
                       }}
+                      title={`View ${event.creatorName}'s profile`}
                     >
                       {event.creatorInitial}
-                    </div>
+                    </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[13px] font-semibold text-primary">{event.creatorName}</span>
+                        <button
+                          onClick={() => navigate(`/creators/${event.creatorSlug}`)}
+                          className="text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 text-left"
+                        >
+                          {event.creatorName}
+                        </button>
                         <span className="text-[11px] text-muted shrink-0">{fmtRelDate(event.publishedAt)}</span>
                       </div>
                       <div className="text-[11px] text-muted">{event.creatorHandle}</div>
-                      <a
-                        href={event.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1.5 block text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug"
+                      <button
+                        onClick={() => onSummaryClick(event.videoId)}
+                        className="mt-1.5 block text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug text-left"
                       >
                         {event.title}
-                      </a>
+                      </button>
                       <div className="flex items-center gap-2 mt-2">
                         <div
                           className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
@@ -753,6 +770,15 @@ export default function StockDetail() {
                         <span className="text-[11px] text-muted">
                           @ {fmtPrice(event.priceAtMention)}
                         </span>
+                        <button
+                          onClick={() => onSummaryClick(event.videoId)}
+                          className="ml-auto text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-150"
+                          style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
+                        >
+                          Summary ↗
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -118,6 +118,7 @@ export interface PricePoint {
 
 export interface RecentCoverageEvent {
   videoId: string
+  creatorSlug: string
   creatorName: string
   creatorHandle: string
   creatorColor: string
@@ -216,6 +217,46 @@ export function useCreators() {
   return useQuery<CreatorCard[]>({
     queryKey: ['creators'],
     queryFn: () => apiFetch<CreatorCard[]>('/api/creators'),
+  })
+}
+
+// ── Creator Profile ──────────────────────────────────────────────────────────
+
+export interface CreatorProfileCall {
+  videoId: string
+  videoTitle: string
+  videoUrl: string
+  thumbnailUrl?: string
+  publishedAt: string
+  durationSeconds?: number
+  summary: string
+  mentions: { ticker: string; sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'; stockId: string }[]
+}
+
+export interface CreatorProfile {
+  slug: string
+  name: string
+  handle: string
+  initial: string
+  brandColor: string
+  avatarUrl?: string
+  channelUrl: string
+  bio: string
+  subscribers?: number
+  videosTracked: number
+  bullishPct: number
+  bullCount: number
+  neutralCount: number
+  bearCount: number
+  covers: { ticker: string; sentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH'; stockId: string }[]
+  calls: CreatorProfileCall[]
+}
+
+export function useCreator(slug: string) {
+  return useQuery<CreatorProfile>({
+    queryKey: ['creator', slug],
+    queryFn: () => apiFetch<CreatorProfile>(`/api/creators/${slug}`),
+    enabled: !!slug,
   })
 }
 

@@ -1,4 +1,5 @@
 import { Play } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
@@ -9,6 +10,7 @@ interface CreatorsProps {
 
 export default function Creators({ onSummaryClick }: CreatorsProps) {
   const { data, isLoading, error } = useCreators()
+  const navigate = useNavigate()
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">Loading…</div>
@@ -58,30 +60,38 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
           >
             {/* Creator header */}
             <div className="flex items-start gap-3">
-              {creator.avatarUrl ? (
-                <img
-                  src={creator.avatarUrl}
-                  alt={creator.name}
-                  className="rounded-full shrink-0"
-                  style={{ width: 52, height: 52 }}
-                />
-              ) : (
-                <div
-                  className="flex items-center justify-center rounded-full shrink-0 text-white"
-                  style={{
-                    width: 52,
-                    height: 52,
-                    background: creator.brandColor,
-                    fontFamily: '"Space Grotesk", sans-serif',
-                    fontWeight: 700,
-                    fontSize: 20,
-                  }}
-                >
-                  {creator.initial}
-                </div>
-              )}
+              <button
+                onClick={() => navigate(`/creators/${creator.slug}`)}
+                className="shrink-0 transition-transform duration-150 hover:scale-105"
+                title={`View ${creator.name}'s profile`}
+              >
+                {creator.avatarUrl ? (
+                  <img
+                    src={creator.avatarUrl}
+                    alt={creator.name}
+                    className="rounded-full"
+                    style={{ width: 52, height: 52 }}
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center rounded-full text-white"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      background: creator.brandColor,
+                      fontFamily: '"Space Grotesk", sans-serif',
+                      fontWeight: 700,
+                      fontSize: 20,
+                    }}
+                  >
+                    {creator.initial}
+                  </div>
+                )}
+              </button>
               <div className="flex-1 min-w-0">
-                <h2
+                <button
+                  onClick={() => navigate(`/creators/${creator.slug}`)}
+                  className="text-left hover:text-accent transition-colors duration-150"
                   style={{
                     fontFamily: '"Space Grotesk", sans-serif',
                     fontWeight: 700,
@@ -91,7 +101,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                   }}
                 >
                   {creator.name}
-                </h2>
+                </button>
                 <p className="text-[12px] text-muted mt-0.5">
                   {creator.handle} · {fmtSubs(creator.subscribers)} subscribers
                 </p>

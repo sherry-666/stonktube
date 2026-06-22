@@ -169,6 +169,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
         return {
           videoId: v._id.toString(),
+          creatorSlug: v.creator.slug,
           creatorName: v.creator.name,
           creatorHandle: v.creator.handle,
           creatorColor: v.creator.brandColor,

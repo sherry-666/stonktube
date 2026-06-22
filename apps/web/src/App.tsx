@@ -5,6 +5,7 @@ import Dashboard from './screens/Dashboard.js'
 import Stocks from './screens/Stocks.js'
 import StockDetail from './screens/StockDetail.js'
 import Creators from './screens/Creators.js'
+import CreatorProfile from './screens/CreatorProfile.js'
 
 export default function App() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -33,8 +34,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard onSummaryClick={handleSummaryClick} />} />
           <Route path="/stocks" element={<Stocks />} />
-          <Route path="/stocks/:ticker" element={<StockDetail />} />
+          <Route path="/stocks/:ticker" element={<StockDetail onSummaryClick={handleSummaryClick} />} />
           <Route path="/creators" element={<Creators onSummaryClick={handleSummaryClick} />} />
+          <Route path="/creators/:slug" element={<CreatorProfile onSummaryClick={handleSummaryClick} />} />
         </Routes>
       </main>
       <VideoSummaryModal videoId={openVideoId} onClose={handleModalClose} />

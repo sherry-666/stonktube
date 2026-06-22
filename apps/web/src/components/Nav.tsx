@@ -196,7 +196,7 @@ export default function Nav() {
                       {results!.creators.map(c => (
                         <button
                           key={c.slug}
-                          onMouseDown={() => go('/creators')}
+                          onMouseDown={() => go(`/creators/${c.slug}`)}
                           className="flex items-center gap-3 w-full px-3 py-2.5 text-left transition-colors duration-100"
                           style={{ background: 'transparent' }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#F8F8F4')}
