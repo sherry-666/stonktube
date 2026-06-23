@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Video } from '@stonktube/db'
+import { mentionExpressesView } from '@stonktube/shared'
 import { Types } from 'mongoose'
 
 const videos: FastifyPluginAsync = async (fastify) => {
@@ -15,12 +16,18 @@ const videos: FastifyPluginAsync = async (fastify) => {
 
     const primaryMention = video.mentions.find((m) => m.isPrimary)
 
-    const mentions = video.mentions.map((m) => ({
-      ticker: m.ticker,
-      stockId: m.stockId.toString(),
-      sentiment: m.sentiment,
-      note: m.note,
-    }))
+    // Key takeaways are the creator's sentiment, so only surface mentions that
+    // express their own view. Bare factual recaps (price moves, earnings, news,
+    // contextual name-drops) carry stance FACTUAL and are filtered out — same
+    // gate the stock/creator sentiment stats use (mentionExpressesView).
+    const mentions = video.mentions
+      .filter((m) => mentionExpressesView(m))
+      .map((m) => ({
+        ticker: m.ticker,
+        stockId: m.stockId.toString(),
+        sentiment: m.sentiment,
+        note: m.note,
+      }))
 
     return reply.send({
       id: video._id.toString(),
