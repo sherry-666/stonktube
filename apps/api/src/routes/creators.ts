@@ -91,6 +91,9 @@ const creators: FastifyPluginAsync = async (fastify) => {
     for (const v of videos) {
       for (const m of v.mentions) {
         if (!mentionQualifies(m)) continue
+        // covers chips and the bull/neutral/bear counts both display sentiment,
+        // so only the creator's own views count — skip bare factual recaps.
+        if (!mentionExpressesView(m)) continue
         if (!covers.has(m.ticker)) {
           covers.set(m.ticker, {
             ticker: m.ticker,
@@ -98,8 +101,6 @@ const creators: FastifyPluginAsync = async (fastify) => {
             sentiment: m.sentiment,
           })
         }
-        // Only the creator's own views feed bull/neutral/bear counts.
-        if (!mentionExpressesView(m)) continue
         if (m.sentiment === 'BULLISH') bullCount++
         else if (m.sentiment === 'NEUTRAL') neutralCount++
         else if (m.sentiment === 'BEARISH') bearCount++

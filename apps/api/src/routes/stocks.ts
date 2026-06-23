@@ -164,28 +164,36 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         verdict: verdict(bullishPct),
       }
 
-      // Recent coverage: all videos sorted by publishedAt desc, limit 10
-      const recentCoverage = videos.slice(0, 10).map((v) => {
-        const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-        return {
-          videoId: v._id.toString(),
-          creatorSlug: v.creator.slug,
-          creatorName: v.creator.name,
-          creatorHandle: v.creator.handle,
-          creatorColor: v.creator.brandColor,
-          creatorInitial: v.creator.initial,
-          creatorAvatarUrl: v.creator.avatarUrl,
-          publishedAt: v.publishedAt.toISOString(),
-          title: v.title,
-          url: v.url,
-          // The creator's own take on THIS stock in the video, beyond the title.
-          note: mention?.note ?? '',
-          sentiment: mention?.sentiment ?? 'NEUTRAL',
-          stance: mention?.stance,
-          priceAtMention: mention?.priceAtMention,
-          priceStr: fmtPrice(mention?.priceAtMention),
-        }
-      })
+      // Recent coverage: videos sorted by publishedAt desc, limit 10. Each row
+      // shows the creator's sentiment on this stock, so only include videos
+      // whose mention of it expresses a view (skip bare factual recaps).
+      const recentCoverage = videos
+        .filter((v) => {
+          const m = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
+          return m != null && mentionExpressesView(m)
+        })
+        .slice(0, 10)
+        .map((v) => {
+          const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
+          return {
+            videoId: v._id.toString(),
+            creatorSlug: v.creator.slug,
+            creatorName: v.creator.name,
+            creatorHandle: v.creator.handle,
+            creatorColor: v.creator.brandColor,
+            creatorInitial: v.creator.initial,
+            creatorAvatarUrl: v.creator.avatarUrl,
+            publishedAt: v.publishedAt.toISOString(),
+            title: v.title,
+            url: v.url,
+            // The creator's own take on THIS stock in the video, beyond the title.
+            note: mention?.note ?? '',
+            sentiment: mention?.sentiment ?? 'NEUTRAL',
+            stance: mention?.stance,
+            priceAtMention: mention?.priceAtMention,
+            priceStr: fmtPrice(mention?.priceAtMention),
+          }
+        })
 
       const trackedBy = new Set(
         videos
@@ -264,12 +272,10 @@ const stocks: FastifyPluginAsync = async (fastify) => {
 
       const markers = videos.flatMap((v) => {
         const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-        // Show all BULLISH/BEARISH mentions that clear the relevance/confidence bar —
-        // both OPINION and FACTUAL. The mentionExpressesView gate stays on sentiment
-        // percentages only (rollup, overallSentiment) where we only want the creator's
-        // own forward-looking view to count. Chart markers are purely for visualization
-        // of when a creator talked about the stock and what tone they used.
-        if (!mention || !mentionQualifies(mention)) return []
+        // Markers carry a sentiment tone, so only plot the creator's own views —
+        // skip bare factual recaps (price moves/news), matching every other
+        // sentiment surface in the UI (rollup, overallSentiment, coverage, chips).
+        if (!mention || !mentionQualifies(mention) || !mentionExpressesView(mention)) return []
         const price = mention.priceAtMention
         return [{
           videoId: v._id.toString(),
