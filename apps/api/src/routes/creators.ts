@@ -39,11 +39,13 @@ const creators: FastifyPluginAsync = async (fastify) => {
           thumbnailUrl: v.thumbnailUrl,
           publishedAt: v.publishedAt.toISOString(),
           durationSeconds: v.durationSeconds,
-          mentions: v.mentions.map((m) => ({
-            ticker: m.ticker,
-            sentiment: m.sentiment,
-            stockId: m.stockId.toString(),
-          })),
+          mentions: v.mentions
+            .filter((m) => mentionExpressesView(m))
+            .map((m) => ({
+              ticker: m.ticker,
+              sentiment: m.sentiment,
+              stockId: m.stockId.toString(),
+            })),
         }))
 
         return {
@@ -116,7 +118,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
       durationSeconds: v.durationSeconds,
       summary: v.summary ?? '',
       mentions: v.mentions
-        .filter((m) => mentionQualifies(m))
+        .filter((m) => mentionQualifies(m) && mentionExpressesView(m))
         .map((m) => ({
           ticker: m.ticker,
           sentiment: m.sentiment,

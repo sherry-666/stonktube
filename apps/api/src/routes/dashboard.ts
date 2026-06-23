@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video } from '@stonktube/db'
+import { mentionExpressesView } from '@stonktube/shared'
 
 // Strip Yahoo Finance suffix for crypto tickers (BTC-USD → BTC)
 function displayTicker(ticker: string): string {
@@ -72,11 +73,15 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         },
         primaryTicker: primaryMention?.ticker ?? '',
         thumbBg: v.creator.brandColor,
-        mentions: v.mentions.map((m) => ({
-          ticker: m.ticker,
-          sentiment: m.sentiment,
-          stockId: m.stockId.toString(),
-        })),
+        // Sentiment-colored chips reflect the creator's view, so drop bare
+        // factual recaps (stance FACTUAL) — same gate as the sentiment stats.
+        mentions: v.mentions
+          .filter((m) => mentionExpressesView(m))
+          .map((m) => ({
+            ticker: m.ticker,
+            sentiment: m.sentiment,
+            stockId: m.stockId.toString(),
+          })),
       }
     })
 
