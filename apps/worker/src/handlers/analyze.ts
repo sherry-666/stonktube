@@ -86,7 +86,7 @@ export const EXTRACT_TOOL = {
               type: SchemaType.STRING,
               enum: ['OPINION', 'FACTUAL'],
               description:
-                "OPINION=the creator expresses their OWN forward-looking view, prediction, recommendation, or judgment about the asset (e.g. 'I'm bullish', 'this will run', 'overvalued', 'I'd buy here'). FACTUAL=anything else: reporting price moves/earnings/news, historical references ('GE was huge in 2000'), contextual mentions ('TSLA is part of Musk's ecosystem'), citing what another analyst or person said ('Chanos thinks...', 'Klarman invested in...'), or any statement that does not reflect the creator's own forward-looking view.",
+                "OPINION=the creator makes a forward-looking assessment: technical prediction ('could pull back', 'no bottoming pattern'), recommendation ('I'd buy here', 'this is a buying opportunity'), investment judgment ('overvalued', 'limits its long-term investment appeal', 'attractive entry'), or prediction about future flows/demand ('will attract passive investment', 'index inclusion drives buying'). Long-term potential assessments ('strong long-term potential', 'limited upside') are also OPINION. Counts as OPINION even when citing data or institutions. FACTUAL=purely reporting: past price moves, news/earnings, historical references, or explicitly quoting a named third party ('Goldman says...', 'Chanos thinks...'). Key test: is the creator judging or predicting the asset's future direction, value, or investment case? → OPINION. Just reporting what already happened or what someone else said? → FACTUAL.",
             },
             confidence: {
               type: SchemaType.NUMBER,
@@ -136,6 +136,8 @@ export const EXTRACT_TOOL = {
 export function buildAnalysisPrompt(trackedList: string, title: string, transcriptText: string): string {
   return `You are analyzing a financial YouTube video to extract stock/asset mentions.
 
+IMPORTANT: If this video is NOT about stocks, crypto, financial markets, investing, or macroeconomics — for example if it is primarily about aviation incidents, celebrity news, political scandals, true crime, sports, cooking, or other non-financial topics — call extract_stock_mentions with an empty mentions array and set the summary to "Off-topic: not a finance/investing video." Do not force financial analysis onto unrelated content.
+
 Tracked tickers (use these for the mentions array): ${trackedList}
 
 For tickers in the tracked list: add them to mentions with full sentiment analysis.
@@ -145,17 +147,22 @@ Set "relevance" honestly per the definitions, and be conservative: most assets a
 creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
 when the creator gives real reasoning or spends meaningful time on the asset.
 
-Set "stance" per mention. FACTUAL covers a wide range — use it for:
-- Price/market moves: "NVDA fell 13%", "gold gained then dropped after hours"
-- Historical references: "GE was a profitable giant in the 2000 dot-com era"
-- Contextual/ecosystem mentions: "TSLA is part of Musk's ecosystem supporting xAI"
-- Reporting another person's view: "Chanos believes...", "Klarman invested in...", "the Fed said..."
+Set "stance" per mention. FACTUAL is for pure reporting with no creator prediction:
+- Past price/market moves: "NVDA fell 13%", "gold dropped after hours"
+- Historical references: "GE was huge in the 2000 dot-com era"
+- Contextual/ecosystem mentions: "TSLA is part of Musk's ecosystem"
+- Explicitly attributing a view to a named third party: "Goldman says...", "Chanos thinks...", "the Fed said..."
 - News/announcements: earnings results, product launches, acquisitions
 
-Only use OPINION when the creator is expressing THEIR OWN forward-looking view,
-prediction, recommendation, or judgment — "I think NVDA will run", "I'm bearish on
-this", "I'd buy here", "this looks overvalued to me". If the creator is reporting,
-describing, or citing — even in strong language — it is FACTUAL.
+Use OPINION for the creator's own forward-looking assessment — this includes:
+- Technical analysis predictions: "could see a significant pullback", "no bottoming pattern yet", "very resilient at this support level"
+- Forward-looking projections with no named source: "expected to see 25% upside", "this dip is a buying opportunity"
+- Investment appeal or suitability judgments: "limits its long-term investment appeal", "makes it a good entry point", "not worth holding long-term", "attractive valuation"
+- Predictions about future capital flows or demand: "will attract passive investment flows", "institutions will rotate into this", "index inclusion will drive buying"
+- Long-term potential assessments: "has strong long-term potential", "a solid long-term hold", "limited upside from here" — any claim about what an asset's future holds, even when framed analytically
+- Creator endorsing a bullish/bearish thesis, even when citing supporting data or institutions: if the creator presents a view as a buy/sell signal and agrees with it, that is their OPINION regardless of whether they also cite institutional backing
+
+Key test: is the creator making a judgment or prediction about the asset's future direction, value, or investment case? → OPINION. Are they purely reporting what already happened or quoting a named third party? → FACTUAL.
 
 Video title: ${title}
 

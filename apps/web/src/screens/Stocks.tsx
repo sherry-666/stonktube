@@ -212,7 +212,6 @@ export default function Stocks() {
                     bullCount={stock.sentiment.bullCount}
                     neutralCount={stock.sentiment.neutralCount}
                     bearCount={stock.sentiment.bearCount}
-                    bullishPct={stock.sentiment.bullishPct}
                   />
                 </div>
               )}

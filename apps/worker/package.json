@@ -12,7 +12,9 @@
     "reanalyze": "tsc && node dist/reanalyze.js",
     "backfill-durations": "tsc && node dist/backfill-durations.js",
     "backfill-channel": "tsc && node dist/backfill-channel.js",
-    "retranscribe-creator": "tsc && node dist/retranscribe-creator.js"
+    "retranscribe-creator": "tsc && node dist/retranscribe-creator.js",
+    "earliest-per-creator": "tsc && node dist/earliest-per-creator.js",
+    "debug-tom-nash": "tsc && node dist/debug-tom-nash.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

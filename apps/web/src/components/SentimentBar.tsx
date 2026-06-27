@@ -2,10 +2,9 @@ interface SentimentBarProps {
   bullCount: number
   neutralCount: number
   bearCount: number
-  bullishPct: number
 }
 
-export default function SentimentBar({ bullCount, neutralCount, bearCount, bullishPct }: SentimentBarProps) {
+export default function SentimentBar({ bullCount, neutralCount, bearCount }: SentimentBarProps) {
   const total = bullCount + neutralCount + bearCount
   const bullPct = total > 0 ? (bullCount / total) * 100 : 0
   const neutralPct = total > 0 ? (neutralCount / total) * 100 : 0
@@ -30,9 +29,19 @@ export default function SentimentBar({ bullCount, neutralCount, bearCount, bulli
           <div style={{ width: '100%', background: '#ECEBE4' }} />
         )}
       </div>
-      <div className="mt-1 text-[11px] font-medium" style={{ color: '#0F9D63' }}>
-        {bullishPct.toFixed(0)}% bullish
-      </div>
+      {(() => {
+        const dominant =
+          bullPct >= neutralPct && bullPct >= bearPct
+            ? { pct: bullPct, label: 'bullish', color: '#0F9D63' }
+            : bearPct >= neutralPct
+              ? { pct: bearPct, label: 'bearish', color: '#E5484D' }
+              : { pct: neutralPct, label: 'neutral', color: '#D9B26A' }
+        return (
+          <div className="mt-1 text-[11px] font-medium" style={{ color: dominant.color }}>
+            {total > 0 ? `${dominant.pct.toFixed(0)}% ${dominant.label}` : '—'}
+          </div>
+        )
+      })()}
     </div>
   )
 }

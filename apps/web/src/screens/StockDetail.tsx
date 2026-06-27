@@ -842,7 +842,6 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               bullCount={overallSentiment.bullCount}
               neutralCount={overallSentiment.neutralCount}
               bearCount={overallSentiment.bearCount}
-              bullishPct={overallSentiment.bullishPct}
             />
 
             {/* Legend */}

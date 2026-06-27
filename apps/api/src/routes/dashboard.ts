@@ -49,6 +49,14 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         dayChangePct: s.stats?.dayChangePct ?? 0,
         dayChangeStr: fmtPct(s.stats?.dayChangePct),
         bullishPct: s.stats?.bullishPct ?? 0,
+        neutralPct: (() => {
+          const t = (s.stats?.bullCount ?? 0) + (s.stats?.neutralCount ?? 0) + (s.stats?.bearCount ?? 0)
+          return t > 0 ? Math.round(((s.stats?.neutralCount ?? 0) / t) * 100) : 0
+        })(),
+        bearishPct: (() => {
+          const t = (s.stats?.bullCount ?? 0) + (s.stats?.neutralCount ?? 0) + (s.stats?.bearCount ?? 0)
+          return t > 0 ? Math.round(((s.stats?.bearCount ?? 0) / t) * 100) : 0
+        })(),
         recentRatings: s.stats?.recentRatings ?? 0,
         sparkline: s.stats?.sparkline ?? [],
       }))

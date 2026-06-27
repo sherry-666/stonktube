@@ -119,7 +119,6 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
               bullCount={creator.bullCount}
               neutralCount={creator.neutralCount}
               bearCount={creator.bearCount}
-              bullishPct={creator.bullishPct}
             />
           </div>
         )}

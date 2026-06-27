@@ -78,17 +78,26 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </div>
                   <div style={{ fontSize: 12, color: '#9A9BA4', marginTop: 1 }}>{pill.name}</div>
                 </div>
-                <span
-                  className="text-[11px] font-semibold px-2 py-0.5"
-                  style={{
-                    background: pill.recentRatings > 0 ? '#E7F6EE' : '#F0EFE8',
-                    color: pill.recentRatings > 0 ? '#0F9D63' : '#9A9BA4',
-                    borderRadius: 8,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {pill.recentRatings > 0 ? `${pill.bullishPct.toFixed(0)}% bullish` : '— no recent calls'}
-                </span>
+                {(() => {
+                  if (!pill.recentRatings) {
+                    return (
+                      <span className="text-[11px] font-semibold px-2 py-0.5" style={{ background: '#F0EFE8', color: '#9A9BA4', borderRadius: 8, whiteSpace: 'nowrap' }}>
+                        — no recent calls
+                      </span>
+                    )
+                  }
+                  const dominant =
+                    pill.bullishPct >= pill.neutralPct && pill.bullishPct >= pill.bearishPct
+                      ? { pct: pill.bullishPct, label: 'bullish', bg: '#E7F6EE', fg: '#0F9D63' }
+                      : pill.bearishPct >= pill.neutralPct
+                        ? { pct: pill.bearishPct, label: 'bearish', bg: '#FDECEA', fg: '#E5484D' }
+                        : { pct: pill.neutralPct, label: 'neutral', bg: '#F0EFE8', fg: '#9A9BA4' }
+                  return (
+                    <span className="text-[11px] font-semibold px-2 py-0.5" style={{ background: dominant.bg, color: dominant.fg, borderRadius: 8, whiteSpace: 'nowrap' }}>
+                      {dominant.pct.toFixed(0)}% {dominant.label}
+                    </span>
+                  )
+                })()}
               </div>
 
               {/* Sparkline — fills pill width */}

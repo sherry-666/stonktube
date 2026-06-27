@@ -6,13 +6,22 @@ config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env')
 import { connectDB, disconnectDB, Video } from '@stonktube/db'
 import { transcribeQueue } from '@stonktube/pipeline'
 
-// One-off: re-enqueue transcribe for videos that never got a transcript
-// (e.g. older yt-dlp failures). The transcribe handler now uses Gemini's
-// native YouTube ingestion, so these can be reprocessed.
+// Enqueue pending/failed videos for transcription.
+// CREATOR_SLUG — limit to one creator (e.g. "bella"). Omit to target all.
+// LIMIT        — max videos to enqueue in this run (e.g. "100"). Omit for all matching.
+const CREATOR_SLUG = process.env.CREATOR_SLUG
+const LIMIT = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined
+
 await connectDB()
 
-const videos = await Video.find({ transcriptStatus: { $in: ['PENDING', 'SKIPPED', 'FAILED'] } })
-console.log(`Re-enqueuing transcribe for ${videos.length} videos`)
+const filter: Record<string, unknown> = { transcriptStatus: { $in: ['PENDING', 'SKIPPED', 'FAILED'] } }
+if (CREATOR_SLUG) filter['creator.slug'] = CREATOR_SLUG
+
+const query = Video.find(filter).sort({ publishedAt: -1 })
+if (LIMIT) query.limit(LIMIT)
+const videos = await query
+
+console.log(`Enqueuing ${videos.length} videos${CREATOR_SLUG ? ` for ${CREATOR_SLUG}` : ''}${LIMIT ? ` (limit ${LIMIT})` : ''}`)
 
 for (const v of videos) {
   await transcribeQueue.add(

@@ -10,7 +10,8 @@ import pino from 'pino'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 const YT_API = 'https://www.googleapis.com/youtube/v3'
-const SINCE = new Date('2026-04-01T00:00:00.000Z')
+const SINCE = new Date(process.env.SINCE_DATE ?? '2026-04-01T00:00:00.000Z')
+const SKIP_ENQUEUE = process.env.SKIP_ENQUEUE === 'true'
 
 // Required: set CREATOR_SLUG env var to target a specific creator (e.g. "meitounews").
 // Leave unset to backfill all active creators.
@@ -104,7 +105,7 @@ for (const creator of creators) {
     const items = await fetchVideosSince(playlistId, SINCE)
     const durations = await fetchDurations(items.map(i => i.snippet.resourceId.videoId))
 
-    log.info({ name: creator.name, found: items.length }, 'Videos found since Apr 2026')
+    log.info({ name: creator.name, found: items.length, since: SINCE.toISOString().slice(0, 10) }, 'Videos found')
 
     let created = 0
     let skippedShort = 0
@@ -148,16 +149,20 @@ for (const creator of creators) {
       )
 
       if (!existing) {
-        const video = await Video.findOne({ youtubeVideoId })
-        if (video) {
-          await transcribeQueue.add(
-            'transcribe',
-            { videoId: video._id.toString() },
-            { jobId: `transcribe-${video._id}-backfill`, attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
-          )
-          log.info({ title: title.slice(0, 70), publishedAt, durationSeconds }, 'Enqueued')
-          created++
+        if (!SKIP_ENQUEUE) {
+          const video = await Video.findOne({ youtubeVideoId })
+          if (video) {
+            await transcribeQueue.add(
+              'transcribe',
+              { videoId: video._id.toString() },
+              { jobId: `transcribe-${video._id}-backfill`, attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
+            )
+            log.info({ title: title.slice(0, 70), publishedAt, durationSeconds }, 'Inserted + enqueued')
+          }
+        } else {
+          log.info({ title: title.slice(0, 70), publishedAt, durationSeconds }, 'Inserted (enqueue skipped)')
         }
+        created++
       } else {
         totalSkipped++
       }
@@ -175,5 +180,5 @@ for (const creator of creators) {
 
 log.info({ totalCreated, totalSkipped, totalShort }, 'Backfill complete')
 
-await transcribeQueue.close()
+if (!SKIP_ENQUEUE) await transcribeQueue.close()
 await disconnectDB()
