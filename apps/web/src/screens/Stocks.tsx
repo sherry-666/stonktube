@@ -209,9 +209,9 @@ export default function Stocks() {
               {!isMobile && (
                 <div>
                   <SentimentBar
-                    bullCount={stock.sentiment.bullCount}
-                    neutralCount={stock.sentiment.neutralCount}
-                    bearCount={stock.sentiment.bearCount}
+                    bullishPct={stock.sentiment.bullishPct}
+                    neutralPct={stock.sentiment.neutralPct}
+                    bearishPct={stock.sentiment.bearishPct}
                   />
                 </div>
               )}

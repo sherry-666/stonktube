@@ -839,9 +839,9 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
             <p className="text-[13px] text-muted mb-4">of creators are bullish</p>
 
             <SentimentBar
-              bullCount={overallSentiment.bullCount}
-              neutralCount={overallSentiment.neutralCount}
-              bearCount={overallSentiment.bearCount}
+              bullishPct={overallSentiment.bullishPct}
+              neutralPct={overallSentiment.neutralPct}
+              bearishPct={overallSentiment.bearishPct}
             />
 
             {/* Legend */}

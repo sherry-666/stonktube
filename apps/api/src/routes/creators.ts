@@ -109,6 +109,8 @@ const creators: FastifyPluginAsync = async (fastify) => {
 
     const total = bullCount + neutralCount + bearCount
     const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
+    const neutralPct = total > 0 ? Math.round((neutralCount / total) * 100) : 0
+    const bearishPct = total > 0 ? Math.round((bearCount / total) * 100) : 0
 
     const calls = videos.slice(0, 30).map((v) => ({
       videoId: v._id.toString(),
@@ -139,6 +141,8 @@ const creators: FastifyPluginAsync = async (fastify) => {
       subscribers: creator.subscriberCount,
       videosTracked: videos.length,
       bullishPct,
+      neutralPct,
+      bearishPct,
       bullCount,
       neutralCount,
       bearCount,

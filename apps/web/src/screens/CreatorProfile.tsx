@@ -116,9 +116,9 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
               </span>
             </div>
             <SentimentBar
-              bullCount={creator.bullCount}
-              neutralCount={creator.neutralCount}
-              bearCount={creator.bearCount}
+              bullishPct={creator.bullishPct}
+              neutralPct={creator.neutralPct}
+              bearishPct={creator.bearishPct}
             />
           </div>
         )}

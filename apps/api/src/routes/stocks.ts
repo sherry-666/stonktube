@@ -93,6 +93,9 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         neutralCount: s.stats?.neutralCount ?? 0,
         bearCount: s.stats?.bearCount ?? 0,
         bullishPct: s.stats?.bullishPct ?? 0,
+        neutralPct: s.stats?.neutralPct ?? 0,
+        bearishPct: s.stats?.bearishPct ?? 0,
+        recentRatings: s.stats?.recentRatings ?? 0,
       },
       mentions30d: s.stats?.mentions30d ?? 0,
       distinctCreators: s.stats?.distinctCreators ?? 0,
@@ -154,6 +157,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
 
       const total = bullCount + neutralCount + bearCount
       const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
+      const neutralPct = total > 0 ? Math.round((neutralCount / total) * 100) : 0
+      const bearishPct = total > 0 ? Math.round((bearCount / total) * 100) : 0
 
       const overallSentiment = {
         total,
@@ -161,6 +166,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         neutralCount,
         bearCount,
         bullishPct,
+        neutralPct,
+        bearishPct,
         verdict: verdict(bullishPct),
       }
 

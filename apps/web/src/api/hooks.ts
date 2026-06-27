@@ -84,7 +84,7 @@ export interface StockRow {
   dayChangeStr: string
   change30dPct: number
   sparkline: number[]
-  sentiment: { bullCount: number; neutralCount: number; bearCount: number; bullishPct: number }
+  sentiment: { bullCount: number; neutralCount: number; bearCount: number; bullishPct: number; neutralPct: number; bearishPct: number; recentRatings: number }
   mentions30d: number
   distinctCreators: number
 }
@@ -140,6 +140,8 @@ export interface OverallSentiment {
   neutralCount: number
   bearCount: number
   bullishPct: number
+  neutralPct: number
+  bearishPct: number
   total: number
   verdict: string
 }
@@ -248,6 +250,8 @@ export interface CreatorProfile {
   subscribers?: number
   videosTracked: number
   bullishPct: number
+  neutralPct: number
+  bearishPct: number
   bullCount: number
   neutralCount: number
   bearCount: number
