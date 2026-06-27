@@ -70,6 +70,8 @@ export async function rebuildStats(stockId?: string): Promise<void> {
 
     const total7d = bull7d + neutral7d + bear7d
     const bullishPct = total7d > 0 ? Math.round((bull7d / total7d) * 100) : 0
+    const neutralPct = total7d > 0 ? Math.round((neutral7d / total7d) * 100) : 0
+    const bearishPct = total7d > 0 ? Math.round((bear7d / total7d) * 100) : 0
     const distinctCreators = creatorSet.size
 
     // ── 2. Price series ───────────────────────────────────────────────────────
@@ -148,6 +150,8 @@ export async function rebuildStats(stockId?: string): Promise<void> {
           neutralCount,
           bearCount,
           bullishPct,
+          neutralPct,
+          bearishPct,
           recentRatings: total7d,
           latestClose,
           dayChangePct,
