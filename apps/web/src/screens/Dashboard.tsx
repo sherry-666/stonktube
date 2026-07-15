@@ -1,18 +1,17 @@
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDashboard } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import VideoCard from '../components/VideoCard.js'
 import type { VideoCardDTO } from '../components/VideoCard.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
-import { useLang } from '../hooks/useLang.js'
+import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
 interface DashboardProps {
   onSummaryClick: (id: string) => void
 }
 
 export default function Dashboard({ onSummaryClick }: DashboardProps) {
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data, isLoading, error } = useDashboard(lang)

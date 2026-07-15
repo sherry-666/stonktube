@@ -1,10 +1,9 @@
 import { Play } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
-import { useLang } from '../hooks/useLang.js'
+import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
 interface CreatorsProps {
   onSummaryClick: (id: string) => void
@@ -14,7 +13,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data, isLoading, error } = useCreators(lang)
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creators.loading')}</div>

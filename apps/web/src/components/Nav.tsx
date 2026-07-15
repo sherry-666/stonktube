@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../api/client.js'
 import StockIcon from './StockIcon.js'
-import { useLang, LANGS } from '../hooks/useLang.js'
+import { useLang, useLangNavigate, langPath, LANGS } from '../hooks/useLang.js'
 
 interface SearchStock {
   ticker: string
@@ -30,7 +30,7 @@ interface SearchResults {
 }
 
 export default function Nav() {
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang, switchLang } = useLang()
   const [query, setQuery] = useState('')
@@ -114,9 +114,9 @@ export default function Nav() {
 
         {/* Nav links */}
         <nav className="order-3 flex w-full items-center gap-1 md:order-2 md:w-auto">
-          <NavLink to="/" end className={linkClass}>{t('nav.dashboard')}</NavLink>
-          <NavLink to="/stocks" className={linkClass}>{t('nav.stocks')}</NavLink>
-          <NavLink to="/creators" className={linkClass}>{t('nav.creators')}</NavLink>
+          <NavLink to={langPath('/', lang)} end className={linkClass}>{t('nav.dashboard')}</NavLink>
+          <NavLink to={langPath('/stocks', lang)} className={linkClass}>{t('nav.stocks')}</NavLink>
+          <NavLink to={langPath('/creators', lang)} className={linkClass}>{t('nav.creators')}</NavLink>
         </nav>
 
         {/* Right side: search + lang switcher */}

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
@@ -9,7 +9,7 @@ import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
 import type { Marker } from '../api/hooks.js'
-import { useLang } from '../hooks/useLang.js'
+import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
 const TF_OPTIONS = [
   { label: '1M', value: '1M' },
@@ -60,7 +60,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
   onMouseLeave: () => void
   isMobile?: boolean
 }) {
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
   const { t } = useTranslation()
   const multi = group.markers.length > 1
   return (
@@ -278,7 +278,7 @@ interface StockDetailProps {
 
 export default function StockDetail({ onSummaryClick }: StockDetailProps) {
   const { ticker = '' } = useParams<{ ticker: string }>()
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
   const [tf, setTf] = useState('3M')

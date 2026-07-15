@@ -1,12 +1,12 @@
 import { Play } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCreator } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import SentimentBar from '../components/SentimentBar.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { bullishPctToVerdict } from '@stonktube/shared'
-import { useLang } from '../hooks/useLang.js'
+import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
 interface CreatorProfileProps {
   onSummaryClick: (id: string) => void
@@ -14,7 +14,7 @@ interface CreatorProfileProps {
 
 export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) {
   const { slug = '' } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data: creator, isLoading, error } = useCreator(slug, lang)
