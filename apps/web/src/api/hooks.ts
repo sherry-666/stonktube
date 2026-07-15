@@ -95,10 +95,10 @@ export interface StockRow {
   distinctCreators: number
 }
 
-export function useStocks(sort: string) {
+export function useStocks(sort: string, lang: string) {
   return useQuery<StockRow[]>({
-    queryKey: ['stocks', sort],
-    queryFn: () => apiFetch<StockRow[]>(`/api/stocks?sort=${sort}`),
+    queryKey: ['stocks', sort, lang],
+    queryFn: () => apiFetch<StockRow[]>(withLang(`/api/stocks?sort=${sort}`, lang)),
   })
 }
 

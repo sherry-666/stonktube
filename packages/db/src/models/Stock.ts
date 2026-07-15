@@ -1,6 +1,11 @@
 import { Schema, model, Document } from 'mongoose'
 import type { StockStats } from '@stonktube/shared'
 
+export interface IStockTranslationLang {
+  name?: string
+  sector?: string
+}
+
 export interface IStock extends Document {
   ticker: string
   /**
@@ -17,6 +22,7 @@ export interface IStock extends Document {
   initials: string
   logoUrl?: string
   stats: StockStats
+  translations?: { zh?: IStockTranslationLang; ko?: IStockTranslationLang }
   createdAt: Date
   updatedAt: Date
 }
@@ -41,6 +47,11 @@ const StockStatsSchema = new Schema<StockStats>(
   { _id: false },
 )
 
+const StockTranslationLangSchema = new Schema(
+  { name: String, sector: String },
+  { _id: false },
+)
+
 const StockSchema = new Schema<IStock>(
   {
     ticker: { type: String, required: true, unique: true },
@@ -54,6 +65,10 @@ const StockSchema = new Schema<IStock>(
     initials: { type: String, required: true },
     logoUrl: String,
     stats: { type: StockStatsSchema, default: () => ({}) },
+    translations: {
+      type: new Schema({ zh: StockTranslationLangSchema, ko: StockTranslationLangSchema }, { _id: false }),
+      default: {},
+    },
   },
   { timestamps: true },
 )

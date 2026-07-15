@@ -3,6 +3,7 @@ import { Stock, Video, getPrices } from '@stonktube/db'
 import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
 import { Types } from 'mongoose'
 import { getVideoTranslation } from '../lib/videoTranslation.js'
+import { getStockTranslationsBatch, getStockTranslation } from '../lib/stockTranslation.js'
 
 function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
@@ -39,9 +40,10 @@ const TF_DAYS: Record<string, number> = {
 }
 
 const stocks: FastifyPluginAsync = async (fastify) => {
-  // GET /api/stocks?sort=mentions|bull|chg|price|ticker
-  fastify.get<{ Querystring: { sort?: string } }>('/api/stocks', async (req, reply) => {
+  // GET /api/stocks?sort=mentions|bull|chg|price|ticker&lang=en|zh|ko
+  fastify.get<{ Querystring: { sort?: string; lang?: string } }>('/api/stocks', async (req, reply) => {
     const sort = req.query.sort ?? 'mentions'
+    const lang = req.query.lang ?? 'en'
     const all = await Stock.find({}).lean()
 
     // Value + whether the stock actually has data for the active sort, so
@@ -72,13 +74,15 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       return B.v - A.v
     })
 
-    const rows = sorted.map((s) => ({
+    const names = await getStockTranslationsBatch(sorted, lang)
+
+    const rows = sorted.map((s, i) => ({
       // Raw ticker — unique per stock; use as a stable React key. (The display
       // ticker strips -USD and can collide, e.g. XAG vs XAG-USD.)
       id: s.ticker,
       ticker: displayTicker(s.ticker),
-      name: s.name,
-      sector: s.sector,
+      name: names[i].name,
+      sector: names[i].sector,
       isPrivate: s.isPrivate,
       brandColor: s.brandColor,
       logoBg: s.logoBg,
@@ -217,11 +221,13 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           .map((v) => v.creatorId.toString()),
       ).size
 
+      const stockNames = await getStockTranslation(stock, lang)
+
       return reply.send({
         stock: {
           ticker: displayTicker(stock.ticker),
-          name: stock.name,
-          sector: stock.sector,
+          name: stockNames.name,
+          sector: stockNames.sector,
           isPrivate: stock.isPrivate,
           brandColor: stock.brandColor,
           logoBg: stock.logoBg,

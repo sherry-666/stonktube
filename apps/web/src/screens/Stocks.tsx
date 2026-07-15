@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStocks } from '../api/hooks.js'
+import { useLang } from '../hooks/useLang.js'
 import Sparkline from '../components/Sparkline.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
@@ -13,8 +14,9 @@ const COL_GRID_MOBILE = '1fr 1fr 0.8fr'
 export default function Stocks() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { lang } = useLang()
   const [sort, setSort] = useState('mentions')
-  const { data, isLoading, error } = useStocks(sort)
+  const { data, isLoading, error } = useStocks(sort, lang)
 
   const SORT_PILLS = [
     { label: t('stocks.sort_mentions'), value: 'mentions' },
