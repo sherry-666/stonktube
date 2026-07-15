@@ -1,5 +1,5 @@
 /**
- * Pre-translate all analyzed videos into zh and ko using Google Translate.
+ * Pre-translate all analyzed videos into zh, ko, and en (for non-English videos).
  * Run once after enabling the Google Cloud Translation API.
  *
  * Usage: GOOGLE_TRANSLATE_API_KEY=... npx tsx src/backfill-translations.ts
@@ -8,17 +8,18 @@ import 'dotenv/config'
 import { connectDB, Video } from '@stonktube/db'
 
 const TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
-const LANGS = ['zh', 'ko'] as const
+const LANGS = ['en', 'zh', 'ko'] as const
 const BATCH_SIZE = 5
 
-async function translateMany(texts: string[], target: string): Promise<string[]> {
+async function translateMany(texts: string[], target: string, source: string): Promise<string[]> {
   const key = process.env.GOOGLE_TRANSLATE_API_KEY
   if (!key) throw new Error('GOOGLE_TRANSLATE_API_KEY not set')
+  if (source === target) return texts
   const nonEmpty = texts.map(t => t || ' ')
   const res = await fetch(`${TRANSLATE_URL}?key=${key}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: nonEmpty, source: 'en', target, format: 'text' }),
+    body: JSON.stringify({ q: nonEmpty, source, target, format: 'text' }),
   })
   if (!res.ok) {
     const body = await res.text()
@@ -35,10 +36,13 @@ async function main() {
   for (const lang of LANGS) {
     console.log(`\n=== Translating to ${lang} ===`)
 
-    const videos = await Video.find({
-      analysisStatus: 'ANALYZED',
-      [`translations.${lang}.title`]: { $exists: false },
-    }).lean()
+    // For 'en': only non-English videos need translation.
+    // For zh/ko: all videos where the translation is missing.
+    const query = lang === 'en'
+      ? { analysisStatus: 'ANALYZED', language: { $exists: true, $ne: 'en' }, [`translations.en.title`]: { $exists: false } }
+      : { analysisStatus: 'ANALYZED', [`translations.${lang}.title`]: { $exists: false } }
+
+    const videos = await Video.find(query).lean()
 
     console.log(`Found ${videos.length} videos missing ${lang} translation`)
 
@@ -46,24 +50,31 @@ async function main() {
       const batch = videos.slice(i, i + BATCH_SIZE)
       await Promise.all(batch.map(async video => {
         try {
+          const videoLang = video.language ?? 'en'
           const tickers = video.mentions.filter(m => m.note).map(m => m.ticker)
-          const notes = video.mentions.filter(m => m.note).map(m => m.note)
-          const texts = [video.title, video.summary ?? '', ...notes]
-          const translated = await translateMany(texts, lang)
+          const noteTexts = video.mentions.filter(m => m.note).map(m => m.note)
 
-          const title = translated[0]
-          const summary = translated[1]
+          // Title and summary: translate from the video's own language
+          const [titleResult, summaryResult] = await translateMany(
+            [video.title, video.summary ?? ''],
+            lang,
+            videoLang,
+          )
+
+          // Notes are always in English
+          const translatedNotes = lang === 'en'
+            ? noteTexts
+            : await translateMany(noteTexts, lang, 'en')
+
           const noteMap: Record<string, string> = {}
-          tickers.forEach((tk, idx) => {
-            noteMap[tk] = translated[2 + idx] ?? ''
-          })
+          tickers.forEach((tk, idx) => { noteMap[tk] = translatedNotes[idx] ?? '' })
 
           await Video.updateOne(
             { _id: video._id },
             {
               $set: {
-                [`translations.${lang}.title`]: title,
-                [`translations.${lang}.summary`]: summary,
+                [`translations.${lang}.title`]: titleResult,
+                [`translations.${lang}.summary`]: summaryResult,
                 [`translations.${lang}.notes`]: noteMap,
               },
             },

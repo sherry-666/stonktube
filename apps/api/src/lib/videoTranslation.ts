@@ -1,29 +1,24 @@
 import { Video } from '@stonktube/db'
 import { translateMany } from './translate.js'
 
-type SupportedLang = 'zh' | 'ko'
-
-function isSupportedLang(lang: string): lang is SupportedLang {
-  return lang === 'zh' || lang === 'ko'
-}
-
-export interface VideoTranslation {
-  title: string
-  summary: string
-  noteByTicker: Record<string, string>
-}
-
 // Accepts the lean() output from Mongoose (FlattenMaps<IVideo>)
 interface LeanVideo {
   _id: unknown
   title: string
   summary?: string
+  language?: string
   mentions: Array<{ ticker: string; note: string }>
   translations?: Record<string, {
     title?: string
     summary?: string
     notes?: Record<string, string> | Map<string, string>
   }>
+}
+
+export interface VideoTranslation {
+  title: string
+  summary: string
+  noteByTicker: Record<string, string>
 }
 
 export async function getVideoTranslation(
@@ -35,7 +30,10 @@ export async function getVideoTranslation(
     if (m.note) englishNotes[m.ticker] = m.note
   }
 
-  if (!isSupportedLang(lang)) {
+  const videoLang = video.language ?? 'en'
+
+  // No translation needed when the video is already in the target language
+  if (videoLang === lang) {
     return {
       title: video.title,
       summary: video.summary ?? '',
@@ -43,8 +41,8 @@ export async function getVideoTranslation(
     }
   }
 
+  // Check cache
   const cached = video.translations?.[lang]
-
   if (cached?.title) {
     const noteByTicker: Record<string, string> = {}
     if (cached.notes) {
@@ -58,16 +56,24 @@ export async function getVideoTranslation(
     }
   }
 
-  // Translate and cache lazily
+  // Title and summary: translate from the video's actual language → target
   const tickers = Object.keys(englishNotes)
-  const textsToTranslate = [video.title, video.summary ?? '', ...tickers.map(tk => englishNotes[tk])]
-  const translated = await translateMany(textsToTranslate, lang)
+  const [titleResult, summaryResult] = await translateMany(
+    [video.title, video.summary ?? ''],
+    lang,
+    videoLang,
+  )
 
-  const title = translated[0] ?? video.title
-  const summary = translated[1] ?? video.summary ?? ''
+  // Notes are always in English regardless of video language
+  const translatedNotes = lang === 'en'
+    ? tickers.map(tk => englishNotes[tk])
+    : await translateMany(tickers.map(tk => englishNotes[tk]), lang, 'en')
+
+  const title = titleResult ?? video.title
+  const summary = summaryResult ?? video.summary ?? ''
   const noteByTicker: Record<string, string> = {}
   tickers.forEach((tk, i) => {
-    noteByTicker[tk] = translated[2 + i] ?? englishNotes[tk]
+    noteByTicker[tk] = translatedNotes[i] ?? englishNotes[tk]
   })
 
   // Write-back (fire and forget)
