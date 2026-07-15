@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { X, Play, Youtube } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useVideo } from '../api/hooks.js'
@@ -7,7 +6,7 @@ import SentimentIcon from './SentimentIcon.js'
 import StockChip from './StockChip.js'
 import { fmtDate, fmtDuration } from '../utils/format.js'
 import { SENTIMENT_META } from '@stonktube/shared'
-import { useLang } from '../hooks/useLang.js'
+import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
 interface VideoSummaryModalProps {
   videoId: string | null
@@ -18,7 +17,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data: video, isLoading } = useVideo(videoId, lang)
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

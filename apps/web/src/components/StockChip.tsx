@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom'
 import SentimentIcon from './SentimentIcon.js'
+import { useLangNavigate } from '../hooks/useLang.js'
 
 interface StockChipProps {
   ticker: string
@@ -8,7 +8,7 @@ interface StockChipProps {
 }
 
 export default function StockChip({ ticker, sentiment }: StockChipProps) {
-  const navigate = useNavigate()
+  const navigate = useLangNavigate()
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
