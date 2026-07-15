@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "stocks": "Stocks",
+    "creators": "Creators",
+    "search_placeholder": "Search ticker or creator",
+    "section_stocks": "Stocks",
+    "section_creators": "Creators",
+    "no_results": "No results for \"{{query}}\""
+  },
+  "dashboard": {
+    "headline": "What the creators are calling.",
+    "latest_analysis": "Latest analysis",
+    "across_creators": "Across {{count}} creators",
+    "most_mentioned": "Most mentioned",
+    "mentions_subtitle": "Total mentions · last 30 days",
+    "most_bullish": "Most bullish",
+    "bullish_subtitle": "Share of positive ratings",
+    "no_recent_calls": "no recent calls",
+    "loading": "Loading…",
+    "error": "Failed to load dashboard."
+  },
+  "stock": {
+    "back": "‹ Dashboard",
+    "private": "Private",
+    "today": "today",
+    "tracked_by_one": "Tracked by {{count}} creator",
+    "tracked_by_other": "Tracked by {{count}} creators",
+    "creator_sentiment": "Creator sentiment at time of video",
+    "recent_coverage": "Recent creator coverage",
+    "overall_sentiment": "Overall sentiment",
+    "ratings_one": "Based on {{count}} rating in the last 7 days",
+    "ratings_other": "Based on {{count}} ratings in the last 7 days",
+    "of_creators_bullish": "of creators are bullish",
+    "summary_btn": "Summary ↗",
+    "watch_youtube": "Watch on YouTube",
+    "price_at_mention": "Price at mention",
+    "calls": "calls",
+    "loading": "Loading…",
+    "error": "Failed to load stock detail."
+  },
+  "stocks": {
+    "title": "Stocks",
+    "subtitle": "All tracked names",
+    "sort_by": "Sort by",
+    "sort_mentions": "Most mentioned",
+    "sort_bull": "Most bullish",
+    "sort_chg": "Top movers",
+    "sort_price": "Price",
+    "sort_ticker": "A–Z",
+    "col_stock": "Stock",
+    "col_price": "Price",
+    "col_30d": "30D",
+    "col_sentiment": "Sentiment",
+    "col_mentions": "Mentions",
+    "col_creators": "Creators",
+    "private_badge": "Priv",
+    "loading": "Loading…",
+    "error": "Failed to load stocks."
+  },
+  "creators": {
+    "title": "Creators we track",
+    "subtitle": "The Network",
+    "description": "We follow the most insightful finance YouTubers and surface every stock call they make.",
+    "subscribers": "subscribers",
+    "videos_tracked": "Videos tracked",
+    "bullish_calls": "Bullish calls",
+    "recent_calls": "Recent calls",
+    "visit": "Visit ↗",
+    "summary_btn": "Summary ↗",
+    "loading": "Loading…",
+    "error": "Failed to load creators."
+  },
+  "creator_profile": {
+    "back": "‹ Creators",
+    "videos_tracked": "Videos tracked",
+    "bullish_calls": "Bullish calls",
+    "stocks_covered": "Stocks covered",
+    "sentiment_label": "Sentiment across all calls",
+    "covers": "Covers",
+    "recent_calls": "Recent calls",
+    "no_videos": "No analyzed videos yet.",
+    "visit_channel": "Visit channel ↗",
+    "summary_btn": "Summary ↗",
+    "loading": "Loading…",
+    "error": "Failed to load creator."
+  },
+  "video": {
+    "summary": "Summary",
+    "key_takeaways": "Key takeaways",
+    "watch_full": "Watch full video on YouTube",
+    "not_found": "Video not found.",
+    "view_summary": "View full summary",
+    "loading": "Loading…"
+  },
+  "sentiment": {
+    "bullish": "Bullish",
+    "neutral": "Neutral",
+    "bearish": "Bearish",
+    "bullish_lower": "bullish",
+    "neutral_lower": "neutral",
+    "bearish_lower": "bearish"
+  },
+  "verdict": {
+    "Strong buy": "Strong buy",
+    "Buy": "Buy",
+    "Mixed": "Mixed",
+    "Cautious": "Cautious",
+    "Bearish": "Bearish"
+  },
+  "lang": {
+    "en": "EN",
+    "zh": "中文",
+    "ko": "한국어"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "dashboard": "대시보드",
+    "stocks": "주식",
+    "creators": "크리에이터",
+    "search_placeholder": "종목 또는 크리에이터 검색",
+    "section_stocks": "주식",
+    "section_creators": "크리에이터",
+    "no_results": "\"{{query}}\"에 대한 결과 없음"
+  },
+  "dashboard": {
+    "headline": "크리에이터들의 전망을 확인하세요.",
+    "latest_analysis": "최신 분석",
+    "across_creators": "{{count}}명의 크리에이터",
+    "most_mentioned": "가장 많이 언급됨",
+    "mentions_subtitle": "총 언급 횟수 · 최근 30일",
+    "most_bullish": "가장 낙관적",
+    "bullish_subtitle": "긍정 평가 비율",
+    "no_recent_calls": "최근 평가 없음",
+    "loading": "로딩 중…",
+    "error": "대시보드를 불러오지 못했습니다."
+  },
+  "stock": {
+    "back": "‹ 대시보드",
+    "private": "비상장",
+    "today": "오늘",
+    "tracked_by_one": "{{count}}명의 크리에이터가 추적 중",
+    "tracked_by_other": "{{count}}명의 크리에이터가 추적 중",
+    "creator_sentiment": "영상 게시 당시 크리에이터 심리",
+    "recent_coverage": "최근 크리에이터 커버리지",
+    "overall_sentiment": "전체 심리",
+    "ratings_one": "최근 7일간 {{count}}개 평가 기준",
+    "ratings_other": "최근 7일간 {{count}}개 평가 기준",
+    "of_creators_bullish": "의 크리에이터가 낙관적",
+    "summary_btn": "요약 ↗",
+    "watch_youtube": "YouTube에서 보기",
+    "price_at_mention": "언급 당시 가격",
+    "calls": "개 평가",
+    "loading": "로딩 중…",
+    "error": "주식 상세 정보를 불러오지 못했습니다."
+  },
+  "stocks": {
+    "title": "주식",
+    "subtitle": "추적 중인 모든 종목",
+    "sort_by": "정렬 기준",
+    "sort_mentions": "가장 많이 언급됨",
+    "sort_bull": "가장 낙관적",
+    "sort_chg": "상위 변동",
+    "sort_price": "가격",
+    "sort_ticker": "A–Z",
+    "col_stock": "종목",
+    "col_price": "가격",
+    "col_30d": "30일",
+    "col_sentiment": "심리",
+    "col_mentions": "언급수",
+    "col_creators": "크리에이터",
+    "private_badge": "비상장",
+    "loading": "로딩 중…",
+    "error": "주식 목록을 불러오지 못했습니다."
+  },
+  "creators": {
+    "title": "추적 중인 크리에이터",
+    "subtitle": "네트워크",
+    "description": "가장 통찰력 있는 재테크 유튜버를 추적하여 그들의 모든 주식 전망을 정리합니다.",
+    "subscribers": "구독자",
+    "videos_tracked": "분석된 영상",
+    "bullish_calls": "낙관적 평가",
+    "recent_calls": "최근 평가",
+    "visit": "방문 ↗",
+    "summary_btn": "요약 ↗",
+    "loading": "로딩 중…",
+    "error": "크리에이터 목록을 불러오지 못했습니다."
+  },
+  "creator_profile": {
+    "back": "‹ 크리에이터",
+    "videos_tracked": "분석된 영상",
+    "bullish_calls": "낙관적 평가",
+    "stocks_covered": "다룬 종목",
+    "sentiment_label": "전체 평가 심리",
+    "covers": "다룬 종목",
+    "recent_calls": "최근 평가",
+    "no_videos": "분석된 영상이 없습니다.",
+    "visit_channel": "채널 방문 ↗",
+    "summary_btn": "요약 ↗",
+    "loading": "로딩 중…",
+    "error": "크리에이터 페이지를 불러오지 못했습니다."
+  },
+  "video": {
+    "summary": "요약",
+    "key_takeaways": "핵심 내용",
+    "watch_full": "YouTube에서 전체 영상 보기",
+    "not_found": "영상을 찾을 수 없습니다.",
+    "view_summary": "전체 요약 보기",
+    "loading": "로딩 중…"
+  },
+  "sentiment": {
+    "bullish": "낙관적",
+    "neutral": "중립",
+    "bearish": "비관적",
+    "bullish_lower": "낙관적",
+    "neutral_lower": "중립",
+    "bearish_lower": "비관적"
+  },
+  "verdict": {
+    "Strong buy": "강력 매수",
+    "Buy": "매수",
+    "Mixed": "혼조",
+    "Cautious": "주의",
+    "Bearish": "비관적"
+  },
+  "lang": {
+    "en": "EN",
+    "zh": "中文",
+    "ko": "한국어"
+  }
+}

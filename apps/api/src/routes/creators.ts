@@ -1,9 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Creator, Video } from '@stonktube/db'
 import { mentionExpressesView, mentionQualifies } from '@stonktube/shared'
+import { getVideoTranslation } from '../lib/videoTranslation.js'
 
 const creators: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/api/creators', async (_req, reply) => {
+  fastify.get<{ Querystring: { lang?: string } }>('/api/creators', async (req, reply) => {
+    const lang = req.query.lang ?? 'en'
     const allCreators = await Creator.find({ isActive: true }).lean()
 
     const result = await Promise.all(
@@ -32,20 +34,23 @@ const creators: FastifyPluginAsync = async (fastify) => {
         const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
         const coveredTickers = Array.from(tickerSet)
 
-        const recentCalls = videos.slice(0, 3).map((v) => ({
-          videoId: v._id.toString(),
-          videoTitle: v.title,
-          videoUrl: v.url,
-          thumbnailUrl: v.thumbnailUrl,
-          publishedAt: v.publishedAt.toISOString(),
-          durationSeconds: v.durationSeconds,
-          mentions: v.mentions
-            .filter((m) => mentionExpressesView(m))
-            .map((m) => ({
-              ticker: m.ticker,
-              sentiment: m.sentiment,
-              stockId: m.stockId.toString(),
-            })),
+        const recentCalls = await Promise.all(videos.slice(0, 3).map(async (v) => {
+          const tx = await getVideoTranslation(v , lang)
+          return {
+            videoId: v._id.toString(),
+            videoTitle: tx.title,
+            videoUrl: v.url,
+            thumbnailUrl: v.thumbnailUrl,
+            publishedAt: v.publishedAt.toISOString(),
+            durationSeconds: v.durationSeconds,
+            mentions: v.mentions
+              .filter((m) => mentionExpressesView(m))
+              .map((m) => ({
+                ticker: m.ticker,
+                sentiment: m.sentiment,
+                stockId: m.stockId.toString(),
+              })),
+          }
         }))
 
         return {
@@ -70,7 +75,8 @@ const creators: FastifyPluginAsync = async (fastify) => {
   })
 
   // GET /api/creators/:slug — full profile + every tracked call.
-  fastify.get<{ Params: { slug: string } }>('/api/creators/:slug', async (req, reply) => {
+  fastify.get<{ Params: { slug: string }; Querystring: { lang?: string } }>('/api/creators/:slug', async (req, reply) => {
+    const lang = req.query.lang ?? 'en'
     const creator = await Creator.findOne({ slug: req.params.slug }).lean()
     if (!creator) return reply.code(404).send({ error: 'Creator not found' })
 
@@ -112,21 +118,24 @@ const creators: FastifyPluginAsync = async (fastify) => {
     const neutralPct = total > 0 ? Math.round((neutralCount / total) * 100) : 0
     const bearishPct = total > 0 ? Math.round((bearCount / total) * 100) : 0
 
-    const calls = videos.slice(0, 30).map((v) => ({
-      videoId: v._id.toString(),
-      videoTitle: v.title,
-      videoUrl: v.url,
-      thumbnailUrl: v.thumbnailUrl,
-      publishedAt: v.publishedAt.toISOString(),
-      durationSeconds: v.durationSeconds,
-      summary: v.summary ?? '',
-      mentions: v.mentions
-        .filter((m) => mentionQualifies(m) && mentionExpressesView(m))
-        .map((m) => ({
-          ticker: m.ticker,
-          sentiment: m.sentiment,
-          stockId: m.stockId.toString(),
-        })),
+    const calls = await Promise.all(videos.slice(0, 30).map(async (v) => {
+      const tx = await getVideoTranslation(v , lang)
+      return {
+        videoId: v._id.toString(),
+        videoTitle: tx.title,
+        videoUrl: v.url,
+        thumbnailUrl: v.thumbnailUrl,
+        publishedAt: v.publishedAt.toISOString(),
+        durationSeconds: v.durationSeconds,
+        summary: tx.summary,
+        mentions: v.mentions
+          .filter((m) => mentionQualifies(m) && mentionExpressesView(m))
+          .map((m) => ({
+            ticker: m.ticker,
+            sentiment: m.sentiment,
+            stockId: m.stockId.toString(),
+          })),
+      }
     }))
 
     return reply.send({

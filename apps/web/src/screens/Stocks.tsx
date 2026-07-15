@@ -1,26 +1,28 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStocks } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
 
-const SORT_PILLS = [
-  { label: 'Most mentioned', value: 'mentions' },
-  { label: 'Most bullish', value: 'bull' },
-  { label: 'Top movers', value: 'chg' },
-  { label: 'Price', value: 'price' },
-  { label: 'A–Z', value: 'ticker' },
-]
-
 const COL_GRID_DESKTOP = '2.2fr 1.1fr 0.9fr 1.4fr 0.9fr 0.9fr'
 const COL_GRID_MOBILE = '1fr 1fr 0.8fr'
 
 export default function Stocks() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [sort, setSort] = useState('mentions')
   const { data, isLoading, error } = useStocks(sort)
+
+  const SORT_PILLS = [
+    { label: t('stocks.sort_mentions'), value: 'mentions' },
+    { label: t('stocks.sort_bull'), value: 'bull' },
+    { label: t('stocks.sort_chg'), value: 'chg' },
+    { label: t('stocks.sort_price'), value: 'price' },
+    { label: t('stocks.sort_ticker'), value: 'ticker' },
+  ]
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerW, setContainerW] = useState(700)
@@ -49,7 +51,7 @@ export default function Stocks() {
             letterSpacing: '0.08em',
           }}
         >
-          All tracked names
+          {t('stocks.subtitle')}
         </p>
         <h1
           className="font-display font-bold text-[30px] sm:text-[36px] md:text-[42px] tracking-[-0.03em]"
@@ -58,13 +60,13 @@ export default function Stocks() {
             lineHeight: 1.05,
           }}
         >
-          Stocks
+          {t('stocks.title')}
         </h1>
       </div>
 
       {/* Sort control */}
       <div className="flex items-center gap-3">
-        {!isMobile && <span className="text-[13px] font-medium text-muted shrink-0">Sort by</span>}
+        {!isMobile && <span className="text-[13px] font-medium text-muted shrink-0">{t('stocks.sort_by')}</span>}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {SORT_PILLS.map(p => (
             <button
@@ -96,19 +98,19 @@ export default function Stocks() {
             borderBottom: '1px solid #F3F2EC',
           }}
         >
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint">Stock</span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">Price</span>
-          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">30D</span>}
-          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint">Sentiment</span>}
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">Mentions</span>
-          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">Creators</span>}
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint">{t('stocks.col_stock')}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">{t('stocks.col_price')}</span>
+          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">{t('stocks.col_30d')}</span>}
+          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint">{t('stocks.col_sentiment')}</span>}
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">{t('stocks.col_mentions')}</span>
+          {!isMobile && <span className="text-[11px] font-semibold uppercase tracking-wider text-faint text-right">{t('stocks.col_creators')}</span>}
         </div>
 
         {isLoading && (
-          <div className="py-10 text-center text-muted text-sm">Loading…</div>
+          <div className="py-10 text-center text-muted text-sm">{t('stocks.loading')}</div>
         )}
         {error && (
-          <div className="py-10 text-center text-bear text-sm">Failed to load stocks.</div>
+          <div className="py-10 text-center text-bear text-sm">{t('stocks.error')}</div>
         )}
 
         {data?.map((stock, idx) => {
@@ -159,7 +161,7 @@ export default function Stocks() {
                         className="text-[9px] font-semibold px-1 py-0.5 rounded"
                         style={{ background: '#FBF3E2', color: '#8A6D3B' }}
                       >
-                        Priv
+                        {t('stocks.private_badge')}
                       </span>
                     )}
                   </div>

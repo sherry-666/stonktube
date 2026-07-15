@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "dashboard": "首页",
+    "stocks": "股票",
+    "creators": "创作者",
+    "search_placeholder": "搜索股票或创作者",
+    "section_stocks": "股票",
+    "section_creators": "创作者",
+    "no_results": "\"{{query}}\" 没有结果"
+  },
+  "dashboard": {
+    "headline": "看看创作者们怎么说。",
+    "latest_analysis": "最新分析",
+    "across_creators": "来自 {{count}} 位创作者",
+    "most_mentioned": "最多提及",
+    "mentions_subtitle": "总提及次数 · 近30天",
+    "most_bullish": "最多看涨",
+    "bullish_subtitle": "正面评价占比",
+    "no_recent_calls": "暂无近期评价",
+    "loading": "加载中…",
+    "error": "首页加载失败。"
+  },
+  "stock": {
+    "back": "‹ 首页",
+    "private": "未上市",
+    "today": "今日",
+    "tracked_by_one": "{{count}} 位创作者跟踪",
+    "tracked_by_other": "{{count}} 位创作者跟踪",
+    "creator_sentiment": "视频发布时创作者的情绪",
+    "recent_coverage": "近期创作者报道",
+    "overall_sentiment": "综合情绪",
+    "ratings_one": "基于近7天 {{count}} 条评分",
+    "ratings_other": "基于近7天 {{count}} 条评分",
+    "of_creators_bullish": "的创作者看涨",
+    "summary_btn": "摘要 ↗",
+    "watch_youtube": "在 YouTube 上观看",
+    "price_at_mention": "提及时股价",
+    "calls": "次评价",
+    "loading": "加载中…",
+    "error": "股票详情加载失败。"
+  },
+  "stocks": {
+    "title": "股票",
+    "subtitle": "所有追踪的股票",
+    "sort_by": "排序",
+    "sort_mentions": "最多提及",
+    "sort_bull": "最多看涨",
+    "sort_chg": "涨跌幅",
+    "sort_price": "价格",
+    "sort_ticker": "A–Z",
+    "col_stock": "股票",
+    "col_price": "价格",
+    "col_30d": "30天",
+    "col_sentiment": "情绪",
+    "col_mentions": "提及数",
+    "col_creators": "创作者",
+    "private_badge": "未上",
+    "loading": "加载中…",
+    "error": "股票列表加载失败。"
+  },
+  "creators": {
+    "title": "追踪的创作者",
+    "subtitle": "创作者网络",
+    "description": "我们追踪最具洞察力的财经 YouTuber，并整理他们的每一个股票观点。",
+    "subscribers": "订阅者",
+    "videos_tracked": "已分析视频",
+    "bullish_calls": "看涨评价",
+    "recent_calls": "近期评价",
+    "visit": "访问 ↗",
+    "summary_btn": "摘要 ↗",
+    "loading": "加载中…",
+    "error": "创作者列表加载失败。"
+  },
+  "creator_profile": {
+    "back": "‹ 创作者",
+    "videos_tracked": "已分析视频",
+    "bullish_calls": "看涨评价",
+    "stocks_covered": "覆盖股票",
+    "sentiment_label": "所有评价的综合情绪",
+    "covers": "覆盖",
+    "recent_calls": "近期评价",
+    "no_videos": "暂无已分析视频。",
+    "visit_channel": "访问频道 ↗",
+    "summary_btn": "摘要 ↗",
+    "loading": "加载中…",
+    "error": "创作者页面加载失败。"
+  },
+  "video": {
+    "summary": "摘要",
+    "key_takeaways": "要点",
+    "watch_full": "在 YouTube 上观看完整视频",
+    "not_found": "视频不存在。",
+    "view_summary": "查看完整摘要",
+    "loading": "加载中…"
+  },
+  "sentiment": {
+    "bullish": "看涨",
+    "neutral": "中性",
+    "bearish": "看跌",
+    "bullish_lower": "看涨",
+    "neutral_lower": "中性",
+    "bearish_lower": "看跌"
+  },
+  "verdict": {
+    "Strong buy": "强力买入",
+    "Buy": "买入",
+    "Mixed": "分歧",
+    "Cautious": "谨慎",
+    "Bearish": "看跌"
+  },
+  "lang": {
+    "en": "EN",
+    "zh": "中文",
+    "ko": "한국어"
+  }
+}

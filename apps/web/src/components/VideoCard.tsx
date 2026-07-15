@@ -1,4 +1,5 @@
 import { FileText, Play } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StockChip from './StockChip.js'
 import { fmtDuration, fmtRelDate } from '../utils/format.js'
 
@@ -28,6 +29,7 @@ interface VideoCardProps {
 }
 
 export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
+  const { t } = useTranslation()
   const { creator, mentions } = video
   const visibleMentions = mentions.slice(0, 5)
 
@@ -175,7 +177,7 @@ export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
             onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#4F46E5')}
           >
             <FileText size={13} />
-            View full summary
+            {t('video.view_summary')}
           </button>
         </div>
       </div>

@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Play, Youtube } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useVideo } from '../api/hooks.js'
 import SentimentIcon from './SentimentIcon.js'
 import StockChip from './StockChip.js'
 import { fmtDate, fmtDuration } from '../utils/format.js'
 import { SENTIMENT_META } from '@stonktube/shared'
+import { useLang } from '../hooks/useLang.js'
 
 interface VideoSummaryModalProps {
   videoId: string | null
@@ -13,7 +15,9 @@ interface VideoSummaryModalProps {
 }
 
 export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModalProps) {
-  const { data: video, isLoading } = useVideo(videoId)
+  const { t } = useTranslation()
+  const { lang } = useLang()
+  const { data: video, isLoading } = useVideo(videoId, lang)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -47,7 +51,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
       >
         {isLoading || !video ? (
           <div className="flex items-center justify-center p-12 text-muted text-sm">
-            {isLoading ? 'Loading…' : 'Video not found.'}
+            {isLoading ? t('video.loading') : t('video.not_found')}
           </div>
         ) : (
           <>
@@ -183,7 +187,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
               {video.summary && (
                 <div>
                   <h3 className="text-[12px] font-semibold uppercase tracking-widest text-faint mb-2">
-                    Summary
+                    {t('video.summary')}
                   </h3>
                   <p className="text-[14px] text-body leading-relaxed">{video.summary}</p>
                 </div>
@@ -193,7 +197,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
               {video.mentions && video.mentions.length > 0 && (
                 <div>
                   <h3 className="text-[12px] font-semibold uppercase tracking-widest text-faint mb-3">
-                    Key takeaways
+                    {t('video.key_takeaways')}
                   </h3>
                   <div className="flex flex-col gap-2">
                     {video.mentions.map(m => {
@@ -216,7 +220,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
                             style={{ background: meta.bg, color: meta.color, fontSize: 12, fontWeight: 600 }}
                           >
                             <SentimentIcon sentiment={m.sentiment} size={11} color={meta.color} />
-                            {meta.label}
+                            {t(`sentiment.${m.sentiment.toLowerCase()}`)}
                           </div>
                           {m.note && (
                             <span className="text-[13px] text-body flex-1 leading-snug">{m.note}</span>
@@ -238,7 +242,7 @@ export default function VideoSummaryModal({ videoId, onClose }: VideoSummaryModa
                 onClick={e => e.stopPropagation()}
               >
                 <Youtube size={18} />
-                Watch full video on YouTube
+                {t('video.watch_full')}
               </a>
             </div>
           </>

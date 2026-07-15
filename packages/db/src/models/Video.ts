@@ -22,6 +22,17 @@ export interface ICreatorSnapshot {
   avatarUrl?: string
 }
 
+export interface ITranslationLang {
+  title?: string
+  summary?: string
+  notes?: Record<string, string>
+}
+
+export interface ITranslations {
+  zh?: ITranslationLang
+  ko?: ITranslationLang
+}
+
 export interface IVideo extends Document {
   creatorId: Types.ObjectId
   creator: ICreatorSnapshot
@@ -36,6 +47,7 @@ export interface IVideo extends Document {
   summary?: string
   language: string
   mentions: IMention[]
+  translations?: ITranslations
   createdAt: Date
   updatedAt: Date
 }
@@ -67,6 +79,15 @@ const CreatorSnapshotSchema = new Schema<ICreatorSnapshot>(
   { _id: false },
 )
 
+const TranslationLangSchema = new Schema(
+  {
+    title: String,
+    summary: String,
+    notes: { type: Map, of: String },
+  },
+  { _id: false },
+)
+
 const VideoSchema = new Schema<IVideo>(
   {
     creatorId: { type: Schema.Types.ObjectId, ref: 'Creator', required: true },
@@ -90,6 +111,10 @@ const VideoSchema = new Schema<IVideo>(
     summary: String,
     language: { type: String, default: 'en' },
     mentions: { type: [MentionSchema], default: [] },
+    translations: {
+      type: new Schema({ zh: TranslationLangSchema, ko: TranslationLangSchema }, { _id: false }),
+      default: {},
+    },
   },
   { timestamps: true },
 )

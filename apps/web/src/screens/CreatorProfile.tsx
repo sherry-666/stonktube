@@ -1,10 +1,12 @@
 import { Play } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useCreator } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import SentimentBar from '../components/SentimentBar.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { bullishPctToVerdict } from '@stonktube/shared'
+import { useLang } from '../hooks/useLang.js'
 
 interface CreatorProfileProps {
   onSummaryClick: (id: string) => void
@@ -13,14 +15,16 @@ interface CreatorProfileProps {
 export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { data: creator, isLoading, error } = useCreator(slug)
+  const { t } = useTranslation()
+  const { lang } = useLang()
+  const { data: creator, isLoading, error } = useCreator(slug, lang)
 
   if (isLoading) {
-    return <div className="py-12 text-center text-muted text-sm">Loading…</div>
+    return <div className="py-12 text-center text-muted text-sm">{t('creator_profile.loading')}</div>
   }
 
   if (error || !creator) {
-    return <div className="py-12 text-center text-bear text-sm">Failed to load creator.</div>
+    return <div className="py-12 text-center text-bear text-sm">{t('creator_profile.error')}</div>
   }
 
   const verdict = bullishPctToVerdict(creator.bullishPct)
@@ -32,7 +36,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
         onClick={() => navigate('/creators')}
         className="flex items-center gap-1 text-[13px] font-medium text-muted hover:text-primary transition-colors duration-150 self-start"
       >
-        ‹ Creators
+        {t('creator_profile.back')}
       </button>
 
       {/* Header card */}
@@ -68,7 +72,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
               {creator.name}
             </h1>
             <p className="text-[13px] text-muted mt-1">
-              {creator.handle} · {fmtSubs(creator.subscribers)} subscribers
+              {creator.handle} · {fmtSubs(creator.subscribers)} {t('creators.subscribers')}
             </p>
             {creator.bio && (
               <p className="mt-3" style={{ fontSize: 13.5, color: '#6E6F78', lineHeight: 1.6 }}>
@@ -82,24 +86,24 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
             rel="noopener noreferrer"
             className="shrink-0 text-[12px] font-semibold px-3 py-1.5 border border-[#ECEBE4] rounded-[8px] text-muted hover:text-primary hover:border-[#D6D5CC] transition-colors duration-150"
           >
-            Visit channel ↗
+            {t('creator_profile.visit_channel')}
           </a>
         </div>
 
         {/* Stat tiles */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
           <div className="flex flex-col gap-0.5 px-3 py-2.5" style={{ background: '#F8F8F4', borderRadius: 11 }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">Videos tracked</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">{t('creator_profile.videos_tracked')}</span>
             <span className="text-[18px] font-bold text-primary">{creator.videosTracked}</span>
           </div>
           <div className="flex flex-col gap-0.5 px-3 py-2.5" style={{ background: '#F8F8F4', borderRadius: 11 }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">Bullish calls</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">{t('creator_profile.bullish_calls')}</span>
             <span className="text-[18px] font-bold" style={{ color: '#0F9D63' }}>
               {creator.bullishPct.toFixed(0)}%
             </span>
           </div>
           <div className="flex flex-col gap-0.5 px-3 py-2.5" style={{ background: '#F8F8F4', borderRadius: 11 }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">Stocks covered</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">{t('creator_profile.stocks_covered')}</span>
             <span className="text-[18px] font-bold text-primary">{creator.covers.length}</span>
           </div>
         </div>
@@ -109,10 +113,10 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-faint">
-                Sentiment across all calls
+                {t('creator_profile.sentiment_label')}
               </span>
               <span className="text-[12px] font-semibold" style={{ color: '#0F9D63' }}>
-                {verdict}
+                {t(`verdict.${verdict}`, verdict)}
               </span>
             </div>
             <SentimentBar
@@ -126,7 +130,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
         {/* Covered tickers */}
         {creator.covers.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-faint mb-2">Covers</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-faint mb-2">{t('creator_profile.covers')}</h3>
             <div className="flex flex-wrap gap-1.5">
               {creator.covers.map(c => (
                 <StockChip key={c.ticker} ticker={c.ticker} sentiment={c.sentiment} stockId={c.stockId} />
@@ -147,10 +151,10 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
             color: '#14151A',
           }}
         >
-          Recent calls
+          {t('creator_profile.recent_calls')}
         </h2>
         {creator.calls.length === 0 ? (
-          <p className="text-[13px] text-muted">No analyzed videos yet.</p>
+          <p className="text-[13px] text-muted">{t('creator_profile.no_videos')}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {creator.calls.map(call => (
@@ -162,7 +166,6 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
                 onMouseLeave={e => (e.currentTarget.style.borderColor = '#ECEBE4')}
               >
                 <div className="flex items-start gap-3">
-                  {/* Thumbnail — opens summary */}
                   <button
                     onClick={() => onSummaryClick(call.videoId)}
                     className="relative shrink-0 overflow-hidden"
@@ -199,7 +202,6 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
                     )}
                   </button>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <button
@@ -221,7 +223,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
                         onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
                         onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
                       >
-                        Summary ↗
+                        {t('creator_profile.summary_btn')}
                       </button>
                     </div>
                   </div>

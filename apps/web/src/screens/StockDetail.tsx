@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
 import SentimentBar from '../components/SentimentBar.js'
@@ -8,6 +9,7 @@ import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
 import type { Marker } from '../api/hooks.js'
+import { useLang } from '../hooks/useLang.js'
 
 const TF_OPTIONS = [
   { label: '1M', value: '1M' },
@@ -59,6 +61,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
   isMobile?: boolean
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const multi = group.markers.length > 1
   return (
     <div
@@ -79,7 +82,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
       {/* Date header for multi-marker groups */}
       {multi && (
         <div className="text-[11px] font-semibold mb-2" style={{ color: '#9A9BA4' }}>
-          {fmtDate(group.date)} · {group.markers.length} calls
+          {fmtDate(group.date)} · {group.markers.length} {t('stock.calls')}
         </div>
       )}
 
@@ -111,7 +114,7 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
                 style={{ background: meta.bg, color: meta.color, fontSize: 10, fontWeight: 600 }}
               >
                 <SentimentIcon sentiment={marker.sentiment} size={9} color={meta.color} />
-                {meta.label}
+                {t(`sentiment.${marker.sentiment.toLowerCase()}`)}
               </div>
             </div>
             {marker.note && (
@@ -127,14 +130,14 @@ function MarkerTooltip({ group, style, onMouseEnter, onMouseLeave }: {
               style={{ color: '#6E6F78' }}
             >
               {YT_ICON}
-              Watch on YouTube
+              {t('stock.watch_youtube')}
             </a>
           </div>
         )
       })}
 
       <div className="text-[10px] mt-2" style={{ color: '#6E6F78' }}>
-        Price at mention ·{' '}
+        {t('stock.price_at_mention')} ·{' '}
         <span style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}>
           {group.markers[0].priceLabel}
         </span>
@@ -276,6 +279,8 @@ interface StockDetailProps {
 export default function StockDetail({ onSummaryClick }: StockDetailProps) {
   const { ticker = '' } = useParams<{ ticker: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation()
+  const { lang } = useLang()
   const [tf, setTf] = useState('3M')
 
   // Adapt marker sizes / layout on mobile. Keyed off the viewport rather than a
@@ -319,15 +324,15 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
     setHoverIdx(nearestIdx)
   }
 
-  const { data, isLoading, error } = useStockDetail(ticker, tf)
-  const { data: markers } = useStockMarkers(ticker, tf)
+  const { data, isLoading, error } = useStockDetail(ticker, tf, lang)
+  const { data: markers } = useStockMarkers(ticker, tf, lang)
 
   if (isLoading) {
-    return <div className="py-12 text-center text-muted text-sm">Loading…</div>
+    return <div className="py-12 text-center text-muted text-sm">{t('stock.loading')}</div>
   }
 
   if (error || !data) {
-    return <div className="py-12 text-center text-bear text-sm">Failed to load stock detail.</div>
+    return <div className="py-12 text-center text-bear text-sm">{t('stock.error')}</div>
   }
 
   const { stock, priceSeries, recentCoverage, overallSentiment } = data
@@ -434,7 +439,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
         onClick={() => navigate('/')}
         className="flex items-center gap-1 text-[13px] font-medium text-muted hover:text-primary transition-colors duration-150 self-start"
       >
-        ‹ Dashboard
+        {t('stock.back')}
       </button>
 
       {/* Header row */}
@@ -466,7 +471,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                   className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: '#FBF3E2', color: '#8A6D3B' }}
                 >
-                  Private
+                  {t('stock.private')}
                 </span>
               )}
             </div>
@@ -491,13 +496,13 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               </div>
               <div className="flex items-center justify-end gap-2 mt-1">
                 <span className="text-[14px] font-semibold" style={{ color: changeColor }}>
-                  {fmtPct(stock.dayChangePct)} today
+                  {fmtPct(stock.dayChangePct)} {t('stock.today')}
                 </span>
               </div>
             </>
           )}
           <div className="text-[12px] text-muted mt-1">
-            Tracked by {stock.trackedBy} creator{stock.trackedBy !== 1 ? 's' : ''}
+            {stock.trackedBy === 1 ? t('stock.tracked_by_one', { count: stock.trackedBy }) : t('stock.tracked_by_other', { count: stock.trackedBy })}
           </div>
         </div>
       </div>
@@ -534,7 +539,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               className="inline-block rounded-full"
               style={{ width: 8, height: 8, background: stock.brandColor }}
             />
-            Creator sentiment at time of video
+            {t('stock.creator_sentiment')}
           </div>
         </div>
 
@@ -715,7 +720,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               color: '#14151A',
             }}
           >
-            Recent creator coverage
+            {t('stock.recent_coverage')}
           </h2>
           <div className="flex flex-col gap-3">
             {recentCoverage.map(event => {
@@ -773,7 +778,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                           style={{ background: meta.bg, color: meta.color }}
                         >
                           <SentimentIcon sentiment={event.sentiment} size={10} color={meta.color} />
-                          {meta.label}
+                          {t(`sentiment.${event.sentiment.toLowerCase()}`)}
                         </div>
                         <span className="text-[11px] text-muted">
                           @ {fmtPrice(event.priceAtMention)}
@@ -785,7 +790,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                           onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
                           onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
                         >
-                          Summary ↗
+                          {t('stock.summary_btn')}
                         </button>
                       </div>
                     </div>
@@ -811,10 +816,10 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                 color: '#14151A',
               }}
             >
-              Overall sentiment
+              {t('stock.overall_sentiment')}
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">
-              Based on {overallSentiment.total} rating{overallSentiment.total !== 1 ? 's' : ''} in the last 7 days
+              {overallSentiment.total === 1 ? t('stock.ratings_one', { count: overallSentiment.total }) : t('stock.ratings_other', { count: overallSentiment.total })}
             </p>
 
             <div className="flex items-baseline gap-2 mb-1">
@@ -833,10 +838,10 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                 className="text-[16px] font-semibold"
                 style={{ color: '#0F9D63' }}
               >
-                {verdict}
+                {t(`verdict.${verdict}`, verdict)}
               </span>
             </div>
-            <p className="text-[13px] text-muted mb-4">of creators are bullish</p>
+            <p className="text-[13px] text-muted mb-4">{t('stock.of_creators_bullish')}</p>
 
             <SentimentBar
               bullishPct={overallSentiment.bullishPct}
@@ -849,21 +854,21 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               <div className="flex items-center justify-between text-[13px]">
                 <div className="flex items-center gap-2">
                   <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#0F9D63' }} />
-                  <span className="text-body">Bullish</span>
+                  <span className="text-body">{t('sentiment.bullish')}</span>
                 </div>
                 <span className="font-semibold text-primary">{overallSentiment.bullCount}</span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <div className="flex items-center gap-2">
                   <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#D9B26A' }} />
-                  <span className="text-body">Neutral</span>
+                  <span className="text-body">{t('sentiment.neutral')}</span>
                 </div>
                 <span className="font-semibold text-primary">{overallSentiment.neutralCount}</span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <div className="flex items-center gap-2">
                   <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#E5484D' }} />
-                  <span className="text-body">Bearish</span>
+                  <span className="text-body">{t('sentiment.bearish')}</span>
                 </div>
                 <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
               </div>

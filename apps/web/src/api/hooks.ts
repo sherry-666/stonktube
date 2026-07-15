@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from './client.js'
 
+function withLang(url: string, lang: string): string {
+  if (lang === 'en') return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}lang=${lang}`
+}
+
 // ── Dashboard ──────────────────────────────────────────────────────────────
 
 export interface DashboardPill {
@@ -60,10 +66,10 @@ export interface DashboardResponse {
   mostBullish: MostBullishRow[]
 }
 
-export function useDashboard() {
+export function useDashboard(lang: string) {
   return useQuery<DashboardResponse>({
-    queryKey: ['dashboard'],
-    queryFn: () => apiFetch<DashboardResponse>('/api/dashboard'),
+    queryKey: ['dashboard', lang],
+    queryFn: () => apiFetch<DashboardResponse>(withLang('/api/dashboard', lang)),
   })
 }
 
@@ -153,10 +159,10 @@ export interface StockDetailResponse {
   overallSentiment: OverallSentiment
 }
 
-export function useStockDetail(ticker: string, tf: string) {
+export function useStockDetail(ticker: string, tf: string, lang: string) {
   return useQuery<StockDetailResponse>({
-    queryKey: ['stock', ticker, tf],
-    queryFn: () => apiFetch<StockDetailResponse>(`/api/stocks/${ticker}?tf=${tf}`),
+    queryKey: ['stock', ticker, tf, lang],
+    queryFn: () => apiFetch<StockDetailResponse>(withLang(`/api/stocks/${ticker}?tf=${tf}`, lang)),
     enabled: !!ticker,
   })
 }
@@ -182,10 +188,10 @@ export interface Marker {
   svgY?: number
 }
 
-export function useStockMarkers(ticker: string, tf: string) {
+export function useStockMarkers(ticker: string, tf: string, lang: string) {
   return useQuery<Marker[]>({
-    queryKey: ['markers', ticker, tf],
-    queryFn: () => apiFetch<Marker[]>(`/api/stocks/${ticker}/markers?tf=${tf}`),
+    queryKey: ['markers', ticker, tf, lang],
+    queryFn: () => apiFetch<Marker[]>(withLang(`/api/stocks/${ticker}/markers?tf=${tf}`, lang)),
     enabled: !!ticker,
   })
 }
@@ -218,10 +224,10 @@ export interface CreatorCard {
   recentCalls: CreatorRecentCall[]
 }
 
-export function useCreators() {
+export function useCreators(lang: string) {
   return useQuery<CreatorCard[]>({
-    queryKey: ['creators'],
-    queryFn: () => apiFetch<CreatorCard[]>('/api/creators'),
+    queryKey: ['creators', lang],
+    queryFn: () => apiFetch<CreatorCard[]>(withLang('/api/creators', lang)),
   })
 }
 
@@ -259,10 +265,10 @@ export interface CreatorProfile {
   calls: CreatorProfileCall[]
 }
 
-export function useCreator(slug: string) {
+export function useCreator(slug: string, lang: string) {
   return useQuery<CreatorProfile>({
-    queryKey: ['creator', slug],
-    queryFn: () => apiFetch<CreatorProfile>(`/api/creators/${slug}`),
+    queryKey: ['creator', slug, lang],
+    queryFn: () => apiFetch<CreatorProfile>(withLang(`/api/creators/${slug}`, lang)),
     enabled: !!slug,
   })
 }
@@ -296,10 +302,10 @@ export interface VideoModal {
   mentions: VideoModalMention[]
 }
 
-export function useVideo(id: string | null) {
+export function useVideo(id: string | null, lang: string) {
   return useQuery<VideoModal>({
-    queryKey: ['video', id],
-    queryFn: () => apiFetch<VideoModal>(`/api/videos/${id}`),
+    queryKey: ['video', id, lang],
+    queryFn: () => apiFetch<VideoModal>(withLang(`/api/videos/${id}`, lang)),
     enabled: !!id,
   })
 }

@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useDashboard } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import VideoCard from '../components/VideoCard.js'
 import type { VideoCardDTO } from '../components/VideoCard.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
+import { useLang } from '../hooks/useLang.js'
 
 interface DashboardProps {
   onSummaryClick: (id: string) => void
@@ -11,14 +13,16 @@ interface DashboardProps {
 
 export default function Dashboard({ onSummaryClick }: DashboardProps) {
   const navigate = useNavigate()
-  const { data, isLoading, error } = useDashboard()
+  const { t } = useTranslation()
+  const { lang } = useLang()
+  const { data, isLoading, error } = useDashboard(lang)
 
   if (isLoading) {
-    return <div className="py-12 text-center text-muted text-sm">Loading…</div>
+    return <div className="py-12 text-center text-muted text-sm">{t('dashboard.loading')}</div>
   }
 
   if (error || !data) {
-    return <div className="py-12 text-center text-bear text-sm">Failed to load dashboard.</div>
+    return <div className="py-12 text-center text-bear text-sm">{t('dashboard.error')}</div>
   }
 
   const maxMentions = data.mostMentioned.length > 0
@@ -36,7 +40,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
           maxWidth: 680,
         }}
       >
-        What the creators are calling.
+        {t('dashboard.headline')}
       </h1>
 
       {/* Stock pills row */}
@@ -63,7 +67,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                 el.style.boxShadow = ''
               }}
             >
-              {/* Top row: ticker + bullish chip */}
+              {/* Top row: ticker + sentiment chip */}
               <div className="flex items-start justify-between mb-1">
                 <div>
                   <div
@@ -82,25 +86,25 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   if (!pill.recentRatings) {
                     return (
                       <span className="text-[11px] font-semibold px-2 py-0.5" style={{ background: '#F0EFE8', color: '#9A9BA4', borderRadius: 8, whiteSpace: 'nowrap' }}>
-                        — no recent calls
+                        — {t('dashboard.no_recent_calls')}
                       </span>
                     )
                   }
                   const dominant =
                     pill.bullishPct >= pill.neutralPct && pill.bullishPct >= pill.bearishPct
-                      ? { pct: pill.bullishPct, label: 'bullish', bg: '#E7F6EE', fg: '#0F9D63' }
+                      ? { pct: pill.bullishPct, key: 'sentiment.bullish_lower', bg: '#E7F6EE', fg: '#0F9D63' }
                       : pill.bearishPct >= pill.neutralPct
-                        ? { pct: pill.bearishPct, label: 'bearish', bg: '#FDECEA', fg: '#E5484D' }
-                        : { pct: pill.neutralPct, label: 'neutral', bg: '#F0EFE8', fg: '#9A9BA4' }
+                        ? { pct: pill.bearishPct, key: 'sentiment.bearish_lower', bg: '#FDECEA', fg: '#E5484D' }
+                        : { pct: pill.neutralPct, key: 'sentiment.neutral_lower', bg: '#F0EFE8', fg: '#9A9BA4' }
                   return (
                     <span className="text-[11px] font-semibold px-2 py-0.5" style={{ background: dominant.bg, color: dominant.fg, borderRadius: 8, whiteSpace: 'nowrap' }}>
-                      {dominant.pct.toFixed(0)}% {dominant.label}
+                      {dominant.pct.toFixed(0)}% {t(dominant.key)}
                     </span>
                   )
                 })()}
               </div>
 
-              {/* Sparkline — fills pill width */}
+              {/* Sparkline */}
               <div className="my-2">
                 <Sparkline
                   points={pill.sparkline}
@@ -144,9 +148,9 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                 color: '#14151A',
               }}
             >
-              Latest analysis
+              {t('dashboard.latest_analysis')}
             </h2>
-            <p className="text-sm text-muted mt-0.5">Across 6 creators</p>
+            <p className="text-sm text-muted mt-0.5">{t('dashboard.across_creators', { count: 6 })}</p>
           </div>
           <div className="flex flex-col gap-3">
             {data.feed.map(video => (
@@ -174,9 +178,9 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                 color: '#14151A',
               }}
             >
-              Most mentioned
+              {t('dashboard.most_mentioned')}
             </h2>
-            <p className="text-[12px] text-muted mt-0.5 mb-4">Total mentions · last 30 days</p>
+            <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.mentions_subtitle')}</p>
             <div className="flex flex-col gap-3">
               {data.mostMentioned.map((row, idx) => (
                 <button
@@ -235,9 +239,9 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                 color: '#14151A',
               }}
             >
-              Most bullish
+              {t('dashboard.most_bullish')}
             </h2>
-            <p className="text-[12px] text-muted mt-0.5 mb-4">Share of positive ratings</p>
+            <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.bullish_subtitle')}</p>
             <div className="flex flex-col gap-3">
               {data.mostBullish.map((row, idx) => {
                 const verdictColor =
@@ -266,7 +270,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                           className="text-[11px] font-semibold"
                           style={{ color: verdictColor }}
                         >
-                          {row.verdict}
+                          {t(`verdict.${row.verdict}`, row.verdict)}
                         </span>
                       </div>
                       <div

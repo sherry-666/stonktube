@@ -1,23 +1,27 @@
 import { Play } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
+import { useLang } from '../hooks/useLang.js'
 
 interface CreatorsProps {
   onSummaryClick: (id: string) => void
 }
 
 export default function Creators({ onSummaryClick }: CreatorsProps) {
-  const { data, isLoading, error } = useCreators()
+  const { t } = useTranslation()
+  const { lang } = useLang()
+  const { data, isLoading, error } = useCreators(lang)
   const navigate = useNavigate()
 
   if (isLoading) {
-    return <div className="py-12 text-center text-muted text-sm">Loading…</div>
+    return <div className="py-12 text-center text-muted text-sm">{t('creators.loading')}</div>
   }
 
   if (error || !data) {
-    return <div className="py-12 text-center text-bear text-sm">Failed to load creators.</div>
+    return <div className="py-12 text-center text-bear text-sm">{t('creators.error')}</div>
   }
 
   return (
@@ -34,7 +38,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
             letterSpacing: '0.08em',
           }}
         >
-          The Network
+          {t('creators.subtitle')}
         </p>
         <h1
           className="font-display font-bold text-[30px] sm:text-[36px] md:text-[42px] tracking-[-0.03em]"
@@ -43,10 +47,10 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
             lineHeight: 1.05,
           }}
         >
-          Creators we track
+          {t('creators.title')}
         </h1>
         <p className="text-[15px] text-muted mt-2 max-w-xl">
-          We follow the most insightful finance YouTubers and surface every stock call they make.
+          {t('creators.description')}
         </p>
       </div>
 
@@ -103,7 +107,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                   {creator.name}
                 </button>
                 <p className="text-[12px] text-muted mt-0.5">
-                  {creator.handle} · {fmtSubs(creator.subscribers)} subscribers
+                  {creator.handle} · {fmtSubs(creator.subscribers)} {t('creators.subscribers')}
                 </p>
               </div>
               <a
@@ -113,7 +117,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                 className="shrink-0 text-[12px] font-semibold px-3 py-1.5 border border-[#ECEBE4] rounded-[8px] text-muted hover:text-primary hover:border-[#D6D5CC] transition-colors duration-150"
                 onClick={e => e.stopPropagation()}
               >
-                Visit ↗
+                {t('creators.visit')}
               </a>
             </div>
 
@@ -127,7 +131,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                 style={{ background: '#F8F8F4', borderRadius: 11 }}
               >
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  Videos tracked
+                  {t('creators.videos_tracked')}
                 </span>
                 <span className="text-[16px] font-bold text-primary">{creator.videosTracked}</span>
               </div>
@@ -136,7 +140,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                 style={{ background: '#F8F8F4', borderRadius: 11 }}
               >
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  Bullish calls
+                  {t('creators.bullish_calls')}
                 </span>
                 <span
                   className="text-[16px] font-bold"
@@ -151,11 +155,10 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
             {creator.recentCalls && creator.recentCalls.length > 0 && (
               <div className="flex flex-col gap-2">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-faint">
-                  Recent calls
+                  {t('creators.recent_calls')}
                 </h3>
                 {creator.recentCalls.slice(0, 3).map(call => (
                   <div key={call.videoId} className="flex items-start gap-2">
-                    {/* Mini thumbnail — clicking opens summary modal */}
                     <button
                       onClick={() => onSummaryClick(call.videoId)}
                       className="relative shrink-0 overflow-hidden"
@@ -196,7 +199,6 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                       )}
                     </button>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <button
@@ -223,7 +225,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                           onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
                           onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
                         >
-                          Summary ↗
+                          {t('creators.summary_btn')}
                         </button>
                       </div>
                     </div>

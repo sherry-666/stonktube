@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video } from '@stonktube/db'
 import { mentionExpressesView } from '@stonktube/shared'
+import { getVideoTranslation } from '../lib/videoTranslation.js'
 
 // Strip Yahoo Finance suffix for crypto tickers (BTC-USD → BTC)
 function displayTicker(ticker: string): string {
@@ -25,7 +26,8 @@ function verdict(bullishPct: number): string {
 }
 
 const dashboard: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/api/dashboard', async (_req, reply) => {
+  fastify.get<{ Querystring: { lang?: string } }>('/api/dashboard', async (req, reply) => {
+    const lang = req.query.lang ?? 'en'
     const [stocks, videos] = await Promise.all([
       Stock.find({}).lean(),
       Video.find({ analysisStatus: 'ANALYZED' })
@@ -56,11 +58,12 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
       }))
 
     // Feed: latest 8 analyzed videos as VideoCardDTO
-    const feed = videos.map((v) => {
+    const feed = await Promise.all(videos.map(async (v) => {
       const primaryMention = v.mentions.find((m) => m.isPrimary)
+      const tx = await getVideoTranslation(v , lang)
       return {
         id: v._id.toString(),
-        title: v.title,
+        title: tx.title,
         url: v.url,
         thumbnailUrl: v.thumbnailUrl,
         publishedAt: v.publishedAt.toISOString(),
@@ -75,8 +78,6 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         },
         primaryTicker: primaryMention?.ticker ?? '',
         thumbBg: v.creator.brandColor,
-        // Sentiment-colored chips reflect the creator's view, so drop bare
-        // factual recaps (stance FACTUAL) — same gate as the sentiment stats.
         mentions: v.mentions
           .filter((m) => mentionExpressesView(m))
           .map((m) => ({
@@ -85,7 +86,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
             stockId: m.stockId.toString(),
           })),
       }
-    })
+    }))
 
     // mostMentioned: top 6 by mentions30d
     const sortedByMentions = [...stocks].sort(
