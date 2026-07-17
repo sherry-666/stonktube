@@ -161,9 +161,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   onSummaryClick={onSummaryClick}
                 />
                 {(idx + 1) % 4 === 0 && (
-                  <div key={`ad-feed-${idx}`} className="rounded-[14px] overflow-hidden bg-white border border-[#ECEBE4]">
-                    <AdUnit slot="FEED_AD_SLOT" />
-                  </div>
+                  <AdUnit key={`ad-feed-${idx}`} slot="FEED_AD_SLOT" className="rounded-[14px] bg-white border border-[#ECEBE4]" />
                 )}
               </>
             ))}
@@ -230,7 +228,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </span>
                 </button>
               ))}
-              <AdUnit slot="SIDEBAR_AD_SLOT" style={{ borderRadius: 8 }} />
+              <AdUnit slot="SIDEBAR_AD_SLOT" className="rounded-[8px]" />
             </div>
           </div>
 
