@@ -135,7 +135,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
           )
         })}
         {!pillAdHidden && (
-          <div className="overflow-hidden" style={{ maxHeight: 160 }}>
+          <div className="overflow-hidden" style={{ maxHeight: 160, contain: 'layout' }}>
             <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" onHidden={() => setPillAdHidden(true)} />
           </div>
         )}

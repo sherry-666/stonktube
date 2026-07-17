@@ -42,7 +42,7 @@ export default function AdUnit({ slot, format = 'auto', layoutKey, className, on
     <ins
       ref={insRef}
       className={`adsbygoogle${className ? ` ${className}` : ''}`}
-      style={{ display: 'block', minHeight: 100, maxHeight: 120 }}
+      style={{ display: 'block' }}
       data-ad-client="ca-pub-3146668424927503"
       data-ad-slot={slot}
       data-ad-format={format}
