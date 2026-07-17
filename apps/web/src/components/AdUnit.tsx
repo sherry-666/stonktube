@@ -18,22 +18,35 @@ export default function AdUnit({ slot, format = 'auto', layoutKey, className, on
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
-    if (pushed.current) return
-    pushed.current = true
-    try {
-      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-    } catch {}
+    if (!pushed.current) {
+      pushed.current = true
+      try {
+        ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+      } catch {}
+    }
+
+    const hide = () => {
+      setHidden(true)
+      onHidden?.()
+    }
+
+    const el = insRef.current
+    let observer: MutationObserver | undefined
+    if (el) {
+      observer = new MutationObserver(() => {
+        if (el.getAttribute('data-ad-status') === 'unfilled') hide()
+      })
+      observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] })
+    }
 
     const timer = setTimeout(() => {
-      const el = insRef.current
-      if (!el) return
-      if (el.getAttribute('data-ad-status') !== 'filled') {
-        setHidden(true)
-        onHidden?.()
-      }
-    }, 1500)
+      if (insRef.current?.getAttribute('data-ad-status') !== 'filled') hide()
+    }, 2000)
 
-    return () => clearTimeout(timer)
+    return () => {
+      observer?.disconnect()
+      clearTimeout(timer)
+    }
   }, [])
 
   if (hidden) return null
