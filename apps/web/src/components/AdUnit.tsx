@@ -9,10 +9,12 @@ interface AdUnitProps {
   format?: string
   layoutKey?: string
   className?: string
+  /** Fixed pixel height: requests exactly-sized ads instead of responsive (tall) ones */
+  height?: number
   onHidden?: () => void
 }
 
-export default function AdUnit({ slot, format = 'auto', layoutKey, className, onHidden }: AdUnitProps) {
+export default function AdUnit({ slot, format = 'auto', layoutKey, className, height, onHidden }: AdUnitProps) {
   const insRef = useRef<HTMLModElement>(null)
   const pushed = useRef(false)
   const [hidden, setHidden] = useState(false)
@@ -55,11 +57,11 @@ export default function AdUnit({ slot, format = 'auto', layoutKey, className, on
     <ins
       ref={insRef}
       className={`adsbygoogle${className ? ` ${className}` : ''}`}
-      style={{ display: 'block' }}
+      style={height ? { display: 'block', height, overflow: 'hidden' } : { display: 'block' }}
       data-ad-client="ca-pub-3146668424927503"
       data-ad-slot={slot}
-      data-ad-format={format}
-      {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : { 'data-full-width-responsive': 'true' })}
+      {...(height ? {} : { 'data-ad-format': format })}
+      {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : height ? {} : { 'data-full-width-responsive': 'true' })}
     />
   )
 }
