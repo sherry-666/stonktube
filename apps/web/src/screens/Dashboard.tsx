@@ -46,7 +46,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
       </h1>
 
       {/* Stock pills row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-start">
         {(pillAdHidden ? data.pills : data.pills.slice(0, -1)).map(pill => {
           const isUp = pill.dayChangePct >= 0
           const changeColor = isUp ? '#0F9D63' : '#E5484D'
@@ -135,7 +135,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
           )
         })}
         {!pillAdHidden && (
-          <div className="self-start overflow-hidden" style={{ maxHeight: 160 }}>
+          <div className="overflow-hidden" style={{ maxHeight: 160 }}>
             <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" onHidden={() => setPillAdHidden(true)} />
           </div>
         )}
