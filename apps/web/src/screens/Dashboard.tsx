@@ -187,7 +187,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.mentions_subtitle')}</p>
             <div className="flex flex-col gap-3">
-              {data.mostMentioned.slice(0, -1).map((row, idx) => (
+              {data.mostMentioned.map((row, idx) => (
                 <button
                   key={row.ticker}
                   onClick={() => navigate(`/stocks/${row.ticker}`)}
@@ -228,7 +228,6 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </span>
                 </button>
               ))}
-              <AdUnit slot="SIDEBAR_AD_SLOT" className="rounded-[8px]" />
             </div>
           </div>
 
@@ -249,7 +248,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.bullish_subtitle')}</p>
             <div className="flex flex-col gap-3">
-              {data.mostBullish.map((row, idx) => {
+              {data.mostBullish.slice(0, -1).map((row, idx) => {
                 const verdictColor =
                   row.verdict === 'Strong buy' || row.verdict === 'Buy'
                     ? '#0F9D63'
@@ -302,6 +301,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </button>
                 )
               })}
+              <AdUnit slot="SIDEBAR_AD_SLOT" className="rounded-[8px]" />
             </div>
           </div>
         </div>
