@@ -161,7 +161,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   onSummaryClick={onSummaryClick}
                 />
                 {(idx + 1) % 4 === 0 && (
-                  <AdUnit key={`ad-feed-${idx}`} slot="FEED_AD_SLOT" className="rounded-[14px] bg-white border border-[#ECEBE4]" />
+                  <AdUnit key={`ad-feed-${idx}`} slot="4608578398" format="fluid" layoutKey="-gb-2l+7j-8l+1h" className="rounded-[14px] bg-white border border-[#ECEBE4]" />
                 )}
               </>
             ))}

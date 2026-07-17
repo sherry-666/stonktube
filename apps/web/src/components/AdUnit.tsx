@@ -7,10 +7,11 @@ declare global {
 interface AdUnitProps {
   slot: string
   format?: string
+  layoutKey?: string
   className?: string
 }
 
-export default function AdUnit({ slot, format = 'auto', className }: AdUnitProps) {
+export default function AdUnit({ slot, format = 'auto', layoutKey, className }: AdUnitProps) {
   const insRef = useRef<HTMLModElement>(null)
   const pushed = useRef(false)
   const [hidden, setHidden] = useState(false)
@@ -44,7 +45,7 @@ export default function AdUnit({ slot, format = 'auto', className }: AdUnitProps
       data-ad-client="ca-pub-3146668424927503"
       data-ad-slot={slot}
       data-ad-format={format}
-      data-full-width-responsive="true"
+      {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : { 'data-full-width-responsive': 'true' })}
     />
   )
 }
