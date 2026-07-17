@@ -45,7 +45,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
 
       {/* Stock pills row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {data.pills.map(pill => {
+        {data.pills.slice(0, -1).map(pill => {
           const isUp = pill.dayChangePct >= 0
           const changeColor = isUp ? '#0F9D63' : '#E5484D'
           const sparkColor = pill.brandColor || (isUp ? '#0F9D63' : '#E5484D')
@@ -132,6 +132,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </button>
           )
         })}
+        <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" />
       </div>
 
       {/* Body grid */}
@@ -248,7 +249,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.bullish_subtitle')}</p>
             <div className="flex flex-col gap-3">
-              {data.mostBullish.slice(0, -1).map((row, idx) => {
+              {data.mostBullish.map((row, idx) => {
                 const verdictColor =
                   row.verdict === 'Strong buy' || row.verdict === 'Buy'
                     ? '#0F9D63'
@@ -301,7 +302,6 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </button>
                 )
               })}
-              <AdUnit slot="2269355519" className="rounded-[8px]" />
             </div>
           </div>
         </div>
