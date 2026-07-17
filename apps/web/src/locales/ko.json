@@ -32,6 +32,8 @@
     "ratings_one": "최근 7일간 {{count}}개 평가 기준",
     "ratings_other": "최근 7일간 {{count}}개 평가 기준",
     "of_creators_bullish": "의 크리에이터가 낙관적",
+    "of_creators_bearish": "의 크리에이터가 비관적",
+    "of_creators_neutral": "의 크리에이터가 중립적",
     "summary_btn": "요약 ↗",
     "watch_youtube": "YouTube에서 보기",
     "price_at_mention": "언급 당시 가격",

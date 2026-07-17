@@ -32,6 +32,8 @@
     "ratings_one": "基于近7天 {{count}} 条评分",
     "ratings_other": "基于近7天 {{count}} 条评分",
     "of_creators_bullish": "的创作者看涨",
+    "of_creators_bearish": "的创作者看跌",
+    "of_creators_neutral": "的创作者持中立",
     "summary_btn": "摘要 ↗",
     "watch_youtube": "在 YouTube 上观看",
     "price_at_mention": "提及时股价",

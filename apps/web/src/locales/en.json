@@ -32,6 +32,8 @@
     "ratings_one": "Based on {{count}} rating in the last 7 days",
     "ratings_other": "Based on {{count}} ratings in the last 7 days",
     "of_creators_bullish": "of creators are bullish",
+    "of_creators_bearish": "of creators are bearish",
+    "of_creators_neutral": "of creators are neutral",
     "summary_btn": "Summary ↗",
     "watch_youtube": "Watch on YouTube",
     "price_at_mention": "Price at mention",

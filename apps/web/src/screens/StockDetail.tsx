@@ -822,27 +822,31 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               {overallSentiment.total === 1 ? t('stock.ratings_one', { count: overallSentiment.total }) : t('stock.ratings_other', { count: overallSentiment.total })}
             </p>
 
-            {overallSentiment.total > 0 && <>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span
-                  style={{
-                    fontFamily: '"Space Grotesk", sans-serif',
-                    fontWeight: 700,
-                    fontSize: 44,
-                    color: '#0F9D63',
-                    lineHeight: 1,
-                  }}
-                >
-                  {overallSentiment.bullishPct.toFixed(0)}%
-                </span>
-                <span
-                  className="text-[16px] font-semibold"
-                  style={{ color: '#0F9D63' }}
-                >
-                  {t(`verdict.${verdict}`, verdict)}
-                </span>
-              </div>
-              <p className="text-[13px] text-muted mb-4">{t('stock.of_creators_bullish')}</p>
+            {overallSentiment.total > 0 && (() => {
+              const { bullCount, neutralCount, bearCount, bullishPct, neutralPct, bearishPct } = overallSentiment
+              const isBearDominant = bearCount > bullCount && bearCount >= neutralCount
+              const isNeutralDominant = !isBearDominant && neutralCount > bullCount
+              const dominantPct = isBearDominant ? bearishPct : isNeutralDominant ? neutralPct : bullishPct
+              const dominantColor = isBearDominant ? '#E5484D' : isNeutralDominant ? '#D9B26A' : '#0F9D63'
+              const subtitleKey = isBearDominant ? 'stock.of_creators_bearish' : isNeutralDominant ? 'stock.of_creators_neutral' : 'stock.of_creators_bullish'
+              return <>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span
+                    style={{
+                      fontFamily: '"Space Grotesk", sans-serif',
+                      fontWeight: 700,
+                      fontSize: 44,
+                      color: dominantColor,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {dominantPct.toFixed(0)}%
+                  </span>
+                  <span className="text-[16px] font-semibold" style={{ color: dominantColor }}>
+                    {t(`verdict.${verdict}`, verdict)}
+                  </span>
+                </div>
+                <p className="text-[13px] text-muted mb-4">{t(subtitleKey)}</p>
 
               <SentimentBar
                 bullishPct={overallSentiment.bullishPct}
@@ -874,7 +878,8 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                   <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
                 </div>
               </div>
-            </>}
+            </>
+            })()}
           </div>
         </div>
       </div>
