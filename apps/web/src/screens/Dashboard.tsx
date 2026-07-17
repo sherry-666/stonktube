@@ -132,7 +132,9 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </button>
           )
         })}
-        <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" />
+        <div className="self-start">
+          <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" />
+        </div>
       </div>
 
       {/* Body grid */}
