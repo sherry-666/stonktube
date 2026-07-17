@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDashboard } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
@@ -16,6 +17,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data, isLoading, error } = useDashboard(lang)
+  const [pillAdHidden, setPillAdHidden] = useState(false)
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('dashboard.loading')}</div>
@@ -45,7 +47,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
 
       {/* Stock pills row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {data.pills.slice(0, -1).map(pill => {
+        {(pillAdHidden ? data.pills : data.pills.slice(0, -1)).map(pill => {
           const isUp = pill.dayChangePct >= 0
           const changeColor = isUp ? '#0F9D63' : '#E5484D'
           const sparkColor = pill.brandColor || (isUp ? '#0F9D63' : '#E5484D')
@@ -132,9 +134,11 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </button>
           )
         })}
-        <div className="self-start">
-          <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" />
-        </div>
+        {!pillAdHidden && (
+          <div className="self-start">
+            <AdUnit slot="2269355519" className="rounded-[16px] border border-[#ECEBE4]" onHidden={() => setPillAdHidden(true)} />
+          </div>
+        )}
       </div>
 
       {/* Body grid */}

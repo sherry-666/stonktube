@@ -9,9 +9,10 @@ interface AdUnitProps {
   format?: string
   layoutKey?: string
   className?: string
+  onHidden?: () => void
 }
 
-export default function AdUnit({ slot, format = 'auto', layoutKey, className }: AdUnitProps) {
+export default function AdUnit({ slot, format = 'auto', layoutKey, className, onHidden }: AdUnitProps) {
   const insRef = useRef<HTMLModElement>(null)
   const pushed = useRef(false)
   const [hidden, setHidden] = useState(false)
@@ -23,12 +24,12 @@ export default function AdUnit({ slot, format = 'auto', layoutKey, className }: 
       ;(window.adsbygoogle = window.adsbygoogle || []).push({})
     } catch {}
 
-    // Hide container if AdSense marks the slot as unfilled
     const timer = setTimeout(() => {
       const el = insRef.current
       if (!el) return
       if (el.getAttribute('data-ad-status') === 'unfilled' || el.offsetHeight === 0) {
         setHidden(true)
+        onHidden?.()
       }
     }, 1500)
 
