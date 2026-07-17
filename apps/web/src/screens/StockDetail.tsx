@@ -822,57 +822,59 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
               {overallSentiment.total === 1 ? t('stock.ratings_one', { count: overallSentiment.total }) : t('stock.ratings_other', { count: overallSentiment.total })}
             </p>
 
-            <div className="flex items-baseline gap-2 mb-1">
-              <span
-                style={{
-                  fontFamily: '"Space Grotesk", sans-serif',
-                  fontWeight: 700,
-                  fontSize: 44,
-                  color: '#0F9D63',
-                  lineHeight: 1,
-                }}
-              >
-                {overallSentiment.bullishPct.toFixed(0)}%
-              </span>
-              <span
-                className="text-[16px] font-semibold"
-                style={{ color: '#0F9D63' }}
-              >
-                {t(`verdict.${verdict}`, verdict)}
-              </span>
-            </div>
-            <p className="text-[13px] text-muted mb-4">{t('stock.of_creators_bullish')}</p>
+            {overallSentiment.total > 0 && <>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span
+                  style={{
+                    fontFamily: '"Space Grotesk", sans-serif',
+                    fontWeight: 700,
+                    fontSize: 44,
+                    color: '#0F9D63',
+                    lineHeight: 1,
+                  }}
+                >
+                  {overallSentiment.bullishPct.toFixed(0)}%
+                </span>
+                <span
+                  className="text-[16px] font-semibold"
+                  style={{ color: '#0F9D63' }}
+                >
+                  {t(`verdict.${verdict}`, verdict)}
+                </span>
+              </div>
+              <p className="text-[13px] text-muted mb-4">{t('stock.of_creators_bullish')}</p>
 
-            <SentimentBar
-              bullishPct={overallSentiment.bullishPct}
-              neutralPct={overallSentiment.neutralPct}
-              bearishPct={overallSentiment.bearishPct}
-            />
+              <SentimentBar
+                bullishPct={overallSentiment.bullishPct}
+                neutralPct={overallSentiment.neutralPct}
+                bearishPct={overallSentiment.bearishPct}
+              />
 
-            {/* Legend */}
-            <div className="flex flex-col gap-2 mt-4">
-              <div className="flex items-center justify-between text-[13px]">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#0F9D63' }} />
-                  <span className="text-body">{t('sentiment.bullish')}</span>
+              {/* Legend */}
+              <div className="flex flex-col gap-2 mt-4">
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#0F9D63' }} />
+                    <span className="text-body">{t('sentiment.bullish')}</span>
+                  </div>
+                  <span className="font-semibold text-primary">{overallSentiment.bullCount}</span>
                 </div>
-                <span className="font-semibold text-primary">{overallSentiment.bullCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-[13px]">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#D9B26A' }} />
-                  <span className="text-body">{t('sentiment.neutral')}</span>
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#D9B26A' }} />
+                    <span className="text-body">{t('sentiment.neutral')}</span>
+                  </div>
+                  <span className="font-semibold text-primary">{overallSentiment.neutralCount}</span>
                 </div>
-                <span className="font-semibold text-primary">{overallSentiment.neutralCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-[13px]">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#E5484D' }} />
-                  <span className="text-body">{t('sentiment.bearish')}</span>
+                <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#E5484D' }} />
+                    <span className="text-body">{t('sentiment.bearish')}</span>
+                  </div>
+                  <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
                 </div>
-                <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
               </div>
-            </div>
+            </>}
           </div>
         </div>
       </div>
