@@ -301,7 +301,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </button>
                 )
               })}
-              <AdUnit slot="SIDEBAR_AD_SLOT" className="rounded-[8px]" />
+              <AdUnit slot="2269355519" className="rounded-[8px]" />
             </div>
           </div>
         </div>
