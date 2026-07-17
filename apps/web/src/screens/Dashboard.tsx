@@ -70,7 +70,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
               }}
             >
               {/* Top row: ticker + sentiment chip */}
-              <div className="flex items-start justify-between mb-1">
+              <div className="flex items-start justify-between mb-1 flex-wrap gap-1">
                 <div>
                   <div
                     style={{
@@ -116,7 +116,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
               </div>
 
               {/* Price + change */}
-              <div className="flex items-baseline gap-2 mt-1">
+              <div className="flex items-baseline gap-2 mt-1 flex-wrap">
                 <span
                   style={{
                     fontFamily: '"JetBrains Mono", monospace',
