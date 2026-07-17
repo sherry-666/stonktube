@@ -105,12 +105,12 @@ export default function Nav() {
         style={{ minHeight: 66 }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0 order-1">
+        <NavLink to={langPath('/', lang)} end className="flex items-center gap-2 shrink-0 order-1 no-underline">
           <img src="/icon.svg" alt="StonkTube" className="h-[30px] w-[30px] rounded-[9px]" />
           <span className="font-display font-bold text-[19px] tracking-[-0.02em] text-primary">
             StonkTube
           </span>
-        </div>
+        </NavLink>
 
         {/* Nav links */}
         <nav className="order-3 flex w-full items-center gap-1 md:order-2 md:w-auto">
