@@ -27,7 +27,7 @@ export default function AdUnit({ slot, format = 'auto', layoutKey, className, on
     const timer = setTimeout(() => {
       const el = insRef.current
       if (!el) return
-      if (el.getAttribute('data-ad-status') === 'unfilled' || el.offsetHeight === 0) {
+      if (el.getAttribute('data-ad-status') !== 'filled') {
         setHidden(true)
         onHidden?.()
       }
