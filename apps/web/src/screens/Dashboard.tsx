@@ -3,6 +3,7 @@ import { useDashboard } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import VideoCard from '../components/VideoCard.js'
 import type { VideoCardDTO } from '../components/VideoCard.js'
+import AdUnit from '../components/AdUnit.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
 
@@ -152,12 +153,19 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             <p className="text-sm text-muted mt-0.5">{t('dashboard.across_creators', { count: 6 })}</p>
           </div>
           <div className="flex flex-col gap-3">
-            {data.feed.map(video => (
-              <VideoCard
-                key={video.id}
-                video={video as VideoCardDTO}
-                onSummaryClick={onSummaryClick}
-              />
+            {data.feed.map((video, idx) => (
+              <>
+                <VideoCard
+                  key={video.id}
+                  video={video as VideoCardDTO}
+                  onSummaryClick={onSummaryClick}
+                />
+                {(idx + 1) % 4 === 0 && (
+                  <div key={`ad-feed-${idx}`} className="rounded-[14px] overflow-hidden bg-white border border-[#ECEBE4]">
+                    <AdUnit slot="FEED_AD_SLOT" />
+                  </div>
+                )}
+              </>
             ))}
           </div>
         </div>
@@ -181,7 +189,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
             </h2>
             <p className="text-[12px] text-muted mt-0.5 mb-4">{t('dashboard.mentions_subtitle')}</p>
             <div className="flex flex-col gap-3">
-              {data.mostMentioned.map((row, idx) => (
+              {data.mostMentioned.slice(0, -1).map((row, idx) => (
                 <button
                   key={row.ticker}
                   onClick={() => navigate(`/stocks/${row.ticker}`)}
@@ -222,6 +230,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                   </span>
                 </button>
               ))}
+              <AdUnit slot="SIDEBAR_AD_SLOT" style={{ borderRadius: 8 }} />
             </div>
           </div>
 
