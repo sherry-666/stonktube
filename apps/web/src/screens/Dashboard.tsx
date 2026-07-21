@@ -7,6 +7,7 @@ import type { VideoCardDTO } from '../components/VideoCard.js'
 import AdUnit from '../components/AdUnit.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
+import { usePageMeta } from '../hooks/usePageMeta.js'
 
 interface DashboardProps {
   onSummaryClick: (id: string) => void
@@ -18,6 +19,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
   const { lang } = useLang()
   const { data, isLoading, error } = useDashboard(lang)
   const [pillAdHidden, setPillAdHidden] = useState(false)
+  usePageMeta()
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('dashboard.loading')}</div>

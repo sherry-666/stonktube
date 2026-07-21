@@ -4,6 +4,7 @@ import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
+import { usePageMeta } from '../hooks/usePageMeta.js'
 
 interface CreatorsProps {
   onSummaryClick: (id: string) => void
@@ -14,6 +15,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
   const { lang } = useLang()
   const { data, isLoading, error } = useCreators(lang)
   const navigate = useLangNavigate()
+  usePageMeta('Finance Creators · StonkTube', 'Discover YouTube finance creators and see which stocks they track. Compare bullish and bearish sentiment across channels.')
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creators.loading')}</div>

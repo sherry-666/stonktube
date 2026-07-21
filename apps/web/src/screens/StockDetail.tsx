@@ -10,6 +10,7 @@ import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
 import type { Marker } from '../api/hooks.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
+import { usePageMeta } from '../hooks/usePageMeta.js'
 
 const TF_OPTIONS = [
   { label: '1M', value: '1M' },
@@ -326,6 +327,14 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
 
   const { data, isLoading, error } = useStockDetail(ticker, tf, lang)
   const { data: markers } = useStockMarkers(ticker, tf, lang)
+  usePageMeta(
+    data?.stock
+      ? `${data.stock.name} (${ticker.toUpperCase()}) · StonkTube`
+      : `${ticker.toUpperCase()} · StonkTube`,
+    data?.stock
+      ? `See what YouTube finance creators say about ${data.stock.name} (${ticker.toUpperCase()}) — sentiment ratings, recent coverage, and price history.`
+      : undefined,
+  )
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('stock.loading')}</div>

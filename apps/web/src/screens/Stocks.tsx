@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStocks } from '../api/hooks.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
+import { usePageMeta } from '../hooks/usePageMeta.js'
 import Sparkline from '../components/Sparkline.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
@@ -16,6 +17,7 @@ export default function Stocks() {
   const { lang } = useLang()
   const [sort, setSort] = useState('mentions')
   const { data, isLoading, error } = useStocks(sort, lang)
+  usePageMeta('All Stocks · StonkTube', 'Browse stocks tracked by YouTube finance creators. Compare creator sentiment, coverage counts, and price movements.')
 
   const SORT_PILLS = [
     { label: t('stocks.sort_mentions'), value: 'mentions' },

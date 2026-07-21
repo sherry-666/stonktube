@@ -10,6 +10,7 @@ import stocks from './routes/stocks.js'
 import creators from './routes/creators.js'
 import videos from './routes/videos.js'
 import search from './routes/search.js'
+import sitemap from './routes/sitemap.js'
 
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } })
 
@@ -32,6 +33,7 @@ app.register(stocks)
 app.register(creators)
 app.register(videos)
 app.register(search)
+app.register(sitemap)
 
 // Serve SPA in production
 if (process.env.NODE_ENV === 'production') {

@@ -7,6 +7,7 @@ import SentimentBar from '../components/SentimentBar.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { bullishPctToVerdict } from '@stonktube/shared'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
+import { usePageMeta } from '../hooks/usePageMeta.js'
 
 interface CreatorProfileProps {
   onSummaryClick: (id: string) => void
@@ -18,6 +19,12 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
   const { t } = useTranslation()
   const { lang } = useLang()
   const { data: creator, isLoading, error } = useCreator(slug, lang)
+  usePageMeta(
+    creator ? `${creator.name} Stock Picks · StonkTube` : 'Creator · StonkTube',
+    creator
+      ? `See which stocks ${creator.name} covers on YouTube. Track their investment calls and sentiment ratings.`
+      : undefined,
+  )
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creator_profile.loading')}</div>
