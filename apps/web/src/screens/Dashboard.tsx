@@ -303,7 +303,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
                       className="text-[12px] font-semibold shrink-0"
                       style={{ color: '#0F9D63' }}
                     >
-                      {row.bullishPct.toFixed(0)}%
+                      {row.bullishPct.toFixed(0)}% <span className="text-muted font-normal">({row.recentRatings})</span>
                     </span>
                   </button>
                 )

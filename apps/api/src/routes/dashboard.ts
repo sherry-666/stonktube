@@ -108,6 +108,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
     const mostBullish = sortedByBull.slice(0, 6).map((s) => ({
       ticker: s.ticker,
       bullishPct: s.stats?.bullishPct ?? 0,
+      recentRatings: s.stats?.recentRatings ?? 0,
       verdict: verdict(s.stats?.bullishPct ?? 0),
     }))
 

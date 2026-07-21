@@ -15,7 +15,7 @@
     "most_mentioned": "Most mentioned",
     "mentions_subtitle": "Total mentions · last 30 days",
     "most_bullish": "Most bullish",
-    "bullish_subtitle": "Share of positive ratings",
+    "bullish_subtitle": "Share of positive ratings · last 7 days",
     "no_recent_calls": "no recent calls",
     "loading": "Loading…",
     "error": "Failed to load dashboard."

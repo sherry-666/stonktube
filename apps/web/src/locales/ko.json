@@ -15,7 +15,7 @@
     "most_mentioned": "가장 많이 언급됨",
     "mentions_subtitle": "총 언급 횟수 · 최근 30일",
     "most_bullish": "가장 낙관적",
-    "bullish_subtitle": "긍정 평가 비율",
+    "bullish_subtitle": "긍정 평가 비율 · 최근 7일",
     "no_recent_calls": "최근 평가 없음",
     "loading": "로딩 중…",
     "error": "대시보드를 불러오지 못했습니다."
