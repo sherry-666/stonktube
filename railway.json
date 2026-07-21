@@ -4,8 +4,7 @@
     "web": {
       "buildCommand": "pnpm install && pnpm turbo run build --filter=api... --filter=web...",
       "startCommand": "node apps/api/dist/index.js",
-      "healthcheckPath": "/healthz",
-      "releaseCommand": "node apps/api/dist/bootstrap.js"
+      "healthcheckPath": "/healthz"
     },
     "worker": {
       "buildCommand": "pnpm install && pnpm turbo run build --filter=worker...",
