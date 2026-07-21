@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node generate-sitemap.mjs",
     "preview": "serve -s dist -l ${PORT:-4173}",
     "dev": "vite",
     "typecheck": "tsc --noEmit",

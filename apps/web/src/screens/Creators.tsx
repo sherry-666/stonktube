@@ -15,7 +15,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
   const { lang } = useLang()
   const { data, isLoading, error } = useCreators(lang)
   const navigate = useLangNavigate()
-  usePageMeta('Finance Creators · StonkTube', 'Discover YouTube finance creators and see which stocks they track. Compare bullish and bearish sentiment across channels.')
+  usePageMeta('YouTube Finance Creators & Influencers · StonkTube', 'Discover YouTube finance creators, influencers, and crypto YouTubers. See which stocks and crypto they cover and track their sentiment ratings.')
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creators.loading')}</div>

@@ -332,7 +332,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
       ? `${data.stock.name} (${ticker.toUpperCase()}) · StonkTube`
       : `${ticker.toUpperCase()} · StonkTube`,
     data?.stock
-      ? `See what YouTube finance creators say about ${data.stock.name} (${ticker.toUpperCase()}) — sentiment ratings, recent coverage, and price history.`
+      ? `See what YouTube finance creators and influencers say about ${data.stock.name} (${ticker.toUpperCase()}) — bullish/bearish sentiment, recent creator coverage, and price history.`
       : undefined,
   )
 

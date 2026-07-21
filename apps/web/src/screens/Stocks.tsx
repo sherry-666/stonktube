@@ -17,7 +17,7 @@ export default function Stocks() {
   const { lang } = useLang()
   const [sort, setSort] = useState('mentions')
   const { data, isLoading, error } = useStocks(sort, lang)
-  usePageMeta('All Stocks · StonkTube', 'Browse stocks tracked by YouTube finance creators. Compare creator sentiment, coverage counts, and price movements.')
+  usePageMeta('Stocks & Crypto Picks · StonkTube', 'Browse stocks and crypto assets tracked by YouTube finance creators and influencers. Compare sentiment, creator coverage, and price movements.')
 
   const SORT_PILLS = [
     { label: t('stocks.sort_mentions'), value: 'mentions' },

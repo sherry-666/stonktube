@@ -20,9 +20,9 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
   const { lang } = useLang()
   const { data: creator, isLoading, error } = useCreator(slug, lang)
   usePageMeta(
-    creator ? `${creator.name} Stock Picks · StonkTube` : 'Creator · StonkTube',
+    creator ? `${creator.name} Stock & Crypto Picks · StonkTube` : 'Creator · StonkTube',
     creator
-      ? `See which stocks ${creator.name} covers on YouTube. Track their investment calls and sentiment ratings.`
+      ? `See which stocks and crypto assets ${creator.name} covers on YouTube. Track their investment calls, bullish/bearish ratings, and sentiment history.`
       : undefined,
   )
 

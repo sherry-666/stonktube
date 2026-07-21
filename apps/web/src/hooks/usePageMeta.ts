@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 
-const DEFAULT_TITLE = 'StonkTube — YouTube Finance Creator Stock Picks'
+const DEFAULT_TITLE = 'StonkTube — Stock & Crypto Picks from YouTube Finance Creators'
 const DEFAULT_DESC =
-  'Track which stocks YouTube finance creators are calling. Real-time sentiment and ratings from top investing channels.'
+  'See what top YouTube finance creators, influencers, and crypto YouTubers are buying and selling. Real-time stock and crypto sentiment from the biggest investing channels.'
 
 function setMeta(selector: string, value: string) {
   const el = document.querySelector<HTMLMetaElement>(selector)
