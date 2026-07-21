@@ -57,6 +57,7 @@ export interface MostBullishRow {
   ticker: string
   verdict: string
   bullishPct: number
+  recentRatings: number
 }
 
 export interface DashboardResponse {
