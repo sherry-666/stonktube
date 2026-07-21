@@ -50,7 +50,7 @@ console.log(`Videos updated: ${videoResult.modifiedCount}`)
 
 // 3. Delete stale KRW price data so the pipeline re-fetches USD prices
 await deletePricesForStock(stock._id)
-console.log(`Price points deleted for stockId ${stockId}`)
+console.log(`Price points deleted for stockId ${stock._id}`)
 
 console.log('Done. Run a price-fill + rollup to populate SKHY prices.')
 await disconnectDB()
