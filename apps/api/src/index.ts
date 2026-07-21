@@ -26,7 +26,7 @@ app.options('*', async (_req, reply) => {
   return reply.code(204).send()
 })
 
-app.get('/healthz', async () => ({ status: 'ok' }))
+app.get('/healthz', async () => ({ status: 'ok', ts: Date.now() }))
 
 app.register(dashboard)
 app.register(stocks)
