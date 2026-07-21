@@ -104,7 +104,11 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
     // mostBullish: top 6 by bullishPct, among stocks with recent ratings only
     const sortedByBull = [...stocks]
       .filter((s) => (s.stats?.recentRatings ?? 0) > 0)
-      .sort((a, b) => (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0))
+      .sort((a, b) => {
+        const pctDiff = (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0)
+        if (pctDiff !== 0) return pctDiff
+        return (b.stats?.recentRatings ?? 0) - (a.stats?.recentRatings ?? 0)
+      })
     const mostBullish = sortedByBull.slice(0, 6).map((s) => ({
       ticker: s.ticker,
       bullishPct: s.stats?.bullishPct ?? 0,
