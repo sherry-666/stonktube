@@ -14,7 +14,8 @@
     "clean": "rm -rf dist",
     "seed": "node --experimental-vm-modules dist/seed.js",
     "recompute-stats": "node dist/recompute-stats.js",
-    "fix-symbols": "node dist/fix-symbols.js"
+    "fix-symbols": "node dist/fix-symbols.js",
+    "migrate-skhynix": "node dist/migrate-skhynix.js"
   },
   "dependencies": {
     "@stonktube/shared": "workspace:*",
