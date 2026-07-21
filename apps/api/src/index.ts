@@ -15,8 +15,7 @@ import sitemap from './routes/sitemap.js'
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } })
 
 // Simple CORS for dev
-app.addHook('onRequest', async (req, reply) => {
-  void req
+app.addHook('onRequest', async (_req, reply) => {
   reply.header('Access-Control-Allow-Origin', '*')
   reply.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   reply.header('Access-Control-Allow-Headers', 'Content-Type')
