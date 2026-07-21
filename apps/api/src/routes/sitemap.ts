@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Creator } from '@stonktube/db'
 
-const SITE_URL = (process.env.SITE_URL ?? 'https://stonktube.app').replace(/\/$/, '')
+const SITE_URL = 'https://stonktube.app'
 
 const sitemap: FastifyPluginAsync = async (fastify) => {
   fastify.get('/sitemap.xml', async (_req, reply) => {
