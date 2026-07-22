@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
+import TagIcon from '../components/TagIcon.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
 import { usePageMeta } from '../hooks/usePageMeta.js'
@@ -165,9 +166,10 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
               {creator.tags.map(tag => (
                 <span
                   key={tag}
-                  className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full self-center"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full self-center"
                   style={{ background: '#F3F2EC', color: '#6E6F78' }}
                 >
+                  <TagIcon tag={tag} />
                   {tag}
                 </span>
               ))}
