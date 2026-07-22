@@ -137,23 +137,8 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
             {/* Bio */}
             <p style={{ fontSize: 13.5, color: '#6E6F78', lineHeight: 1.6 }}>{creator.bio}</p>
 
-            {/* Tags */}
-            {creator.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {creator.tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                    style={{ background: '#F3F2EC', color: '#6E6F78' }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Stat tiles */}
-            <div className="flex items-center gap-2">
+            {/* Stat tiles + Tags */}
+            <div className="flex items-center gap-2 flex-wrap">
               <div
                 className="flex flex-col gap-0.5 px-3 py-2"
                 style={{ background: '#F8F8F4', borderRadius: 11 }}
@@ -177,6 +162,15 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
                   {creator.bullishPct.toFixed(0)}%
                 </span>
               </div>
+              {creator.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full self-center"
+                  style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
 
             {/* Recent calls */}
