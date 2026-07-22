@@ -8,8 +8,12 @@ function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
 }
 
-function fmtPrice(n?: number): string {
-  return n != null ? `$${n.toFixed(2)}` : ''
+function currencySymbol(ticker: string): string {
+  return ticker.endsWith('.KS') ? '₩' : '$'
+}
+
+function fmtPrice(n: number | undefined, ticker: string): string {
+  return n != null ? `${currencySymbol(ticker)}${n.toFixed(2)}` : ''
 }
 
 function fmtPct(n?: number): string {
@@ -47,7 +51,8 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
         brandColor: s.brandColor,
         logoBg: s.logoBg,
         initials: s.initials,
-        priceStr: fmtPrice(s.stats?.latestClose),
+        currency: currencySymbol(s.ticker),
+        priceStr: fmtPrice(s.stats?.latestClose, s.ticker),
         dayChangePct: s.stats?.dayChangePct ?? 0,
         dayChangeStr: fmtPct(s.stats?.dayChangePct),
         bullishPct: s.stats?.bullishPct ?? 0,

@@ -1,6 +1,6 @@
-export function fmtPrice(n?: number): string {
+export function fmtPrice(n?: number, currency = '$'): string {
   if (n == null) return '—'
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return currency + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export function fmtPct(n?: number, showSign = true): string {

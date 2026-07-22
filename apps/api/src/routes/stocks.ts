@@ -9,14 +9,18 @@ function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
 }
 
+function currencySymbol(ticker: string): string {
+  return ticker.endsWith('.KS') ? '₩' : '$'
+}
+
 // Company logo by ticker (Financial Modeling Prep). 404s for indices/odd
 // symbols, so the client falls back to the initials badge on image error.
 function fmpLogo(ticker: string): string {
   return `https://financialmodelingprep.com/image-stock/${displayTicker(ticker)}.png`
 }
 
-function fmtPrice(n?: number): string {
-  return n != null ? `$${n.toFixed(2)}` : ''
+function fmtPrice(n: number | undefined, ticker: string): string {
+  return n != null ? `${currencySymbol(ticker)}${n.toFixed(2)}` : ''
 }
 
 function fmtPct(n?: number): string {
@@ -88,7 +92,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       logoBg: s.logoBg,
       initials: s.initials,
       logoUrl: s.logoUrl || fmpLogo(s.ticker),
-      priceStr: fmtPrice(s.stats?.latestClose),
+      currency: currencySymbol(s.ticker),
+      priceStr: fmtPrice(s.stats?.latestClose, s.ticker),
       dayChangePct: s.stats?.dayChangePct ?? 0,
       dayChangeStr: fmtPct(s.stats?.dayChangePct),
       change30dPct: s.stats?.change30dPct ?? 0,
@@ -206,7 +211,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
             sentiment: mention?.sentiment ?? 'NEUTRAL',
             stance: mention?.stance,
             priceAtMention: mention?.priceAtMention,
-            priceStr: fmtPrice(mention?.priceAtMention),
+            priceStr: fmtPrice(mention?.priceAtMention, stock.ticker),
           }
         }),
       )
@@ -233,7 +238,8 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           logoBg: stock.logoBg,
           initials: stock.initials,
           logoUrl: stock.logoUrl || fmpLogo(stock.ticker),
-          priceStr: fmtPrice(stock.stats?.latestClose),
+          currency: currencySymbol(stock.ticker),
+          priceStr: fmtPrice(stock.stats?.latestClose, stock.ticker),
           dayChangePct: stock.stats?.dayChangePct ?? 0,
           dayChangeStr: fmtPct(stock.stats?.dayChangePct),
           trackedBy,
@@ -312,7 +318,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
             title: tx.title,
             url: v.url,
             priceAtMention: price,
-            priceLabel: price != null ? `@ $${price.toFixed(2)}` : '',
+            priceLabel: price != null ? `@ ${currencySymbol(stock.ticker)}${price.toFixed(2)}` : '',
           }
         }),
       )

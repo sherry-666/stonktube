@@ -20,6 +20,7 @@ export interface DashboardPill {
   neutralPct: number
   bearishPct: number
   recentRatings: number
+  currency: string
   priceStr: string
   dayChangePct: number
   dayChangeStr: string
@@ -86,6 +87,7 @@ export interface StockRow {
   logoBg: string
   initials: string
   logoUrl?: string
+  currency: string
   priceStr: string
   dayChangePct: number
   dayChangeStr: string
@@ -114,6 +116,7 @@ export interface StockDetailStock {
   logoBg: string
   initials: string
   logoUrl?: string
+  currency: string
   priceStr: string
   dayChangePct: number
   dayChangeStr: string

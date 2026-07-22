@@ -594,7 +594,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                       textAnchor="end"
                       style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, fill: '#B6B7BE' }}
                     >
-                      {fmtPrice(gp)}
+                      {fmtPrice(gp, data?.stock.currency)}
                     </text>
                   </g>
                 )
@@ -668,7 +668,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                   zIndex: 10,
                 }}
               >
-                {fmtDate(pt.date)} · {fmtPrice(pt.close)}
+                {fmtDate(pt.date)} · {fmtPrice(pt.close, data?.stock.currency)}
               </div>
             )
           })()}
@@ -790,7 +790,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                           {t(`sentiment.${event.sentiment.toLowerCase()}`)}
                         </div>
                         <span className="text-[11px] text-muted">
-                          @ {fmtPrice(event.priceAtMention)}
+                          @ {fmtPrice(event.priceAtMention, data?.stock.currency)}
                         </span>
                         <button
                           onClick={() => onSummaryClick(event.videoId)}
