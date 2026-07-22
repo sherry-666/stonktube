@@ -2,6 +2,17 @@ import type { FastifyPluginAsync } from 'fastify'
 import { Creator, Video } from '@stonktube/db'
 import { mentionExpressesView, mentionQualifies } from '@stonktube/shared'
 import { getVideoTranslation } from '../lib/videoTranslation.js'
+import { translateOne } from '../lib/translate.js'
+
+async function getCreatorBio(creator: { _id: unknown; bio: string; bioI18n?: Record<string, string> }, lang: string): Promise<string> {
+  if (lang === 'en') return creator.bio
+  const cached = creator.bioI18n?.[lang]
+  if (cached) return cached
+  const translated = await translateOne(creator.bio, lang, 'en')
+  Creator.updateOne({ _id: creator._id }, { $set: { [`bioI18n.${lang}`]: translated } })
+    .catch(err => console.error('[creatorBio] cache write failed', err))
+  return translated
+}
 
 const creators: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { lang?: string } }>('/api/creators', async (req, reply) => {
@@ -61,7 +72,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
           initial: c.initial,
           avatarUrl: c.avatarUrl,
           subscribers: c.subscriberCount,
-          bio: c.bioI18n?.[lang] ?? c.bio,
+          bio: await getCreatorBio(c, lang),
           channelUrl: c.channelUrl,
           videosTracked: videos.length,
           bullishPct,
@@ -150,7 +161,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
       initial: creator.initial,
       avatarUrl: creator.avatarUrl,
       channelUrl: creator.channelUrl,
-      bio: creator.bioI18n?.[lang] ?? creator.bio,
+      bio: await getCreatorBio(creator, lang),
       subscribers: creator.subscriberCount,
       videosTracked: videos.length,
       bullishPct,
