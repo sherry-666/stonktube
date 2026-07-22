@@ -55,8 +55,22 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
   )
 }
 
+const TAG_LABELS: Record<string, Record<string, string>> = {
+  crypto:    { en: 'Crypto',    zh: '加密货币', ko: '암호화폐' },
+  dividends: { en: 'Dividends', zh: '股息',     ko: '배당' },
+  macro:     { en: 'Macro',     zh: '宏观',     ko: '거시경제' },
+  news:      { en: 'News',      zh: '新闻',     ko: '뉴스' },
+  politics:  { en: 'Politics',  zh: '政治',     ko: '정치' },
+  technical: { en: 'Technical', zh: '技术分析', ko: '기술분석' },
+}
+
+function tagLabel(tag: string, lang: string): string {
+  return TAG_LABELS[tag]?.[lang] ?? TAG_LABELS[tag]?.en ?? tag
+}
+
 function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hooks.js').CreatorCard; onSummaryClick: (id: string) => void }) {
   const { t } = useTranslation()
+  const { lang } = useLang()
   const navigate = useLangNavigate()
   const [hovered, setHovered] = useState(false)
 
@@ -139,40 +153,46 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
             <p style={{ fontSize: 13.5, color: '#6E6F78', lineHeight: 1.6 }}>{creator.bio}</p>
 
             {/* Stat tiles + Tags */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div
-                className="flex flex-col gap-0.5 px-3 py-2"
-                style={{ background: '#F8F8F4', borderRadius: 11 }}
-              >
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  {t('creators.videos_tracked')}
-                </span>
-                <span className="text-[16px] font-bold text-primary">{creator.videosTracked}</span>
-              </div>
-              <div
-                className="flex flex-col gap-0.5 px-3 py-2"
-                style={{ background: '#F8F8F4', borderRadius: 11 }}
-              >
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  {t('creators.bullish_calls')}
-                </span>
-                <span
-                  className="text-[16px] font-bold"
-                  style={{ color: '#0F9D63' }}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex flex-col gap-0.5 px-3 py-2"
+                  style={{ background: '#F8F8F4', borderRadius: 11 }}
                 >
-                  {creator.bullishPct.toFixed(0)}%
-                </span>
-              </div>
-              {creator.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full self-center"
-                  style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
+                    {t('creators.videos_tracked')}
+                  </span>
+                  <span className="text-[16px] font-bold text-primary">{creator.videosTracked}</span>
+                </div>
+                <div
+                  className="flex flex-col gap-0.5 px-3 py-2"
+                  style={{ background: '#F8F8F4', borderRadius: 11 }}
                 >
-                  <TagIcon tag={tag} />
-                  {tag}
-                </span>
-              ))}
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
+                    {t('creators.bullish_calls')}
+                  </span>
+                  <span
+                    className="text-[16px] font-bold"
+                    style={{ color: '#0F9D63' }}
+                  >
+                    {creator.bullishPct.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              {creator.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 justify-end">
+                  {creator.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full"
+                      style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                    >
+                      <TagIcon tag={tag} />
+                      {tagLabel(tag, lang)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Recent calls */}
