@@ -29,18 +29,6 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div>
-        <p
-          className="mb-1"
-          style={{
-            color: '#4F46E5',
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}
-        >
-          {t('creators.subtitle')}
-        </p>
         <h1
           className="font-display font-bold text-[30px] sm:text-[36px] md:text-[42px] tracking-[-0.03em]"
           style={{

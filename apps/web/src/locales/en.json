@@ -42,7 +42,7 @@
     "error": "Failed to load stock detail."
   },
   "stocks": {
-    "title": "Stocks",
+    "title": "Market Tracker",
     "subtitle": "All tracked names",
     "sort_by": "Sort by",
     "sort_mentions": "Most mentioned",
@@ -61,7 +61,7 @@
     "error": "Failed to load stocks."
   },
   "creators": {
-    "title": "Creators we track",
+    "title": "Market Influencers",
     "subtitle": "The Network",
     "description": "We follow the most insightful finance YouTubers and surface every stock call they make.",
     "subscribers": "subscribers",

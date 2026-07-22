@@ -42,7 +42,7 @@
     "error": "주식 상세 정보를 불러오지 못했습니다."
   },
   "stocks": {
-    "title": "주식",
+    "title": "마켓 트래커",
     "subtitle": "추적 중인 모든 종목",
     "sort_by": "정렬 기준",
     "sort_mentions": "가장 많이 언급됨",
@@ -61,7 +61,7 @@
     "error": "주식 목록을 불러오지 못했습니다."
   },
   "creators": {
-    "title": "추적 중인 크리에이터",
+    "title": "마켓 인플루언서",
     "subtitle": "네트워크",
     "description": "가장 통찰력 있는 재테크 유튜버를 추적하여 그들의 모든 주식 전망을 정리합니다.",
     "subscribers": "구독자",

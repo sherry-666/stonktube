@@ -14,7 +14,8 @@
     "backfill-channel": "tsc && node dist/backfill-channel.js",
     "retranscribe-creator": "tsc && node dist/retranscribe-creator.js",
     "earliest-per-creator": "tsc && node dist/earliest-per-creator.js",
-    "debug-tom-nash": "tsc && node dist/debug-tom-nash.js"
+    "debug-tom-nash": "tsc && node dist/debug-tom-nash.js",
+    "onboard-creator": "tsc && node dist/onboard-creator.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

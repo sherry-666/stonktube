@@ -42,7 +42,7 @@
     "error": "股票详情加载失败。"
   },
   "stocks": {
-    "title": "股票",
+    "title": "市场追踪",
     "subtitle": "所有追踪的股票",
     "sort_by": "排序",
     "sort_mentions": "最多提及",
@@ -61,7 +61,7 @@
     "error": "股票列表加载失败。"
   },
   "creators": {
-    "title": "追踪的创作者",
+    "title": "财经博主",
     "subtitle": "创作者网络",
     "description": "我们追踪最具洞察力的财经 YouTuber，并整理他们的每一个股票观点。",
     "subscribers": "订阅者",
