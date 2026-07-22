@@ -58,7 +58,10 @@
     "col_creators": "크리에이터",
     "private_badge": "비상장",
     "loading": "로딩 중…",
-    "error": "주식 목록을 불러오지 못했습니다."
+    "error": "주식 목록을 불러오지 못했습니다.",
+    "showing": "{{from}}–{{to}} / 총 {{total}}",
+    "prev": "이전",
+    "next": "다음"
   },
   "creators": {
     "title": "마켓 인플루언서",
@@ -77,9 +80,9 @@
     "back": "‹ 크리에이터",
     "videos_tracked": "분석된 영상",
     "bullish_calls": "낙관적 평가",
-    "stocks_covered": "다룬 종목",
+    "stocks_covered": "7일 종목",
     "sentiment_label": "전체 평가 심리",
-    "covers": "다룬 종목",
+    "covers": "최근 7일",
     "recent_calls": "최근 평가",
     "no_videos": "분석된 영상이 없습니다.",
     "visit_channel": "채널 방문 ↗",

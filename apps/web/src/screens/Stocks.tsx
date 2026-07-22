@@ -16,6 +16,8 @@ export default function Stocks() {
   const { t } = useTranslation()
   const { lang } = useLang()
   const [sort, setSort] = useState('mentions')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 50
   const { data, isLoading, error } = useStocks(sort, lang)
   usePageMeta('Stocks & Crypto Picks · StonkTube', 'Browse stocks and crypto assets tracked by YouTube finance creators and influencers. Compare sentiment, creator coverage, and price movements.')
 
@@ -39,6 +41,7 @@ export default function Stocks() {
   }, [])
   const isMobile = containerW < 560
   const COL_GRID = isMobile ? COL_GRID_MOBILE : COL_GRID_DESKTOP
+  const pageStocks = data?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? []
 
   return (
     <div ref={containerRef} className="flex flex-col gap-6">
@@ -62,7 +65,7 @@ export default function Stocks() {
           {SORT_PILLS.map(p => (
             <button
               key={p.value}
-              onClick={() => setSort(p.value)}
+              onClick={() => { setSort(p.value); setPage(0) }}
               className="px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 shrink-0"
               style={{
                 borderRadius: 8,
@@ -104,7 +107,7 @@ export default function Stocks() {
           <div className="py-10 text-center text-bear text-sm">{t('stocks.error')}</div>
         )}
 
-        {data?.map((stock, idx) => {
+        {pageStocks.map((stock, idx) => {
           const isUp = stock.dayChangePct >= 0
           const change30Up = stock.change30dPct >= 0
 
@@ -117,7 +120,7 @@ export default function Stocks() {
                 gridTemplateColumns: COL_GRID,
                 gap: isMobile ? 8 : 16,
                 padding: isMobile ? '12px 14px' : '16px 22px',
-                borderBottom: idx < (data?.length ?? 0) - 1 ? '1px solid #F3F2EC' : 'none',
+                borderBottom: idx < pageStocks.length - 1 ? '1px solid #F3F2EC' : 'none',
                 background: 'white',
                 cursor: 'pointer',
               }}
@@ -224,6 +227,49 @@ export default function Stocks() {
           )
         })}
       </div>
+
+      {/* Pagination */}
+      {data && data.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] text-muted">
+            {t('stocks.showing', {
+              from: page * PAGE_SIZE + 1,
+              to: Math.min((page + 1) * PAGE_SIZE, data.length),
+              total: data.length,
+            })}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page === 0}
+              onClick={() => { setPage(p => p - 1); window.scrollTo(0, 0) }}
+              className="px-3 py-1.5 text-[13px] font-medium transition-colors duration-150"
+              style={{
+                borderRadius: 8,
+                background: 'white',
+                color: page === 0 ? '#C5C4BD' : '#6E6F78',
+                border: '1px solid #ECEBE4',
+                cursor: page === 0 ? 'default' : 'pointer',
+              }}
+            >
+              {t('stocks.prev')}
+            </button>
+            <button
+              disabled={(page + 1) * PAGE_SIZE >= data.length}
+              onClick={() => { setPage(p => p + 1); window.scrollTo(0, 0) }}
+              className="px-3 py-1.5 text-[13px] font-medium transition-colors duration-150"
+              style={{
+                borderRadius: 8,
+                background: (page + 1) * PAGE_SIZE >= data.length ? 'white' : '#14151A',
+                color: (page + 1) * PAGE_SIZE >= data.length ? '#C5C4BD' : 'white',
+                border: (page + 1) * PAGE_SIZE >= data.length ? '1px solid #ECEBE4' : '1px solid transparent',
+                cursor: (page + 1) * PAGE_SIZE >= data.length ? 'default' : 'pointer',
+              }}
+            >
+              {t('stocks.next')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

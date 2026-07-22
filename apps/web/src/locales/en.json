@@ -58,7 +58,10 @@
     "col_creators": "Creators",
     "private_badge": "Priv",
     "loading": "Loading…",
-    "error": "Failed to load stocks."
+    "error": "Failed to load stocks.",
+    "showing": "{{from}}–{{to}} of {{total}}",
+    "prev": "Previous",
+    "next": "Next"
   },
   "creators": {
     "title": "Market Influencers",
@@ -77,9 +80,9 @@
     "back": "‹ Creators",
     "videos_tracked": "Videos tracked",
     "bullish_calls": "Bullish calls",
-    "stocks_covered": "Stocks covered",
+    "stocks_covered": "7-day tickers",
     "sentiment_label": "Sentiment across all calls",
-    "covers": "Covers",
+    "covers": "Last 7 days",
     "recent_calls": "Recent calls",
     "no_videos": "No analyzed videos yet.",
     "visit_channel": "Visit channel ↗",

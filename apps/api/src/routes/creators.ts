@@ -90,16 +90,23 @@ const creators: FastifyPluginAsync = async (fastify) => {
     let bullCount = 0
     let neutralCount = 0
     let bearCount = 0
-    // Most-recent qualifying stance per ticker. Videos are sorted newest-first,
-    // so the first time we see a ticker is its latest call.
-    const covers = new Map<string, { ticker: string; stockId: string; sentiment: string }>()
 
     for (const v of videos) {
       for (const m of v.mentions) {
-        if (!mentionQualifies(m)) continue
-        // covers chips and the bull/neutral/bear counts both display sentiment,
-        // so only the creator's own views count — skip bare factual recaps.
-        if (!mentionExpressesView(m)) continue
+        if (!mentionQualifies(m) || !mentionExpressesView(m)) continue
+        if (m.sentiment === 'BULLISH') bullCount++
+        else if (m.sentiment === 'NEUTRAL') neutralCount++
+        else if (m.sentiment === 'BEARISH') bearCount++
+      }
+    }
+
+    // Covers: only mentions from the last 7 days, most-recent sentiment per ticker.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const covers = new Map<string, { ticker: string; stockId: string; sentiment: string }>()
+    for (const v of videos) {
+      if (v.publishedAt < sevenDaysAgo) continue
+      for (const m of v.mentions) {
+        if (!mentionQualifies(m) || !mentionExpressesView(m)) continue
         if (!covers.has(m.ticker)) {
           covers.set(m.ticker, {
             ticker: m.ticker,
@@ -107,9 +114,6 @@ const creators: FastifyPluginAsync = async (fastify) => {
             sentiment: m.sentiment,
           })
         }
-        if (m.sentiment === 'BULLISH') bullCount++
-        else if (m.sentiment === 'NEUTRAL') neutralCount++
-        else if (m.sentiment === 'BEARISH') bearCount++
       }
     }
 

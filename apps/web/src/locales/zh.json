@@ -58,7 +58,10 @@
     "col_creators": "创作者",
     "private_badge": "未上",
     "loading": "加载中…",
-    "error": "股票列表加载失败。"
+    "error": "股票列表加载失败。",
+    "showing": "{{from}}–{{to}} / 共 {{total}}",
+    "prev": "上一页",
+    "next": "下一页"
   },
   "creators": {
     "title": "财经博主",
@@ -77,9 +80,9 @@
     "back": "‹ 创作者",
     "videos_tracked": "已分析视频",
     "bullish_calls": "看涨评价",
-    "stocks_covered": "覆盖股票",
+    "stocks_covered": "近7天股票",
     "sentiment_label": "所有评价的综合情绪",
-    "covers": "覆盖",
+    "covers": "近7天覆盖",
     "recent_calls": "近期评价",
     "no_videos": "暂无已分析视频。",
     "visit_channel": "访问频道 ↗",
