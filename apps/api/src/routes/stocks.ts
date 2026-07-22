@@ -9,8 +9,19 @@ function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
 }
 
+function isKorean(ticker: string): boolean {
+  return ticker.endsWith('.KS') || ticker.endsWith('.KQ')
+}
+
 function currencySymbol(ticker: string): string {
-  return ticker.endsWith('.KS') ? '₩' : '$'
+  return isKorean(ticker) ? '₩' : '$'
+}
+
+// Static KRW→USD rate for price-sort normalisation only (not displayed).
+const KRW_PER_USD = 1400
+
+function toUSDEquivalent(price: number, ticker: string): number {
+  return isKorean(ticker) ? price / KRW_PER_USD : price
 }
 
 // Company logo by ticker (Financial Modeling Prep). 404s for indices/odd
@@ -63,7 +74,10 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         case 'chg':
           return { v: st?.change30dPct ?? 0, has: st?.change30dPct != null }
         case 'price':
-          return { v: st?.latestClose ?? 0, has: st?.latestClose != null }
+          return {
+            v: st?.latestClose != null ? toUSDEquivalent(st.latestClose, s.ticker) : 0,
+            has: st?.latestClose != null,
+          }
         case 'mentions':
         default:
           return { v: st?.mentions30d ?? 0, has: (st?.mentions30d ?? 0) > 0 }

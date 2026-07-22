@@ -9,7 +9,7 @@ function displayTicker(ticker: string): string {
 }
 
 function currencySymbol(ticker: string): string {
-  return ticker.endsWith('.KS') ? '₩' : '$'
+  return ticker.endsWith('.KS') || ticker.endsWith('.KQ') ? '₩' : '$'
 }
 
 function fmtPrice(n: number | undefined, ticker: string): string {
