@@ -4,7 +4,12 @@
  *
  * The API URL is read from VITE_API_URL (set in the Railway web service env).
  */
-import { writeFileSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const distDir = resolve(__dirname, 'dist')
 
 const apiBase = process.env.VITE_API_URL ?? 'https://api-production-a02bd.up.railway.app'
 const url = `${apiBase}/sitemap.xml`
@@ -13,5 +18,6 @@ console.log(`Fetching sitemap from ${url}`)
 const res = await fetch(url)
 if (!res.ok) throw new Error(`Sitemap fetch failed: ${res.status} ${res.statusText}`)
 const xml = await res.text()
-writeFileSync('dist/sitemap.xml', xml)
+mkdirSync(distDir, { recursive: true })
+writeFileSync(resolve(distDir, 'sitemap.xml'), xml)
 console.log(`sitemap.xml written (${xml.length} bytes)`)
