@@ -67,6 +67,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
           avatarUrl: c.avatarUrl,
           subscribers: c.subscriberCount,
           bio: getCreatorBio(c, lang),
+          tags: (c as any).tags ?? [],
           channelUrl: c.channelUrl,
           videosTracked: videos.length,
           bullishPct,

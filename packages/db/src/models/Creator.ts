@@ -12,6 +12,7 @@ export interface ICreator extends Document {
   subscriberCount?: number
   bio: string
   bioI18n?: Record<string, string>
+  tags: string[]
   language: string
   aliases: string[]
   isActive: boolean
@@ -32,6 +33,7 @@ const CreatorSchema = new Schema<ICreator>(
     subscriberCount: Number,
     bio: { type: String, default: '' },
     bioI18n: { type: Object, default: {} },
+    tags: { type: [String], default: [] },
     language: { type: String, default: 'en' },
     aliases: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },

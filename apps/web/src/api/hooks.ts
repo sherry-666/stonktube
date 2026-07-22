@@ -221,6 +221,7 @@ export interface CreatorCard {
   avatarUrl?: string
   channelUrl: string
   bio: string
+  tags: string[]
   subscribers: number
   videosTracked: number
   bullishPct: number

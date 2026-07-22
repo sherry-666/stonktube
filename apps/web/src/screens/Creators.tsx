@@ -1,5 +1,6 @@
 import { Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 import { useCreators } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
@@ -46,10 +47,33 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
         {data.map(creator => (
+          <CreatorCard key={creator.slug} creator={creator} onSummaryClick={onSummaryClick} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hooks.js').CreatorCard; onSummaryClick: (id: string) => void }) {
+  const { t } = useTranslation()
+  const navigate = useLangNavigate()
+  const [hovered, setHovered] = useState(false)
+
+  return (
           <div
-            key={creator.slug}
-            className="bg-white flex flex-col gap-4"
-            style={{ borderRadius: 18, padding: 22, border: '1px solid #ECEBE4' }}
+            className="flex flex-col gap-4 cursor-pointer"
+            onClick={() => navigate(`/creators/${creator.slug}`)}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+              borderRadius: 18,
+              padding: 22,
+              border: '1px solid #ECEBE4',
+              background: hovered
+                ? `linear-gradient(135deg, ${creator.brandColor}18 0%, #ffffff 55%)`
+                : '#ffffff',
+              transition: 'background 0.2s ease',
+            }}
           >
             {/* Creator header */}
             <div className="flex items-start gap-3">
@@ -113,6 +137,21 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
             {/* Bio */}
             <p style={{ fontSize: 13.5, color: '#6E6F78', lineHeight: 1.6 }}>{creator.bio}</p>
 
+            {/* Tags */}
+            {creator.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {creator.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                    style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Stat tiles */}
             <div className="flex items-center gap-2">
               <div
@@ -149,7 +188,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                 {creator.recentCalls.slice(0, 3).map(call => (
                   <div key={call.videoId} className="flex items-start gap-2">
                     <button
-                      onClick={() => onSummaryClick(call.videoId)}
+                      onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
                       className="relative shrink-0 overflow-hidden"
                       style={{
                         width: 66,
@@ -191,7 +230,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <button
-                          onClick={() => onSummaryClick(call.videoId)}
+                          onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
                           className="text-[12px] font-semibold text-primary hover:text-accent transition-colors duration-150 line-clamp-1 flex-1 text-left"
                         >
                           {call.videoTitle}
@@ -208,7 +247,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
                           />
                         ))}
                         <button
-                          onClick={() => onSummaryClick(call.videoId)}
+                          onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors duration-150"
                           style={{ background: '#F3F2EC', color: '#6E6F78' }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
@@ -223,8 +262,5 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
               </div>
             )}
           </div>
-        ))}
-      </div>
-    </div>
   )
 }
