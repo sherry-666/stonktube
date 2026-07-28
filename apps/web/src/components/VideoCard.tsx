@@ -2,6 +2,7 @@ import { FileText, Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import StockChip from './StockChip.js'
 import { fmtDuration, fmtRelDate } from '../utils/format.js'
+import { useOpenVideo } from '../hooks/useOpenVideo.js'
 
 export interface VideoCardDTO {
   id: string
@@ -25,10 +26,10 @@ export interface VideoCardDTO {
 
 interface VideoCardProps {
   video: VideoCardDTO
-  onSummaryClick: (id: string) => void
 }
 
-export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
+export default function VideoCard({ video }: VideoCardProps) {
+  const openVideo = useOpenVideo()
   const { t } = useTranslation()
   const { creator, mentions } = video
   const visibleMentions = mentions.slice(0, 5)
@@ -169,7 +170,7 @@ export default function VideoCard({ video, onSummaryClick }: VideoCardProps) {
           <button
             onClick={e => {
               e.stopPropagation()
-              onSummaryClick(video.id)
+              openVideo(video.id)
             }}
             className="shrink-0 flex items-center gap-1.5 text-[12px] font-semibold transition-colors duration-150"
             style={{ color: '#4F46E5' }}

@@ -2,22 +2,22 @@ import { Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useCreators } from '../api/hooks.js'
+import type { CreatorCard } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import TagIcon from '../components/TagIcon.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
-import { usePageMeta } from '../hooks/usePageMeta.js'
+import { useOpenVideo } from '../hooks/useOpenVideo.js'
 
 interface CreatorsProps {
-  onSummaryClick: (id: string) => void
+  initialData?: CreatorCard[]
 }
 
-export default function Creators({ onSummaryClick }: CreatorsProps) {
+export default function Creators({ initialData }: CreatorsProps) {
   const { t } = useTranslation()
   const { lang } = useLang()
-  const { data, isLoading, error } = useCreators(lang)
+  const { data, isLoading, error } = useCreators(lang, initialData)
   const navigate = useLangNavigate()
-  usePageMeta('YouTube Finance Creators & Influencers · StonkTube', 'Discover YouTube finance creators, influencers, and crypto YouTubers. See which stocks and crypto they cover and track their sentiment ratings.')
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creators.loading')}</div>
@@ -48,7 +48,7 @@ export default function Creators({ onSummaryClick }: CreatorsProps) {
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
         {data.map(creator => (
-          <CreatorCard key={creator.slug} creator={creator} onSummaryClick={onSummaryClick} />
+          <CreatorCard key={creator.slug} creator={creator} />
         ))}
       </div>
     </div>
@@ -68,10 +68,11 @@ function tagLabel(tag: string, lang: string): string {
   return TAG_LABELS[tag]?.[lang] ?? TAG_LABELS[tag]?.en ?? tag
 }
 
-function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hooks.js').CreatorCard; onSummaryClick: (id: string) => void }) {
+function CreatorCard({ creator }: { creator: CreatorCard }) {
   const { t } = useTranslation()
   const { lang } = useLang()
   const navigate = useLangNavigate()
+  const openVideo = useOpenVideo()
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -204,7 +205,7 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
                 {creator.recentCalls.slice(0, 3).map(call => (
                   <div key={call.videoId} className="flex items-start gap-2">
                     <button
-                      onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
+                      onClick={e => { e.stopPropagation(); openVideo(call.videoId) }}
                       className="relative shrink-0 overflow-hidden"
                       style={{
                         width: 66,
@@ -246,7 +247,7 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <button
-                          onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
+                          onClick={e => { e.stopPropagation(); openVideo(call.videoId) }}
                           className="text-[12px] font-semibold text-primary hover:text-accent transition-colors duration-150 line-clamp-1 flex-1 text-left"
                         >
                           {call.videoTitle}
@@ -263,7 +264,7 @@ function CreatorCard({ creator, onSummaryClick }: { creator: import('../api/hook
                           />
                         ))}
                         <button
-                          onClick={e => { e.stopPropagation(); onSummaryClick(call.videoId) }}
+                          onClick={e => { e.stopPropagation(); openVideo(call.videoId) }}
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors duration-150"
                           style={{ background: '#F3F2EC', color: '#6E6F78' }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}

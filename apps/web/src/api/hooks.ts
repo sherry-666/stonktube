@@ -68,10 +68,12 @@ export interface DashboardResponse {
   mostBullish: MostBullishRow[]
 }
 
-export function useDashboard(lang: string) {
+export function useDashboard(lang: string, initialData?: DashboardResponse) {
   return useQuery<DashboardResponse>({
     queryKey: ['dashboard', lang],
     queryFn: () => apiFetch<DashboardResponse>(withLang('/api/dashboard', lang)),
+    initialData,
+    staleTime: initialData ? 60_000 : 0,
   })
 }
 
@@ -98,10 +100,12 @@ export interface StockRow {
   distinctCreators: number
 }
 
-export function useStocks(sort: string, lang: string) {
+export function useStocks(sort: string, lang: string, initialData?: StockRow[]) {
   return useQuery<StockRow[]>({
     queryKey: ['stocks', sort, lang],
     queryFn: () => apiFetch<StockRow[]>(withLang(`/api/stocks?sort=${sort}`, lang)),
+    initialData: sort === 'mentions' ? initialData : undefined,
+    staleTime: sort === 'mentions' && initialData ? 60_000 : 0,
   })
 }
 
@@ -163,11 +167,13 @@ export interface StockDetailResponse {
   overallSentiment: OverallSentiment
 }
 
-export function useStockDetail(ticker: string, tf: string, lang: string) {
+export function useStockDetail(ticker: string, tf: string, lang: string, initialData?: StockDetailResponse) {
   return useQuery<StockDetailResponse>({
     queryKey: ['stock', ticker, tf, lang],
     queryFn: () => apiFetch<StockDetailResponse>(withLang(`/api/stocks/${ticker}?tf=${tf}`, lang)),
     enabled: !!ticker,
+    initialData: tf === '3M' ? initialData : undefined,
+    staleTime: tf === '3M' && initialData ? 60_000 : 0,
   })
 }
 
@@ -192,11 +198,13 @@ export interface Marker {
   svgY?: number
 }
 
-export function useStockMarkers(ticker: string, tf: string, lang: string) {
+export function useStockMarkers(ticker: string, tf: string, lang: string, initialData?: Marker[]) {
   return useQuery<Marker[]>({
     queryKey: ['markers', ticker, tf, lang],
     queryFn: () => apiFetch<Marker[]>(withLang(`/api/stocks/${ticker}/markers?tf=${tf}`, lang)),
     enabled: !!ticker,
+    initialData: tf === '3M' ? initialData : undefined,
+    staleTime: tf === '3M' && initialData ? 60_000 : 0,
   })
 }
 
@@ -229,10 +237,12 @@ export interface CreatorCard {
   recentCalls: CreatorRecentCall[]
 }
 
-export function useCreators(lang: string) {
+export function useCreators(lang: string, initialData?: CreatorCard[]) {
   return useQuery<CreatorCard[]>({
     queryKey: ['creators', lang],
     queryFn: () => apiFetch<CreatorCard[]>(withLang('/api/creators', lang)),
+    initialData,
+    staleTime: initialData ? 60_000 : 0,
   })
 }
 
@@ -270,11 +280,13 @@ export interface CreatorProfile {
   calls: CreatorProfileCall[]
 }
 
-export function useCreator(slug: string, lang: string) {
+export function useCreator(slug: string, lang: string, initialData?: CreatorProfile) {
   return useQuery<CreatorProfile>({
     queryKey: ['creator', slug, lang],
     queryFn: () => apiFetch<CreatorProfile>(withLang(`/api/creators/${slug}`, lang)),
     enabled: !!slug,
+    initialData,
+    staleTime: initialData ? 60_000 : 0,
   })
 }
 

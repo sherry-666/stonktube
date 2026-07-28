@@ -1,15 +1,6 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { reactRouter } from '@react-router/dev/vite'
 
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/api': 'http://127.0.0.1:3000',
-    },
-  },
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-  },
+  plugins: [reactRouter()],
 })

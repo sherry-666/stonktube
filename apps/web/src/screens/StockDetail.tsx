@@ -1,16 +1,16 @@
 import { useRef, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useStockDetail, useStockMarkers } from '../api/hooks.js'
+import type { StockDetailResponse, Marker } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
 import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
-import type { Marker } from '../api/hooks.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
-import { usePageMeta } from '../hooks/usePageMeta.js'
+import { useOpenVideo } from '../hooks/useOpenVideo.js'
 
 const TF_OPTIONS = [
   { label: '1M', value: '1M' },
@@ -274,14 +274,16 @@ function tooltipPosition(group: MarkerGroup, isMobile = false): CSSProperties {
 }
 
 interface StockDetailProps {
-  onSummaryClick: (id: string) => void
+  initialDetail?: StockDetailResponse
+  initialMarkers?: Marker[]
 }
 
-export default function StockDetail({ onSummaryClick }: StockDetailProps) {
+export default function StockDetail({ initialDetail, initialMarkers }: StockDetailProps) {
   const { ticker = '' } = useParams<{ ticker: string }>()
   const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
+  const openVideo = useOpenVideo()
   const [tf, setTf] = useState('3M')
 
   // Adapt marker sizes / layout on mobile. Keyed off the viewport rather than a
@@ -325,16 +327,8 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
     setHoverIdx(nearestIdx)
   }
 
-  const { data, isLoading, error } = useStockDetail(ticker, tf, lang)
-  const { data: markers } = useStockMarkers(ticker, tf, lang)
-  usePageMeta(
-    data?.stock
-      ? `${data.stock.name} (${ticker.toUpperCase()}) · StonkTube`
-      : `${ticker.toUpperCase()} · StonkTube`,
-    data?.stock
-      ? `See what YouTube finance creators and influencers say about ${data.stock.name} (${ticker.toUpperCase()}) — bullish/bearish sentiment, recent creator coverage, and price history.`
-      : undefined,
-  )
+  const { data, isLoading, error } = useStockDetail(ticker, tf, lang, initialDetail)
+  const { data: markers } = useStockMarkers(ticker, tf, lang, initialMarkers)
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('stock.loading')}</div>
@@ -768,7 +762,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                       </div>
                       <div className="text-[11px] text-muted">{event.creatorHandle}</div>
                       <button
-                        onClick={() => onSummaryClick(event.videoId)}
+                        onClick={() => openVideo(event.videoId)}
                         className="mt-1.5 block text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug text-left"
                       >
                         {event.title}
@@ -793,7 +787,7 @@ export default function StockDetail({ onSummaryClick }: StockDetailProps) {
                           @ {fmtPrice(event.priceAtMention, data?.stock.currency)}
                         </span>
                         <button
-                          onClick={() => onSummaryClick(event.videoId)}
+                          onClick={() => openVideo(event.videoId)}
                           className="ml-auto text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-150"
                           style={{ background: '#F3F2EC', color: '#6E6F78' }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}

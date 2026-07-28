@@ -4,26 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build && node generate-sitemap.mjs",
-    "preview": "serve -s dist -l ${PORT:-4173}",
-    "dev": "vite",
+    "build": "react-router build && node generate-sitemap.mjs",
+    "preview": "react-router-serve build/server/index.js",
+    "dev": "react-router dev",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf build .react-router"
   },
   "dependencies": {
+    "@react-router/node": "^7.0.0",
+    "@react-router/serve": "^7.0.0",
     "@stonktube/shared": "workspace:*",
     "@tanstack/react-query": "^5.51.21",
     "i18next": "^26.3.6",
+    "isbot": "^5.1.0",
     "lucide-react": "^0.414.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^17.0.9",
-    "react-router-dom": "^6.25.1"
+    "react-router": "^7.0.0"
   },
   "devDependencies": {
+    "@react-router/dev": "^7.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",

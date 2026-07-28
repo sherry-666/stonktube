@@ -1,25 +1,24 @@
 import { useState, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDashboard } from '../api/hooks.js'
+import type { DashboardResponse } from '../api/hooks.js'
 import Sparkline from '../components/Sparkline.js'
 import VideoCard from '../components/VideoCard.js'
 import type { VideoCardDTO } from '../components/VideoCard.js'
 import AdUnit from '../components/AdUnit.js'
 import { fmtPrice, fmtPct } from '../utils/format.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
-import { usePageMeta } from '../hooks/usePageMeta.js'
 
 interface DashboardProps {
-  onSummaryClick: (id: string) => void
+  initialData?: DashboardResponse
 }
 
-export default function Dashboard({ onSummaryClick }: DashboardProps) {
+export default function Dashboard({ initialData }: DashboardProps) {
   const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
-  const { data, isLoading, error } = useDashboard(lang)
+  const { data, isLoading, error } = useDashboard(lang, initialData)
   const [pillAdHidden, setPillAdHidden] = useState(false)
-  usePageMeta()
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('dashboard.loading')}</div>
@@ -162,10 +161,7 @@ export default function Dashboard({ onSummaryClick }: DashboardProps) {
           <div className="flex flex-col gap-3">
             {data.feed.map((video, idx) => (
               <Fragment key={video.id}>
-                <VideoCard
-                  video={video as VideoCardDTO}
-                  onSummaryClick={onSummaryClick}
-                />
+                <VideoCard video={video as VideoCardDTO} />
                 {(idx + 1) % 4 === 0 && (
                   <AdUnit slot="4608578398" format="fluid" layoutKey="-gb-2l+7j-8l+1h" className="rounded-[14px] bg-white border border-[#ECEBE4]" />
                 )}

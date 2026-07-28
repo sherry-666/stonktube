@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStocks } from '../api/hooks.js'
+import type { StockRow } from '../api/hooks.js'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
-import { usePageMeta } from '../hooks/usePageMeta.js'
 import Sparkline from '../components/Sparkline.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
@@ -11,15 +11,18 @@ import { fmtPrice, fmtPct } from '../utils/format.js'
 const COL_GRID_DESKTOP = '2.2fr 1.1fr 0.9fr 1.4fr 0.9fr 0.9fr'
 const COL_GRID_MOBILE = '1fr 1fr 0.8fr'
 
-export default function Stocks() {
+interface StocksProps {
+  initialData?: StockRow[]
+}
+
+export default function Stocks({ initialData }: StocksProps) {
   const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
   const [sort, setSort] = useState('mentions')
   const [page, setPage] = useState(0)
   const PAGE_SIZE = 50
-  const { data, isLoading, error } = useStocks(sort, lang)
-  usePageMeta('Stocks & Crypto Picks · StonkTube', 'Browse stocks and crypto assets tracked by YouTube finance creators and influencers. Compare sentiment, creator coverage, and price movements.')
+  const { data, isLoading, error } = useStocks(sort, lang, initialData)
 
   const SORT_PILLS = [
     { label: t('stocks.sort_mentions'), value: 'mentions' },

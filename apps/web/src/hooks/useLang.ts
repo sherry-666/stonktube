@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router'
 import i18next from '../i18n.js'
 
 export type Lang = 'en' | 'zh' | 'ko'

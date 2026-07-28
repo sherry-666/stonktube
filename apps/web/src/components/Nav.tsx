@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router'
 import { Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../api/client.js'

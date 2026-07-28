@@ -1,30 +1,26 @@
 import { Play } from 'lucide-react'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useCreator } from '../api/hooks.js'
+import type { CreatorProfile as CreatorProfileData } from '../api/hooks.js'
 import StockChip from '../components/StockChip.js'
 import SentimentBar from '../components/SentimentBar.js'
 import { fmtSubs, fmtRelDate, fmtDuration } from '../utils/format.js'
 import { bullishPctToVerdict } from '@stonktube/shared'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
-import { usePageMeta } from '../hooks/usePageMeta.js'
+import { useOpenVideo } from '../hooks/useOpenVideo.js'
 
 interface CreatorProfileProps {
-  onSummaryClick: (id: string) => void
+  initialCreator?: CreatorProfileData
 }
 
-export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) {
+export default function CreatorProfile({ initialCreator }: CreatorProfileProps) {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate = useLangNavigate()
   const { t } = useTranslation()
   const { lang } = useLang()
-  const { data: creator, isLoading, error } = useCreator(slug, lang)
-  usePageMeta(
-    creator ? `${creator.name} Stock & Crypto Picks · StonkTube` : 'Creator · StonkTube',
-    creator
-      ? `See which stocks and crypto assets ${creator.name} covers on YouTube. Track their investment calls, bullish/bearish ratings, and sentiment history.`
-      : undefined,
-  )
+  const openVideo = useOpenVideo()
+  const { data: creator, isLoading, error } = useCreator(slug, lang, initialCreator)
 
   if (isLoading) {
     return <div className="py-12 text-center text-muted text-sm">{t('creator_profile.loading')}</div>
@@ -174,7 +170,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
               >
                 <div className="flex items-start gap-3">
                   <button
-                    onClick={() => onSummaryClick(call.videoId)}
+                    onClick={() => openVideo(call.videoId)}
                     className="relative shrink-0 overflow-hidden"
                     style={{
                       width: 104,
@@ -212,7 +208,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <button
-                        onClick={() => onSummaryClick(call.videoId)}
+                        onClick={() => openVideo(call.videoId)}
                         className="text-[14px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug text-left"
                       >
                         {call.videoTitle}
@@ -224,7 +220,7 @@ export default function CreatorProfile({ onSummaryClick }: CreatorProfileProps) 
                         <StockChip key={m.ticker} ticker={m.ticker} sentiment={m.sentiment} stockId={m.stockId} />
                       ))}
                       <button
-                        onClick={() => onSummaryClick(call.videoId)}
+                        onClick={() => openVideo(call.videoId)}
                         className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-150"
                         style={{ background: '#F3F2EC', color: '#6E6F78' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
