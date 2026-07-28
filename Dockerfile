@@ -47,9 +47,10 @@ COPY --from=builder /app/apps/worker         ./apps/worker
 COPY --from=builder /app/apps/scheduler      ./apps/scheduler
 COPY --from=builder /app/apps/web/build      ./apps/web/build
 COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
 
 # Default to api; Railway overrides this per-service via Start Command.
 # Web service start command:
-#   sh -c 'cd /app/apps/web && node /app/node_modules/.bin/react-router-serve build/server/index.js'
+#   sh -c 'cd /app/apps/web && ./node_modules/.bin/react-router-serve build/server/index.js'
 # Web service also needs env var: API_URL=<same value as VITE_API_URL>
 CMD ["node", "apps/api/dist/index.js"]
