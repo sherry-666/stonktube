@@ -29,6 +29,7 @@ export interface ITranslationLang {
 }
 
 export interface ITranslations {
+  en?: ITranslationLang
   zh?: ITranslationLang
   ko?: ITranslationLang
 }
@@ -112,7 +113,8 @@ const VideoSchema = new Schema<IVideo>(
     language: { type: String, default: 'en' },
     mentions: { type: [MentionSchema], default: [] },
     translations: {
-      type: new Schema({ zh: TranslationLangSchema, ko: TranslationLangSchema }, { _id: false }),
+      // en: English titles for non-English-language videos (written by the API).
+      type: new Schema({ en: TranslationLangSchema, zh: TranslationLangSchema, ko: TranslationLangSchema }, { _id: false }),
       default: {},
     },
   },

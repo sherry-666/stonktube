@@ -1,10 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video, getPrices } from '@stonktube/db'
-import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
+import type { ICreatorSnapshot, IMention } from '@stonktube/db'
 import { Types } from 'mongoose'
-import { getVideoTranslation } from '../lib/videoTranslation.js'
+import { resolveSlimVideoTexts } from '../lib/videoTranslation.js'
 import { getStockTranslationsBatch, getStockTranslation } from '../lib/stockTranslation.js'
-import { stockFields, videoCardFields, VIDEO_STATS_FIELDS } from '../lib/projections.js'
+import { stockFields } from '../lib/projections.js'
+import { mentionQualifiesExpr, mentionExpressesViewExpr } from '../lib/mentionExprs.js'
 
 function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
@@ -53,6 +54,33 @@ const TF_DAYS: Record<string, number> = {
   '3M': 66,
   '6M': 132,
   '1Y': 260,
+}
+
+interface SlimVideoRow {
+  _id: Types.ObjectId
+  title: string
+  url: string
+  publishedAt: Date
+  creator: ICreatorSnapshot
+  mention: IMention
+  cachedTitle?: string
+  cachedNotes?: Record<string, string>
+}
+
+// Per-video row for one stock: its first mention of the stock plus the cached
+// translation for `lang`, instead of the whole video document.
+function slimVideoStage(stockId: Types.ObjectId, lang: string) {
+  return {
+    $project: {
+      title: 1,
+      url: 1,
+      publishedAt: 1,
+      creator: 1,
+      mention: { $first: { $filter: { input: '$mentions', cond: { $eq: ['$$this.stockId', stockId] } } } },
+      cachedTitle: `$translations.${lang}.title`,
+      cachedNotes: `$translations.${lang}.notes`,
+    },
+  }
 }
 
 const stocks: FastifyPluginAsync = async (fastify) => {
@@ -144,28 +172,55 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - tfDays * 1.5) // buffer for weekends
 
-      const [pricePoints, videos, coverageVideos] = await Promise.all([
-        getPrices(stock._id as Types.ObjectId, startDate),
-        // Every video mentioning the stock, but only the mention fields the
-        // sentiment / trackedBy counts read.
-        Video.find({
-          'mentions.stockId': stock._id,
-          analysisStatus: 'ANALYZED',
-        })
-          .sort({ publishedAt: -1 })
-          .select(VIDEO_STATS_FIELDS)
-          .lean(),
+      const stockId = stock._id as Types.ObjectId
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      const [pricePoints, [counts], coverageVideos] = await Promise.all([
+        getPrices(stockId, startDate),
+        // trackedBy + overall sentiment, counted in MongoDB over this stock's
+        // qualifying mentions so only the totals come back.
+        Video.aggregate<{
+          trackedBy: { n: number }[]
+          sentiment7d: { _id: 'BULLISH' | 'NEUTRAL' | 'BEARISH'; n: number }[]
+        }>([
+          { $match: { 'mentions.stockId': stockId, analysisStatus: 'ANALYZED' } },
+          {
+            $project: {
+              _id: 0,
+              creatorId: 1,
+              publishedAt: 1,
+              m: { $filter: { input: '$mentions', cond: { $eq: ['$$this.stockId', stockId] } } },
+            },
+          },
+          { $unwind: '$m' },
+          { $match: { $expr: mentionQualifiesExpr('$m') } },
+          {
+            $facet: {
+              trackedBy: [{ $group: { _id: '$creatorId' } }, { $count: 'n' }],
+              // Overall sentiment: last 7 days, creator's own views only
+              // (bare factual recaps excluded).
+              sentiment7d: [
+                { $match: { publishedAt: { $gte: sevenDaysAgo }, $expr: mentionExpressesViewExpr('$m') } },
+                { $group: { _id: '$m.sentiment', n: { $sum: 1 } } },
+              ],
+            },
+          },
+        ]),
         // Recent coverage: latest 10 videos whose mention of this stock
         // expresses a view (stance missing or OPINION; skip bare factual
         // recaps), since each row shows the creator's sentiment on it.
-        Video.find({
-          mentions: { $elemMatch: { stockId: stock._id, stance: { $ne: 'FACTUAL' } } },
-          analysisStatus: 'ANALYZED',
-        })
-          .sort({ publishedAt: -1 })
-          .limit(10)
-          .select(videoCardFields(lang))
-          .lean(),
+        Video.aggregate<SlimVideoRow>([
+          {
+            $match: {
+              mentions: { $elemMatch: { stockId, stance: { $ne: 'FACTUAL' } } },
+              analysisStatus: 'ANALYZED',
+            },
+          },
+          { $sort: { publishedAt: -1 } },
+          { $limit: 10 },
+          slimVideoStage(stockId, lang),
+        ]),
       ])
 
       // Take last tfDays price points
@@ -174,26 +229,10 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         close: p.close as number,
       }))
 
-      // Overall sentiment: last 7 days only
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-      let bullCount = 0
-      let neutralCount = 0
-      let bearCount = 0
-
-      for (const video of videos) {
-        if (video.publishedAt < sevenDaysAgo) continue
-        for (const mention of video.mentions) {
-          if (!mention.stockId.equals(stock._id as Types.ObjectId)) continue
-          if (!mentionQualifies(mention)) continue
-          // Exclude bare factual recaps — only the creator's own view counts.
-          if (!mentionExpressesView(mention)) continue
-          if (mention.sentiment === 'BULLISH') bullCount++
-          else if (mention.sentiment === 'NEUTRAL') neutralCount++
-          else if (mention.sentiment === 'BEARISH') bearCount++
-        }
-      }
+      const countOf = (s: string) => counts.sentiment7d.find((c) => c._id === s)?.n ?? 0
+      const bullCount = countOf('BULLISH')
+      const neutralCount = countOf('NEUTRAL')
+      const bearCount = countOf('BEARISH')
 
       const total = bullCount + neutralCount + bearCount
       const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
@@ -211,39 +250,29 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         verdict: verdict(bullishPct),
       }
 
-      const recentCoverage = await Promise.all(
-        coverageVideos.map(async (v) => {
-          const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-          const tx = await getVideoTranslation(v , lang)
-          return {
-            videoId: v._id.toString(),
-            creatorSlug: v.creator.slug,
-            creatorName: v.creator.name,
-            creatorHandle: v.creator.handle,
-            creatorColor: v.creator.brandColor,
-            creatorInitial: v.creator.initial,
-            creatorAvatarUrl: v.creator.avatarUrl,
-            publishedAt: v.publishedAt.toISOString(),
-            title: tx.title,
-            url: v.url,
-            note: tx.noteByTicker[mention?.ticker ?? ''] ?? mention?.note ?? '',
-            sentiment: mention?.sentiment ?? 'NEUTRAL',
-            stance: mention?.stance,
-            priceAtMention: mention?.priceAtMention,
-            priceStr: fmtPrice(mention?.priceAtMention, stock.ticker),
-          }
-        }),
-      )
+      const coverageTexts = await resolveSlimVideoTexts(coverageVideos, lang)
+      const recentCoverage = coverageVideos.map((v, i) => {
+        const mention = v.mention
+        return {
+          videoId: v._id.toString(),
+          creatorSlug: v.creator.slug,
+          creatorName: v.creator.name,
+          creatorHandle: v.creator.handle,
+          creatorColor: v.creator.brandColor,
+          creatorInitial: v.creator.initial,
+          creatorAvatarUrl: v.creator.avatarUrl,
+          publishedAt: v.publishedAt.toISOString(),
+          title: coverageTexts[i].title,
+          url: v.url,
+          note: coverageTexts[i].note ?? '',
+          sentiment: mention.sentiment ?? 'NEUTRAL',
+          stance: mention.stance,
+          priceAtMention: mention.priceAtMention,
+          priceStr: fmtPrice(mention.priceAtMention, stock.ticker),
+        }
+      })
 
-      const trackedBy = new Set(
-        videos
-          .filter((v) =>
-            v.mentions.some(
-              (m) => m.stockId.equals(stock._id as Types.ObjectId) && mentionQualifies(m),
-            ),
-          )
-          .map((v) => v.creatorId.toString()),
-      ).size
+      const trackedBy = counts.trackedBy[0]?.n ?? 0
 
       const stockNames = await getStockTranslation(stock, lang)
 
@@ -285,18 +314,29 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - tfDays * 1.5) // buffer for weekends
 
+      const stockId = stock._id as Types.ObjectId
       const [videos, prices] = await Promise.all([
-        Video.find({
-          'mentions.stockId': stock._id,
-          publishedAt: { $gte: startDate },
-          analysisStatus: 'ANALYZED',
-        })
-          .sort({ publishedAt: -1 })
-          .select(videoCardFields(lang))
-          .lean(),
+        // Videos in range whose mention of this stock qualifies and expresses
+        // a view, as slim rows.
+        Video.aggregate<SlimVideoRow>([
+          {
+            $match: {
+              'mentions.stockId': stockId,
+              publishedAt: { $gte: startDate },
+              analysisStatus: 'ANALYZED',
+            },
+          },
+          { $sort: { publishedAt: -1 } },
+          slimVideoStage(stockId, lang),
+          {
+            $match: {
+              $expr: { $and: [mentionQualifiesExpr('$mention'), mentionExpressesViewExpr('$mention')] },
+            },
+          },
+        ]),
         // Load price dates so we can snap each marker to an actual trading day,
         // not just the nearest weekday (holidays can also have no price).
-        getPrices(stock._id, startDate),
+        getPrices(stockId, startDate),
       ])
 
       // Sorted ascending list of actual trading dates for this stock.
@@ -315,33 +355,26 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         return result
       }
 
-      const eligibleVideos = videos.filter((v) => {
-        const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-        return mention && mentionQualifies(mention) && mentionExpressesView(mention)
+      const texts = await resolveSlimVideoTexts(videos, lang)
+      const markers = videos.map((v, i) => {
+        const mention = v.mention
+        const price = mention.priceAtMention
+        return {
+          videoId: v._id.toString(),
+          date: snapToTradingDay(v.publishedAt),
+          creatorSlug: v.creator.slug,
+          creatorName: v.creator.name,
+          creatorColor: v.creator.brandColor,
+          creatorInitial: v.creator.initial,
+          creatorAvatarUrl: v.creator.avatarUrl,
+          sentiment: mention.sentiment ?? 'NEUTRAL',
+          note: texts[i].note ?? '',
+          title: texts[i].title,
+          url: v.url,
+          priceAtMention: price,
+          priceLabel: price != null ? `@ ${currencySymbol(stock.ticker)}${price.toFixed(2)}` : '',
+        }
       })
-
-      const markers = await Promise.all(
-        eligibleVideos.map(async (v) => {
-          const mention = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))!
-          const tx = await getVideoTranslation(v , lang)
-          const price = mention.priceAtMention
-          return {
-            videoId: v._id.toString(),
-            date: snapToTradingDay(v.publishedAt),
-            creatorSlug: v.creator.slug,
-            creatorName: v.creator.name,
-            creatorColor: v.creator.brandColor,
-            creatorInitial: v.creator.initial,
-            creatorAvatarUrl: v.creator.avatarUrl,
-            sentiment: mention.sentiment ?? 'NEUTRAL',
-            note: tx.noteByTicker[mention.ticker] ?? mention.note ?? '',
-            title: tx.title,
-            url: v.url,
-            priceAtMention: price,
-            priceLabel: price != null ? `@ ${currencySymbol(stock.ticker)}${price.toFixed(2)}` : '',
-          }
-        }),
-      )
 
       return reply.send(markers)
     },
