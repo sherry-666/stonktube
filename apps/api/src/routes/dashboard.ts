@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video } from '@stonktube/db'
 import { mentionExpressesView } from '@stonktube/shared'
 import { getVideoTranslation } from '../lib/videoTranslation.js'
+import { videoCardFields } from '../lib/projections.js'
 
 // Strip Yahoo Finance suffix for crypto tickers (BTC-USD → BTC)
 function displayTicker(ticker: string): string {
@@ -32,35 +33,43 @@ function verdict(bullishPct: number): string {
 const dashboard: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { lang?: string } }>('/api/dashboard', async (req, reply) => {
     const lang = req.query.lang ?? 'en'
-    const [stocks, videos] = await Promise.all([
-      Stock.find({}).lean(),
+    const [topByMentions, topByBull, videos] = await Promise.all([
+      Stock.find({})
+        .sort({ 'stats.mentions30d': -1, _id: 1 })
+        .limit(8)
+        .select('ticker name isPrivate brandColor logoBg initials stats')
+        .lean(),
+      // mostBullish: top 6 by bullishPct (recentRatings tiebreak), among stocks with recent ratings only
+      Stock.find({ 'stats.recentRatings': { $gt: 0 } })
+        .sort({ 'stats.bullishPct': -1, 'stats.recentRatings': -1, _id: 1 })
+        .limit(6)
+        .select('ticker stats.bullishPct stats.recentRatings')
+        .lean(),
       Video.find({ analysisStatus: 'ANALYZED' })
         .sort({ publishedAt: -1 })
         .limit(8)
+        .select(videoCardFields(lang))
         .lean(),
     ])
 
     // Pills: top 8 by recent mentions
-    const pills = stocks
-      .sort((a, b) => (b.stats?.mentions30d ?? 0) - (a.stats?.mentions30d ?? 0))
-      .slice(0, 8)
-      .map((s) => ({
-        ticker: displayTicker(s.ticker),
-        name: s.name,
-        isPrivate: s.isPrivate,
-        brandColor: s.brandColor,
-        logoBg: s.logoBg,
-        initials: s.initials,
-        currency: currencySymbol(s.ticker),
-        priceStr: fmtPrice(s.stats?.latestClose, s.ticker),
-        dayChangePct: s.stats?.dayChangePct ?? 0,
-        dayChangeStr: fmtPct(s.stats?.dayChangePct),
-        bullishPct: s.stats?.bullishPct ?? 0,
-        neutralPct: s.stats?.neutralPct ?? 0,
-        bearishPct: s.stats?.bearishPct ?? 0,
-        recentRatings: s.stats?.recentRatings ?? 0,
-        sparkline: s.stats?.sparkline ?? [],
-      }))
+    const pills = topByMentions.map((s) => ({
+      ticker: displayTicker(s.ticker),
+      name: s.name,
+      isPrivate: s.isPrivate,
+      brandColor: s.brandColor,
+      logoBg: s.logoBg,
+      initials: s.initials,
+      currency: currencySymbol(s.ticker),
+      priceStr: fmtPrice(s.stats?.latestClose, s.ticker),
+      dayChangePct: s.stats?.dayChangePct ?? 0,
+      dayChangeStr: fmtPct(s.stats?.dayChangePct),
+      bullishPct: s.stats?.bullishPct ?? 0,
+      neutralPct: s.stats?.neutralPct ?? 0,
+      bearishPct: s.stats?.bearishPct ?? 0,
+      recentRatings: s.stats?.recentRatings ?? 0,
+      sparkline: s.stats?.sparkline ?? [],
+    }))
 
     // Feed: latest 8 analyzed videos as VideoCardDTO
     const feed = await Promise.all(videos.map(async (v) => {
@@ -94,10 +103,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
     }))
 
     // mostMentioned: top 6 by mentions30d
-    const sortedByMentions = [...stocks].sort(
-      (a, b) => (b.stats?.mentions30d ?? 0) - (a.stats?.mentions30d ?? 0),
-    )
-    const top6Mentions = sortedByMentions.slice(0, 6)
+    const top6Mentions = topByMentions.slice(0, 6)
     const maxMentions = top6Mentions[0]?.stats?.mentions30d ?? 1
     const mostMentioned = top6Mentions.map((s) => ({
       ticker: s.ticker,
@@ -106,15 +112,7 @@ const dashboard: FastifyPluginAsync = async (fastify) => {
       maxMentions,
     }))
 
-    // mostBullish: top 6 by bullishPct, among stocks with recent ratings only
-    const sortedByBull = [...stocks]
-      .filter((s) => (s.stats?.recentRatings ?? 0) > 0)
-      .sort((a, b) => {
-        const pctDiff = (b.stats?.bullishPct ?? 0) - (a.stats?.bullishPct ?? 0)
-        if (pctDiff !== 0) return pctDiff
-        return (b.stats?.recentRatings ?? 0) - (a.stats?.recentRatings ?? 0)
-      })
-    const mostBullish = sortedByBull.slice(0, 6).map((s) => ({
+    const mostBullish = topByBull.map((s) => ({
       ticker: s.ticker,
       bullishPct: s.stats?.bullishPct ?? 0,
       recentRatings: s.stats?.recentRatings ?? 0,
