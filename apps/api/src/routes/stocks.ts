@@ -4,6 +4,7 @@ import { mentionQualifies, mentionExpressesView } from '@stonktube/shared'
 import { Types } from 'mongoose'
 import { getVideoTranslation } from '../lib/videoTranslation.js'
 import { getStockTranslationsBatch, getStockTranslation } from '../lib/stockTranslation.js'
+import { stockFields, videoCardFields, VIDEO_STATS_FIELDS } from '../lib/projections.js'
 
 function displayTicker(ticker: string): string {
   return ticker.replace(/-USD$/, '')
@@ -59,7 +60,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { sort?: string; lang?: string } }>('/api/stocks', async (req, reply) => {
     const sort = req.query.sort ?? 'mentions'
     const lang = req.query.lang ?? 'en'
-    const all = await Stock.find({}).lean()
+    const all = await Stock.find({}).select(stockFields(lang)).lean()
 
     // Value + whether the stock actually has data for the active sort, so
     // data-less stocks (no price / no mentions) sink to the bottom instead of
@@ -137,19 +138,33 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const lang = req.query.lang ?? 'en'
       const tfDays = TF_DAYS[tf] ?? TF_DAYS['3M']
 
-      const stock = await Stock.findOne({ ticker }).lean()
+      const stock = await Stock.findOne({ ticker }).select(stockFields(lang)).lean()
       if (!stock) return reply.code(404).send({ error: 'Stock not found' })
 
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - tfDays * 1.5) // buffer for weekends
 
-      const [pricePoints, videos] = await Promise.all([
+      const [pricePoints, videos, coverageVideos] = await Promise.all([
         getPrices(stock._id as Types.ObjectId, startDate),
+        // Every video mentioning the stock, but only the mention fields the
+        // sentiment / trackedBy counts read.
         Video.find({
           'mentions.stockId': stock._id,
           analysisStatus: 'ANALYZED',
         })
           .sort({ publishedAt: -1 })
+          .select(VIDEO_STATS_FIELDS)
+          .lean(),
+        // Recent coverage: latest 10 videos whose mention of this stock
+        // expresses a view (stance missing or OPINION; skip bare factual
+        // recaps), since each row shows the creator's sentiment on it.
+        Video.find({
+          mentions: { $elemMatch: { stockId: stock._id, stance: { $ne: 'FACTUAL' } } },
+          analysisStatus: 'ANALYZED',
+        })
+          .sort({ publishedAt: -1 })
+          .limit(10)
+          .select(videoCardFields(lang))
           .lean(),
       ])
 
@@ -195,16 +210,6 @@ const stocks: FastifyPluginAsync = async (fastify) => {
         bearishPct,
         verdict: verdict(bullishPct),
       }
-
-      // Recent coverage: videos sorted by publishedAt desc, limit 10. Each row
-      // shows the creator's sentiment on this stock, so only include videos
-      // whose mention of it expresses a view (skip bare factual recaps).
-      const coverageVideos = videos
-        .filter((v) => {
-          const m = v.mentions.find((m) => m.stockId.equals(stock._id as Types.ObjectId))
-          return m != null && mentionExpressesView(m)
-        })
-        .slice(0, 10)
 
       const recentCoverage = await Promise.all(
         coverageVideos.map(async (v) => {
@@ -274,7 +279,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const lang = req.query.lang ?? 'en'
       const tfDays = TF_DAYS[tf] ?? TF_DAYS['3M']
 
-      const stock = await Stock.findOne({ ticker }).lean()
+      const stock = await Stock.findOne({ ticker }).select('ticker').lean()
       if (!stock) return reply.code(404).send({ error: 'Stock not found' })
 
       const startDate = new Date()
@@ -287,6 +292,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           analysisStatus: 'ANALYZED',
         })
           .sort({ publishedAt: -1 })
+          .select(videoCardFields(lang))
           .lean(),
         // Load price dates so we can snap each marker to an actual trading day,
         // not just the nearest weekday (holidays can also have no price).

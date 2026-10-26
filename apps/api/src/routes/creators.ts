@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { Creator, Video } from '@stonktube/db'
 import { mentionExpressesView, mentionQualifies } from '@stonktube/shared'
 import { getVideoTranslation } from '../lib/videoTranslation.js'
+import { videoCardFields, VIDEO_STATS_FIELDS } from '../lib/projections.js'
 
 function getCreatorBio(creator: { bio: string; bioI18n?: Record<string, string> }, lang: string): string {
   if (lang === 'en') return creator.bio
@@ -15,12 +16,11 @@ const creators: FastifyPluginAsync = async (fastify) => {
 
     const result = await Promise.all(
       allCreators.map(async (c) => {
-        const videos = await Video.find({
-          creatorId: c._id,
-          analysisStatus: 'ANALYZED',
-        })
-          .sort({ publishedAt: -1 })
-          .lean()
+        const filter = { creatorId: c._id, analysisStatus: 'ANALYZED' }
+        const [videos, recentVideos] = await Promise.all([
+          Video.find(filter).sort({ publishedAt: -1 }).select(VIDEO_STATS_FIELDS).lean(),
+          Video.find(filter).sort({ publishedAt: -1 }).limit(3).select(videoCardFields(lang)).lean(),
+        ])
 
         let bullCount = 0
         let total = 0
@@ -39,7 +39,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
         const bullishPct = total > 0 ? Math.round((bullCount / total) * 100) : 0
         const coveredTickers = Array.from(tickerSet)
 
-        const recentCalls = await Promise.all(videos.slice(0, 3).map(async (v) => {
+        const recentCalls = await Promise.all(recentVideos.map(async (v) => {
           const tx = await getVideoTranslation(v , lang)
           return {
             videoId: v._id.toString(),
@@ -86,12 +86,11 @@ const creators: FastifyPluginAsync = async (fastify) => {
     const creator = await Creator.findOne({ slug: req.params.slug }).lean()
     if (!creator) return reply.code(404).send({ error: 'Creator not found' })
 
-    const videos = await Video.find({
-      creatorId: creator._id,
-      analysisStatus: 'ANALYZED',
-    })
-      .sort({ publishedAt: -1 })
-      .lean()
+    const filter = { creatorId: creator._id, analysisStatus: 'ANALYZED' }
+    const [videos, callVideos] = await Promise.all([
+      Video.find(filter).sort({ publishedAt: -1 }).select(VIDEO_STATS_FIELDS).lean(),
+      Video.find(filter).sort({ publishedAt: -1 }).limit(30).select(videoCardFields(lang)).lean(),
+    ])
 
     let bullCount = 0
     let neutralCount = 0
@@ -128,7 +127,7 @@ const creators: FastifyPluginAsync = async (fastify) => {
     const neutralPct = total > 0 ? Math.round((neutralCount / total) * 100) : 0
     const bearishPct = total > 0 ? Math.round((bearCount / total) * 100) : 0
 
-    const calls = await Promise.all(videos.slice(0, 30).map(async (v) => {
+    const calls = await Promise.all(callVideos.map(async (v) => {
       const tx = await getVideoTranslation(v , lang)
       return {
         videoId: v._id.toString(),
