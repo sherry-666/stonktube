@@ -11,6 +11,7 @@ import creators from './routes/creators.js'
 import videos from './routes/videos.js'
 import search from './routes/search.js'
 import sitemap from './routes/sitemap.js'
+import { registerResponseCache, warmResponseCache } from './lib/responseCache.js'
 
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } })
 
@@ -24,6 +25,8 @@ app.addHook('onRequest', async (_req, reply) => {
 app.options('*', async (_req, reply) => {
   return reply.code(204).send()
 })
+
+registerResponseCache(app)
 
 app.get('/healthz', async () => ({ status: 'ok', ts: Date.now() }))
 
@@ -53,6 +56,9 @@ const start = async () => {
   const port = Number(process.env.PORT ?? 3000)
   await app.listen({ port, host: '0.0.0.0' })
   app.log.info(`API listening on port ${port}`)
+  warmResponseCache(app)
+    .then(() => app.log.info('[responseCache] warmed'))
+    .catch((err) => app.log.error({ err }, '[responseCache] warm-up failed'))
 }
 
 start().catch((err) => {
