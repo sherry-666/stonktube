@@ -9,6 +9,8 @@
  *   node dist/fix-security-mappings.js --prod          # dry run on MONGODB_URI_PROD
  *   node dist/fix-security-mappings.js --prod --apply  # writes to production
  *
+ * Lists the videos that need re-analysis but never runs it (see REANALYZE below).
+ *
  * Safe to re-run: work already done is detected and skipped. Avoid running
  * --apply across the hourly price fill, which could add bars while a stock's
  * prices are being replaced.
@@ -58,9 +60,31 @@ interface Merge {
   ticker: string
   into: string
   expect: RegExp
+  /** The stored prices belong to another security, so don't compare them with `into`. */
+  pricesDiffer?: boolean
 }
 
-type Fix = Remap | MarkPrivate | Merge
+/** Deletes a record nobody should be tracking, blocked if it has mentions unless told to remove them. */
+interface Retire {
+  kind: 'retire'
+  ticker: string
+  removeMentions?: boolean
+  /** Tracked stock that takes over the symbol, so the LLM's ticker still resolves. */
+  aliasOn?: string
+}
+
+/**
+ * Mentions on one record that mean different things, which only re-reading the
+ * transcript can sort out. Lists the videos, and writes nothing unless
+ * `retireWhenEmpty` is set and re-analysis left the record with no mentions.
+ */
+interface Reanalyze {
+  kind: 'reanalyze'
+  ticker: string
+  retireWhenEmpty?: boolean
+}
+
+type Fix = Remap | MarkPrivate | Merge | Retire | Reanalyze
 
 const crypto = (ticker: string, symbol: string, expect: RegExp, name?: string): Remap => ({
   kind: 'remap', ticker, symbol, expect, prices: 'replace', name, sector: name ? 'Cryptocurrency' : undefined,
@@ -77,6 +101,9 @@ const FIXES: Fix[] = [
   crypto('USDC', 'USDC-USD', /^USDC/, 'USD Coin'),
   replace('SATS', 'ECHO', /EchoStar/),
   replace('EUR-USD', 'EURUSD=X', /^EUR\/USD/, 'Euro'),
+  replace('JPY', 'JPYUSD=X', /^JPY\/USD/, 'Japanese Yen'),
+  crypto('XRP', 'XRP-USD', /^XRP/, 'XRP'),
+  crypto('LUNA', 'LUNA20314-USD', /^Terra USD/, 'Terra'),
   replace('CATL', '300750.SZ', /Contemporary Amperex/),
   // No stored prices: the bare symbol is empty on Yahoo.
   crypto('ADA', 'ADA-USD', /^Cardano/, 'Cardano'),
@@ -94,6 +121,7 @@ const FIXES: Fix[] = [
   // Quoted against USD so the chart rises when the currency strengthens.
   replace('CNY', 'CNYUSD=X', /^CNY\/USD/, 'Chinese Yuan'),
   replace('KRW', 'KRWUSD=X', /^KRW\/USD/),
+  replace('GBP', 'GBPUSD=X', /^GBP\/USD/, 'British Pound'),
   replace('MTK', '2454.TW', /MediaTek/, 'MediaTek Inc.'),
   replace('HTC', '2498.TW', /HTC/, 'HTC Corporation'),
   // Stored prices are right; only the symbol that refreshes them is dead.
@@ -105,8 +133,24 @@ const FIXES: Fix[] = [
   { kind: 'private', ticker: 'ANTH', name: 'Anthropic', aliases: ['Anthropic'] },
   { kind: 'private', ticker: 'MNSH', name: 'Moonshot AI', aliases: ['Moonshot'] },
   { kind: 'private', ticker: 'XAI' },
+  // Never tradable on Yahoo under these symbols, but creators do discuss them.
+  { kind: 'private', ticker: 'FTX', name: 'FTX' },
+  { kind: 'private', ticker: 'WGM' },
   // Same company on the wrong exchange suffix, duplicating 036930.KQ.
   { kind: 'merge', ticker: '036930.KS', into: '036930.KQ', expect: /JUSUNG/ },
+  // Mentions mean Paramount, now Skydance; stored prices are Banzai/Parabolic.
+  { kind: 'merge', ticker: 'PARA', into: 'SKYD', expect: /Skydance/, pricesDiffer: true },
+  // TRX Gold has no mentions, and Tron is tracked as TRX-USD.
+  { kind: 'retire', ticker: 'TRX', aliasOn: 'TRX-USD' },
+  // A regulator, not a security.
+  { kind: 'retire', ticker: 'SEC', removeMentions: true },
+  // No mentions and no usable prices. A later mention recreates the right stock.
+  ...['ARS', 'ASKJ', 'BNG', 'FLE', 'JPQ', 'SVB', 'TAO', 'TPW', '093230.KQ'].map(
+    (ticker): Retire => ({ kind: 'retire', ticker }),
+  ),
+  { kind: 'reanalyze', ticker: 'USD' },
+  { kind: 'reanalyze', ticker: 'AI' },
+  { kind: 'reanalyze', ticker: 'UST', retireWhenEmpty: true },
 ]
 
 type Bar = { day: string; date: Date; close: number }
@@ -313,7 +357,7 @@ async function runMerge(fix: Merge): Promise<string> {
   }
 
   const stored = await storedPrices(stock._id)
-  if (stored.size > 0) {
+  if (stored.size > 0 && !fix.pricesDiffer) {
     const bars = await fetchBars(fix.into, new Date(new Date([...stored.keys()][0]).getTime() - LOOKBACK_DAYS * DAY_MS))
     const share = matchShare(stored, bars)
     if (share < KEEP_MIN_MATCH) {
@@ -338,7 +382,8 @@ async function runMerge(fix: Merge): Promise<string> {
         },
   )
 
-  const summary = `move ${videos.length} mentions to ${fix.into}; delete ${stored.size} stored days and the ${fix.ticker} stock record`
+  const duplicates = videos.filter((video) => mentionOf(video, target._id)).length
+  const summary = `move ${videos.length - duplicates} mentions to ${fix.into}, drop ${duplicates} where it is already mentioned; delete ${stored.size} stored days and the ${fix.ticker} stock record`
   if (!apply) return `WOULD ${summary}`
 
   if (writes.length > 0) await videosColl.bulkWrite(writes as never)
@@ -347,6 +392,41 @@ async function runMerge(fix: Merge): Promise<string> {
   await stocksColl.deleteOne({ _id: stock._id })
   await rebuildStats(target._id.toString())
   return `DONE ${summary}`
+}
+
+async function runRetire(fix: Retire): Promise<string> {
+  const stock = await stocksColl.findOne({ ticker: fix.ticker })
+  if (!stock) return 'already done (no such stock)'
+  const heir = fix.aliasOn ? await stocksColl.findOne({ ticker: fix.aliasOn }) : null
+  if (fix.aliasOn && !heir) return `BLOCKED: ${fix.aliasOn} does not exist`
+
+  const videos = await mentionVideos(stock._id)
+  if (videos.length > 0 && !fix.removeMentions) return `BLOCKED: it has ${videos.length} mentions now`
+  const storedDays = await pricesColl.countDocuments({ 'meta.stockId': stock._id })
+
+  const summary = `delete "${stock.name}" and ${storedDays} stored days; remove ${videos.length} mentions${heir ? `; alias ${fix.ticker} on ${fix.aliasOn}` : ''}`
+  if (!apply) return `WOULD ${summary}`
+
+  if (heir) await stocksColl.updateOne({ _id: heir._id }, { $addToSet: { aliases: fix.ticker } })
+  if (videos.length > 0) {
+    await videosColl.updateMany({ 'mentions.stockId': stock._id }, { $pull: { mentions: { stockId: stock._id } } } as never)
+  }
+  await deletePricesForStock(stock._id)
+  await stocksColl.deleteOne({ _id: stock._id })
+  return `DONE ${summary}`
+}
+
+const reanalyzeIds = new Set<string>()
+
+async function runReanalyze(fix: Reanalyze): Promise<string> {
+  const stock = await stocksColl.findOne({ ticker: fix.ticker })
+  if (!stock) return 'already done (no such stock)'
+  const videos = await mentionVideos(stock._id)
+  if (videos.length === 0) {
+    return fix.retireWhenEmpty ? runRetire({ kind: 'retire', ticker: fix.ticker }) : 'no mentions left'
+  }
+  for (const video of videos) reanalyzeIds.add(video._id.toString())
+  return `RE-ANALYZE ${videos.length} videos${fix.retireWhenEmpty ? ', then re-run this script to delete it if no mentions remain' : ''}`
 }
 
 const selected = only.length > 0 ? FIXES.filter((f) => only.includes(f.ticker)) : FIXES
@@ -359,7 +439,9 @@ for (const fix of selected) {
   try {
     if (fix.kind === 'remap') result = await runRemap(fix)
     else if (fix.kind === 'private') result = await runPrivate(fix)
-    else result = await runMerge(fix)
+    else if (fix.kind === 'merge') result = await runMerge(fix)
+    else if (fix.kind === 'retire') result = await runRetire(fix)
+    else result = await runReanalyze(fix)
   } catch (err) {
     result = `FAILED: ${(err as Error).message}`
   }
@@ -369,5 +451,8 @@ for (const fix of selected) {
 }
 
 await mongoose.disconnect()
+if (reanalyzeIds.size > 0) {
+  console.log(`\nVideos to re-analyze with reanalyze-ids.js (${reanalyzeIds.size}):\n${[...reanalyzeIds].join(' ')}`)
+}
 console.log(`\n${selected.length} fixes, ${problems} blocked/failed/missing.${apply ? '' : ' Dry run: nothing was written.'}`)
 if (problems > 0) process.exitCode = 1
