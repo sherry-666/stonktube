@@ -9,19 +9,23 @@ import { transcribeQueue } from '@stonktube/pipeline'
 // Enqueue pending/failed videos for transcription.
 // CREATOR_SLUG — limit to one creator (e.g. "bella"). Omit to target all.
 // LIMIT        — max videos to enqueue in this run (e.g. "100"). Omit for all matching.
+// SINCE        — only videos published on/after this date (e.g. "2026-10-01"). Omit for all dates.
 const CREATOR_SLUG = process.env.CREATOR_SLUG
 const LIMIT = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined
+const SINCE = process.env.SINCE ? new Date(process.env.SINCE) : undefined
+if (SINCE && isNaN(SINCE.getTime())) throw new Error(`Invalid SINCE: ${process.env.SINCE}`)
 
 await connectDB()
 
 const filter: Record<string, unknown> = { transcriptStatus: { $in: ['PENDING', 'SKIPPED', 'FAILED'] } }
 if (CREATOR_SLUG) filter['creator.slug'] = CREATOR_SLUG
+if (SINCE) filter.publishedAt = { $gte: SINCE }
 
 const query = Video.find(filter).sort({ publishedAt: -1 })
 if (LIMIT) query.limit(LIMIT)
 const videos = await query
 
-console.log(`Enqueuing ${videos.length} videos${CREATOR_SLUG ? ` for ${CREATOR_SLUG}` : ''}${LIMIT ? ` (limit ${LIMIT})` : ''}`)
+console.log(`Enqueuing ${videos.length} videos${CREATOR_SLUG ? ` for ${CREATOR_SLUG}` : ''}${SINCE ? ` since ${process.env.SINCE}` : ''}${LIMIT ? ` (limit ${LIMIT})` : ''}`)
 
 for (const v of videos) {
   await transcribeQueue.add(
