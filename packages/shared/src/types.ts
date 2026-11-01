@@ -48,6 +48,39 @@ export const StockStatsSchema = z.object({
 })
 export type StockStats = z.infer<typeof StockStatsSchema>
 
+// ── Wall Street analyst consensus (from Yahoo Finance) ──────────────────────
+
+export const AnalystActionSchema = z.object({
+  firm: z.string(),
+  toGrade: z.string(),
+  fromGrade: z.string().optional(),
+  /** Yahoo action code: init, up, down, main or reit. */
+  action: z.string().optional(),
+  priceTarget: z.number().optional(),
+  priorPriceTarget: z.number().optional(),
+  date: z.date(),
+})
+export type AnalystAction = z.infer<typeof AnalystActionSchema>
+
+export const StockAnalystSchema = z.object({
+  targetMean: z.number().optional(),
+  targetHigh: z.number().optional(),
+  targetLow: z.number().optional(),
+  /** Number of analysts behind the price targets. */
+  targetAnalysts: z.number().int().optional(),
+  /** Yahoo consensus key: strong_buy, buy, hold, underperform or sell. */
+  recommendationKey: z.string().optional(),
+  strongBuy: z.number().int(),
+  buy: z.number().int(),
+  hold: z.number().int(),
+  sell: z.number().int(),
+  strongSell: z.number().int(),
+  /** Each firm's latest action from the last 12 months, newest first. */
+  actions: z.array(AnalystActionSchema),
+  fetchedAt: z.date(),
+})
+export type StockAnalyst = z.infer<typeof StockAnalystSchema>
+
 // ── LLM extraction output (validated before writing to DB) ──────────────────
 
 export const LLMExtractionSchema = z.object({

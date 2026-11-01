@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import type { StockStats } from '@stonktube/shared'
+import type { StockAnalyst, StockStats } from '@stonktube/shared'
 
 export interface IStockTranslationLang {
   name?: string
@@ -22,6 +22,8 @@ export interface IStock extends Document {
   initials: string
   logoUrl?: string
   stats: StockStats
+  /** Wall Street analyst consensus. Unset for ETFs, crypto, indices and uncovered stocks. */
+  analyst?: StockAnalyst
   translations?: { zh?: IStockTranslationLang; ko?: IStockTranslationLang }
   createdAt: Date
   updatedAt: Date
@@ -47,6 +49,40 @@ const StockStatsSchema = new Schema<StockStats>(
   { _id: false },
 )
 
+const StockAnalystSchema = new Schema<StockAnalyst>(
+  {
+    targetMean: Number,
+    targetHigh: Number,
+    targetLow: Number,
+    targetAnalysts: Number,
+    recommendationKey: String,
+    strongBuy: { type: Number, default: 0 },
+    buy: { type: Number, default: 0 },
+    hold: { type: Number, default: 0 },
+    sell: { type: Number, default: 0 },
+    strongSell: { type: Number, default: 0 },
+    actions: {
+      type: [
+        new Schema(
+          {
+            firm: { type: String, required: true },
+            toGrade: { type: String, required: true },
+            fromGrade: String,
+            action: String,
+            priceTarget: Number,
+            priorPriceTarget: Number,
+            date: { type: Date, required: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
+    fetchedAt: { type: Date, required: true },
+  },
+  { _id: false },
+)
+
 const StockTranslationLangSchema = new Schema(
   { name: String, sector: String },
   { _id: false },
@@ -65,6 +101,7 @@ const StockSchema = new Schema<IStock>(
     initials: { type: String, required: true },
     logoUrl: String,
     stats: { type: StockStatsSchema, default: () => ({}) },
+    analyst: { type: StockAnalystSchema },
     translations: {
       type: new Schema({ zh: StockTranslationLangSchema, ko: StockTranslationLangSchema }, { _id: false }),
       default: {},

@@ -7,6 +7,7 @@ import type { StockDetailResponse, Marker } from '../api/hooks.js'
 import SentimentIcon from '../components/SentimentIcon.js'
 import SentimentBar from '../components/SentimentBar.js'
 import StockIcon from '../components/StockIcon.js'
+import AnalystCard from '../components/AnalystCard.js'
 import { fmtPrice, fmtPct, fmtDate, fmtRelDate } from '../utils/format.js'
 import { SENTIMENT_META, bullishPctToVerdict } from '@stonktube/shared'
 import { useLang, useLangNavigate } from '../hooks/useLang.js'
@@ -709,6 +710,14 @@ export default function StockDetail({ initialDetail, initialMarkers }: StockDeta
           </div>
         )}
       </div>
+
+      {data.analyst && (
+        <AnalystCard
+          analyst={data.analyst}
+          currency={stock.currency}
+          currentPrice={stock.latestClose}
+        />
+      )}
 
       {/* Bottom grid */}
       <div className="grid gap-7" style={{ gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr' }}>

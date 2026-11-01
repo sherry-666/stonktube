@@ -3,6 +3,7 @@ export const QUEUES = {
   TRANSCRIBE: 'transcribe',
   ANALYZE: 'analyze',
   PRICES: 'prices',
+  ANALYST: 'analyst',
   ROLLUP: 'rollup',
 } as const
 
@@ -29,6 +30,10 @@ export interface AnalyzeJob {
 }
 
 export interface FillPricesJob {
+  stockId?: string // if omitted, fills all non-private stocks
+}
+
+export interface FillAnalystJob {
   stockId?: string // if omitted, fills all non-private stocks
 }
 
