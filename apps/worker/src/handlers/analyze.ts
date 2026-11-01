@@ -5,6 +5,7 @@ import type { AnalyzeJob } from '@stonktube/shared'
 import { LLMExtractionSchema, isTooShort } from '@stonktube/shared'
 import { getFlashModel, FunctionCallingMode } from '../lib/gemini.js'
 import { TokenBucket } from '../lib/token-bucket.js'
+import { resolveNewTicker, type TickerQuote } from '../lib/ticker-validation.js'
 import { SchemaType } from '@google/generative-ai'
 import type { Types } from 'mongoose'
 import YahooFinance from 'yahoo-finance2'
@@ -120,8 +121,8 @@ export const EXTRACT_TOOL = {
         items: {
           type: SchemaType.OBJECT,
           properties: {
-            ticker: { type: SchemaType.STRING, description: 'The ticker symbol (e.g. NVDA, BTC-USD)' },
-            name: { type: SchemaType.STRING, description: 'Company or asset name (e.g. NVIDIA Corporation)' },
+            ticker: { type: SchemaType.STRING, description: 'The ticker symbol (e.g. NVDA, BTC-USD). Crypto uses SYMBOL-USD.' },
+            name: { type: SchemaType.STRING, description: 'English name of the company or asset the creator means (e.g. NVIDIA Corporation, Cardano), not a guess from the symbol' },
           },
           required: ['ticker', 'name'],
         },
@@ -142,6 +143,7 @@ Tracked tickers (use these for the mentions array): ${trackedList}
 
 For tickers in the tracked list: add them to mentions with full sentiment analysis.
 For significant stocks/crypto/assets NOT in the tracked list: add them to new_tickers (ticker symbol + name only).
+Use a tracked ticker only when the creator means that exact company or asset, as named in the list. If the same symbol belongs to something else (a stablecoin vs a penny stock with that symbol), treat it as not tracked. Do not add private companies, currencies, or government agencies to new_tickers.
 
 Set "relevance" honestly per the definitions, and be conservative: most assets a
 creator merely name-drops or lists should be PASSING. Only use DISCUSSED/FEATURED
@@ -269,17 +271,26 @@ export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
     const upper = ticker.toUpperCase()
     if (tickerMap.has(upper.toLowerCase())) continue
     try {
-      const quote = await yahooFinance.quote(upper)
-      if (!quote) continue
-      const resolvedName = quote.shortName ?? quote.longName ?? name
+      const resolved = await resolveNewTicker(upper, name, (symbol) =>
+        yahooFinance.quote(symbol, {}, { validateResult: false }) as Promise<TickerQuote | undefined>,
+      )
+      if (!resolved) {
+        log.warn({ ticker: upper, name }, 'No Yahoo security matches this asset — not creating a stock')
+        continue
+      }
+      const tracked = tickerMap.get(resolved.ticker.toLowerCase())
+      if (tracked) {
+        tickerMap.set(upper.toLowerCase(), tracked)
+        continue
+      }
       const stock = await Stock.findOneAndUpdate(
-        { ticker: upper },
+        { ticker: resolved.ticker },
         {
           $setOnInsert: {
-            ticker: upper,
-            name: resolvedName,
-            sector: (quote as any).sector ?? '',
-            aliases: [],
+            ticker: resolved.ticker,
+            name: resolved.name,
+            sector: resolved.sector,
+            aliases: resolved.ticker === upper ? [] : [upper],
             isPrivate: false,
             brandColor: '#6B7280',
             logoBg: '#F3F4F6',
@@ -290,8 +301,9 @@ export async function handleAnalyze(job: Job<AnalyzeJob>, worker?: Worker) {
       )
       if (stock) {
         tickerMap.set(upper.toLowerCase(), stock)
+        tickerMap.set(resolved.ticker.toLowerCase(), stock)
         stocks.push(stock)
-        log.info({ ticker: upper, name: resolvedName }, 'Auto-created new stock from video mention')
+        log.info({ ticker: resolved.ticker, name: resolved.name }, 'Auto-created new stock from video mention')
       }
     } catch (err) {
       log.warn({ ticker, err: (err as Error).message }, 'Could not validate new ticker via Yahoo Finance — skipping')
