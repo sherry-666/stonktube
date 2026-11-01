@@ -7,7 +7,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env') })
 import { connectDB, disconnectDB, Creator, Video, Transcript } from '@stonktube/db'
-import { discoverQueue, transcribeQueue, analyzeQueue, pricesQueue, rollupQueue } from '@stonktube/pipeline'
+import { discoverQueue, transcribeQueue, analyzeQueue, pricesQueue, analystQueue, rollupQueue } from '@stonktube/pipeline'
 import pino from 'pino'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
@@ -38,6 +38,14 @@ async function run() {
     { jobId: `prices-all-${hour}` },
   )
   log.info('Price fill job enqueued')
+
+  // Analyst ratings change far less often than prices: once a day is enough.
+  await analystQueue.add(
+    'fillAnalyst',
+    { stockId: undefined },
+    { jobId: `analyst-all-${runId.slice(0, 10)}` },
+  )
+  log.info('Analyst fill job enqueued')
 
   await rollupQueue.add(
     'rollup',

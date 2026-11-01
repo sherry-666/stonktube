@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { Stock, Video, getPrices } from '@stonktube/db'
 import type { ICreatorSnapshot, IMention } from '@stonktube/db'
+import type { StockAnalyst } from '@stonktube/shared'
 import { Types } from 'mongoose'
 import { resolveSlimVideoTexts } from '../lib/videoTranslation.js'
 import { getStockTranslationsBatch, getStockTranslation } from '../lib/stockTranslation.js'
@@ -47,6 +48,19 @@ function verdict(bullishPct: number): string {
   if (bullishPct >= 40) return 'Mixed'
   if (bullishPct >= 20) return 'Cautious'
   return 'Bearish'
+}
+
+// Past this age the worker hasn't refreshed the data, so ratings may no longer
+// be what the firms hold.
+const ANALYST_MAX_AGE_MS = 30 * 86_400_000
+
+function analystResponse(analyst: StockAnalyst | undefined, latestClose?: number) {
+  if (!analyst || Date.now() - new Date(analyst.fetchedAt).getTime() > ANALYST_MAX_AGE_MS) return null
+  return {
+    ...analyst,
+    upsidePct:
+      analyst.targetMean != null && latestClose ? (analyst.targetMean / latestClose - 1) * 100 : undefined,
+  }
 }
 
 const TF_DAYS: Record<string, number> = {
@@ -166,7 +180,7 @@ const stocks: FastifyPluginAsync = async (fastify) => {
       const lang = req.query.lang ?? 'en'
       const tfDays = TF_DAYS[tf] ?? TF_DAYS['3M']
 
-      const stock = await Stock.findOne({ ticker }).select(stockFields(lang)).lean()
+      const stock = await Stock.findOne({ ticker }).select(`${stockFields(lang)} analyst`).lean()
       if (!stock) return reply.code(404).send({ error: 'Stock not found' })
 
       const startDate = new Date()
@@ -290,11 +304,13 @@ const stocks: FastifyPluginAsync = async (fastify) => {
           priceStr: fmtPrice(stock.stats?.latestClose, stock.ticker),
           dayChangePct: stock.stats?.dayChangePct ?? 0,
           dayChangeStr: fmtPct(stock.stats?.dayChangePct),
+          latestClose: stock.stats?.latestClose,
           trackedBy,
         },
         priceSeries,
         overallSentiment,
         recentCoverage,
+        analyst: analystResponse(stock.analyst, stock.stats?.latestClose),
       })
     },
   )

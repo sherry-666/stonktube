@@ -26,4 +26,5 @@ export const discoverQueue = new Queue(QUEUES.DISCOVER, { connection, defaultJob
 export const transcribeQueue = new Queue(QUEUES.TRANSCRIBE, { connection, defaultJobOptions })
 export const analyzeQueue = new Queue(QUEUES.ANALYZE, { connection, defaultJobOptions: analyzeJobOptions })
 export const pricesQueue = new Queue(QUEUES.PRICES, { connection, defaultJobOptions })
+export const analystQueue = new Queue(QUEUES.ANALYST, { connection, defaultJobOptions })
 export const rollupQueue = new Queue(QUEUES.ROLLUP, { connection, defaultJobOptions })

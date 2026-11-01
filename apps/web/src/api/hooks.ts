@@ -124,7 +124,34 @@ export interface StockDetailStock {
   priceStr: string
   dayChangePct: number
   dayChangeStr: string
+  latestClose?: number
   trackedBy: number
+}
+
+export interface AnalystAction {
+  firm: string
+  toGrade: string
+  fromGrade?: string
+  action?: string
+  priceTarget?: number
+  priorPriceTarget?: number
+  date: string
+}
+
+export interface StockAnalyst {
+  targetMean?: number
+  targetHigh?: number
+  targetLow?: number
+  targetAnalysts?: number
+  recommendationKey?: string
+  upsidePct?: number
+  strongBuy: number
+  buy: number
+  hold: number
+  sell: number
+  strongSell: number
+  actions: AnalystAction[]
+  fetchedAt: string
 }
 
 export interface PricePoint {
@@ -165,6 +192,7 @@ export interface StockDetailResponse {
   priceSeries: PricePoint[]
   recentCoverage: RecentCoverageEvent[]
   overallSentiment: OverallSentiment
+  analyst: StockAnalyst | null
 }
 
 export function useStockDetail(ticker: string, tf: string, lang: string, initialData?: StockDetailResponse) {

@@ -12,6 +12,7 @@ import { handleDiscover } from './handlers/discover.js'
 import { handleTranscribe } from './handlers/transcribe.js'
 import { handleAnalyze } from './handlers/analyze.js'
 import { handleFillPrices } from './handlers/prices.js'
+import { handleFillAnalyst } from './handlers/analyst.js'
 import { handleRollup } from './handlers/rollup.js'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
@@ -49,6 +50,7 @@ async function start() {
     new Worker(QUEUES.TRANSCRIBE, handleTranscribe, { connection, concurrency: 2 }),
     analyzeWorker,
     new Worker(QUEUES.PRICES, handleFillPrices, { connection, concurrency: 5 }),
+    new Worker(QUEUES.ANALYST, handleFillAnalyst, { connection, concurrency: 1 }),
     new Worker(QUEUES.ROLLUP, handleRollup, { connection, concurrency: 1 }),
   ]
 
