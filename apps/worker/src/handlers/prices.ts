@@ -1,62 +1,11 @@
 import type { Job } from 'bullmq'
-import mongoose from 'mongoose'
-import { Stock, insertPrices } from '@stonktube/db'
+import { Stock } from '@stonktube/db'
 import { rollupQueue } from '@stonktube/pipeline'
 import type { FillPricesJob } from '@stonktube/shared'
-import YahooFinance from 'yahoo-finance2'
-const yahooFinance = new YahooFinance()
 import pino from 'pino'
+import { fillStockPrices } from '../lib/price-fill.js'
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info' })
-
-async function latestPriceDate(stockId: mongoose.Types.ObjectId): Promise<Date | null> {
-  const db = mongoose.connection.db
-  if (!db) throw new Error('DB not connected')
-  const doc = await db.collection('pricepoints')
-    .findOne({ 'meta.stockId': stockId }, { sort: { date: -1 } })
-  return doc ? (doc.date as Date) : null
-}
-
-async function fillOne(stock: { _id: mongoose.Types.ObjectId; ticker: string; priceSymbol?: string }) {
-  // Display ticker (e.g. SPX) isn't always the Yahoo symbol (e.g. ^GSPC).
-  const symbol = stock.priceSymbol || stock.ticker
-  const latest = await latestPriceDate(stock._id)
-  const fromDate = latest
-    ? new Date(latest.getTime() + 86_400_000)
-    : new Date(Date.now() - 365 * 86_400_000)
-  const toDate = new Date()
-
-  if (fromDate > toDate) {
-    log.info({ ticker: stock.ticker }, 'Prices already up to date')
-    return 0
-  }
-
-  type Bar = { date: Date; close: number }
-  const bars: Bar[] = (await yahooFinance.historical(symbol, {
-    period1: fromDate.toISOString().slice(0, 10),
-    period2: toDate.toISOString().slice(0, 10),
-    interval: '1d',
-  })) as Bar[]
-
-  if (!bars || bars.length === 0) return 0
-
-  // Time-series collection: insert-only. Drop bars on/before the latest stored
-  // day (and any null closes) so overlapping refetches don't create duplicates.
-  const fresh = bars.filter(b => b.close != null && (!latest || b.date > latest))
-  if (fresh.length === 0) return 0
-
-  await insertPrices(
-    fresh.map(b => ({
-      date: b.date,
-      meta: { stockId: stock._id, ticker: stock.ticker },
-      close: b.close,
-      source: 'yahoo',
-    })),
-  )
-
-  log.info({ ticker: stock.ticker, inserted: fresh.length }, 'Prices inserted')
-  return fresh.length
-}
 
 export async function handleFillPrices(job: Job<FillPricesJob>) {
   const { stockId } = job.data
@@ -66,9 +15,12 @@ export async function handleFillPrices(job: Job<FillPricesJob>) {
     : await Stock.find({ isPrivate: false })
 
   let total = 0
+  const rebuiltIds: string[] = []
   for (const stock of stocks) {
     try {
-      total += await fillOne(stock)
+      const { inserted, rebuilt } = await fillStockPrices(stock)
+      total += inserted
+      if (rebuilt) rebuiltIds.push(stock._id.toString())
     } catch (err) {
       log.warn({ ticker: stock.ticker, err: (err as Error).message }, 'Price fill failed for ticker — skipping')
     }
@@ -78,5 +30,10 @@ export async function handleFillPrices(job: Job<FillPricesJob>) {
     for (const s of stocks) {
       await rollupQueue.add('rollup', { stockId: s._id.toString() }, { jobId: `rollup-${s._id}-post-prices` })
     }
+  }
+  // Unique job IDs: the fixed ID above is ignored while a completed job with the
+  // same ID is retained, and a rebuild must always correct stats and mention prices.
+  for (const id of rebuiltIds) {
+    await rollupQueue.add('rollup', { stockId: id }, { jobId: `rollup-${id}-post-split-${Date.now()}` })
   }
 }
