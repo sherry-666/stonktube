@@ -213,7 +213,7 @@ export default function CreatorProfile({ initialCreator }: CreatorProfileProps) 
                       >
                         {call.videoTitle}
                       </button>
-                      <span className="text-[11px] text-faint shrink-0 mt-0.5">{fmtRelDate(call.publishedAt)}</span>
+                      <span className="text-[11px] text-faint shrink-0 mt-0.5" suppressHydrationWarning>{fmtRelDate(call.publishedAt)}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
                       {call.mentions.slice(0, 5).map(m => (

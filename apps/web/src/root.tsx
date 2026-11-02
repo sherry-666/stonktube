@@ -1,10 +1,13 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useSearchParams } from 'react-router'
 import type { LinksFunction, MetaFunction } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Nav from './components/Nav.js'
 import VideoSummaryModal from './components/VideoSummaryModal.js'
 import './index.css'
+
+const ADSENSE_CLIENT = 'ca-pub-3146668424927503'
+const ADSENSE_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`
 
 export const meta: MetaFunction = () => [
   { title: 'StonkTube — Stock & Crypto Picks from YouTube Finance Creators' },
@@ -35,6 +38,7 @@ export const meta: MetaFunction = () => [
 
 export const links: LinksFunction = () => [
   { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
+  { rel: 'preload', as: 'script', href: ADSENSE_SRC, crossOrigin: 'anonymous' },
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
   {
@@ -69,18 +73,28 @@ function AppShell() {
 export default function Root() {
   const [queryClient] = useState(() => new QueryClient())
 
+  // AdSense inserts its own <script> and <meta> tags into <head> as soon as it runs.
+  // React 18 hydrates the whole document, so if that happens before hydration the
+  // head no longer matches and the document is re-rendered, dropping styles. Only
+  // execute it once hydrated; the preload in `links` keeps the fetch early. AdUnit
+  // pushes queue on window.adsbygoogle until then.
+  useEffect(() => {
+    if (document.querySelector(`script[src="${ADSENSE_SRC}"]`)) return
+    const script = document.createElement('script')
+    script.async = true
+    script.src = ADSENSE_SRC
+    script.crossOrigin = 'anonymous'
+    document.head.appendChild(script)
+  }, [])
+
   return (
     <html lang="en">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="google-adsense-account" content={ADSENSE_CLIENT} />
         <Meta />
         <Links />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3146668424927503"
-          crossOrigin="anonymous"
-        />
       </head>
       <body className="bg-page font-body text-primary antialiased">
         <QueryClientProvider client={queryClient}>

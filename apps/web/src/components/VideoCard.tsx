@@ -137,7 +137,7 @@ export default function VideoCard({ video }: VideoCardProps) {
               {creator.initial}
             </div>
           )}
-          <span className="text-[13px] text-muted truncate">
+          <span className="text-[13px] text-muted truncate" suppressHydrationWarning>
             <span className="font-semibold text-body">{creator.name}</span>
             {' · '}
             {fmtRelDate(video.publishedAt)}

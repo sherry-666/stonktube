@@ -290,9 +290,7 @@ export default function StockDetail({ initialDetail, initialMarkers }: StockDeta
   // Adapt marker sizes / layout on mobile. Keyed off the viewport rather than a
   // measured element so it stays correct even though the chart only mounts after
   // data loads (an element-based observer would miss that first render).
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 640,
-  )
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640)
     onResize()
@@ -767,7 +765,7 @@ export default function StockDetail({ initialDetail, initialMarkers }: StockDeta
                         >
                           {event.creatorName}
                         </button>
-                        <span className="text-[11px] text-muted shrink-0">{fmtRelDate(event.publishedAt)}</span>
+                        <span className="text-[11px] text-muted shrink-0" suppressHydrationWarning>{fmtRelDate(event.publishedAt)}</span>
                       </div>
                       <div className="text-[11px] text-muted">{event.creatorHandle}</div>
                       <button

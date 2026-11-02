@@ -16,11 +16,14 @@ export function fmtSubs(n?: number): string {
   return String(n)
 }
 
+// UTC so the server and every browser agree, and 'YYYY-MM-DD' dates keep their calendar day.
 export function fmtDate(d: string | Date): string {
   const date = typeof d === 'string' ? new Date(d) : d
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 }
 
+// Depends on the current time: render with suppressHydrationWarning, as the server and
+// client can land on either side of a boundary (e.g. '5 minutes ago' vs '6 minutes ago').
 export function fmtRelDate(d: string | Date): string {
   const date = typeof d === 'string' ? new Date(d) : d
   const diffMs = Date.now() - date.getTime()
