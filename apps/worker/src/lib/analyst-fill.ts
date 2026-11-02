@@ -1,5 +1,5 @@
 import type { Types } from 'mongoose'
-import { Stock } from '@stonktube/db'
+import { AnalystSnapshot, Stock } from '@stonktube/db'
 import type { AnalystAction, StockAnalyst } from '@stonktube/shared'
 import YahooFinance from 'yahoo-finance2'
 
@@ -119,5 +119,12 @@ export async function fillStockAnalyst(stock: StockRef): Promise<boolean> {
   const analyst = await fetchAnalystData(stock.priceSymbol || stock.ticker)
   if (!analyst) return false
   await Stock.updateOne({ _id: stock._id }, { $set: { analyst } })
+  // Re-runs on the same UTC day overwrite that day's snapshot, leaving one per day.
+  const { actions: _actions, ...consensus } = analyst
+  await AnalystSnapshot.updateOne(
+    { stockId: stock._id, day: analyst.fetchedAt.toISOString().slice(0, 10) },
+    { $set: { ticker: stock.ticker, ...consensus } },
+    { upsert: true },
+  )
   return true
 }

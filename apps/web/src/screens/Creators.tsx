@@ -252,7 +252,7 @@ function CreatorCard({ creator }: { creator: CreatorCard }) {
                         >
                           {call.videoTitle}
                         </button>
-                        <span className="text-[10px] text-faint shrink-0">{fmtRelDate(call.publishedAt)}</span>
+                        <span className="text-[10px] text-faint shrink-0" suppressHydrationWarning>{fmtRelDate(call.publishedAt)}</span>
                       </div>
                       <div className="flex flex-wrap items-center gap-1 mt-1">
                         {call.mentions.slice(0, 3).map(m => (
