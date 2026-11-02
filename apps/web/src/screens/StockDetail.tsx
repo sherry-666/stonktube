@@ -286,6 +286,7 @@ export default function StockDetail({ initialDetail, initialMarkers }: StockDeta
   const { lang } = useLang()
   const openVideo = useOpenVideo()
   const [tf, setTf] = useState('3M')
+  const [tab, setTab] = useState<'creators' | 'analysts'>('creators')
 
   // Adapt marker sizes / layout on mobile. Keyed off the viewport rather than a
   // measured element so it stays correct even though the chart only mounts after
@@ -511,390 +512,429 @@ export default function StockDetail({ initialDetail, initialMarkers }: StockDeta
         </div>
       </div>
 
-      {/* Chart card */}
-      <div className="bg-white" style={{ borderRadius: 18, padding: 22, border: '1px solid #ECEBE4' }}>
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-4">
-          <div
-            className="flex items-center gap-0.5 p-1"
-            style={{ background: '#F3F2EC', borderRadius: 10 }}
-          >
-            {TF_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setTf(opt.value)}
-                className="px-3 py-1 text-[13px] font-semibold transition-all duration-150"
-                style={{
-                  borderRadius: 8,
-                  background: tf === opt.value ? 'white' : 'transparent',
-                  color: tf === opt.value ? '#14151A' : '#6E6F78',
-                  boxShadow: tf === opt.value ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <div
-            className="flex items-center gap-1.5 text-[12px] font-medium"
-            style={{ color: '#6E6F78' }}
-          >
-            <span
-              className="inline-block rounded-full"
-              style={{ width: 8, height: 8, background: stock.brandColor }}
-            />
-            {t('stock.creator_sentiment')}
-          </div>
-        </div>
-
-        {/* Chart SVG with overlay */}
-        <div
-          className="relative"
-          style={{ height: isMobile ? 240 : 360 }}
-          onMouseMove={handleChartMouseMove}
-          onMouseLeave={() => setHoverIdx(null)}
-        >
-          {isPrivate ? (
-            /* Private company — no price data: show a simple horizontal timeline */
-            <svg
-              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-              preserveAspectRatio="none"
-              style={{ width: '100%', height: '100%', display: 'block' }}
-            >
-              {/* Baseline */}
-              <line x1={0} y1={SVG_H / 2} x2={SVG_W} y2={SVG_H / 2} stroke="#E8E7E0" strokeWidth={2} />
-            </svg>
-          ) : (
-            <svg
-              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-              preserveAspectRatio="none"
-              style={{ width: '100%', height: '100%', display: 'block' }}
-            >
-              <defs>
-                <linearGradient id={`area-${ticker}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={stock.brandColor} stopOpacity="0.16" />
-                  <stop offset="100%" stopColor={stock.brandColor} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              {/* Gridlines */}
-              {gridPrices && gridPrices.map((gp, i) => {
-                const y = priceToSvgY(gp)
-                return (
-                  <g key={i}>
-                    <line x1={0} y1={y} x2={SVG_W - 50} y2={y} stroke="#F0EFE8" strokeWidth={1} />
-                    <text
-                      x={SVG_W - 4}
-                      y={y + 4}
-                      textAnchor="end"
-                      style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, fill: '#B6B7BE' }}
-                    >
-                      {fmtPrice(gp, data?.stock.currency)}
-                    </text>
-                  </g>
-                )
-              })}
-
-              {/* Area fill */}
-              {pricePts && (
-                <polygon points={`${firstPriceX},${SVG_H} ${pricePts} ${lastPriceX},${SVG_H}`} fill={`url(#area-${ticker})`} />
-              )}
-
-              {/* Price line */}
-              {pricePts && (
-                <polyline
-                  points={pricePts}
-                  fill="none"
-                  stroke={stock.brandColor}
-                  strokeWidth={2.4}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )}
-
-              {/* Crosshair */}
-              {hoverIdx !== null && priceSeries.length > 1 && (() => {
-                const cx = dateToSvgX(priceMsList[hoverIdx])
-                const cy = priceToSvgY(priceSeries[hoverIdx].close)
-                return (
-                  <g>
-                    <line
-                      x1={cx} y1={0} x2={cx} y2={SVG_H}
-                      stroke="#9A9BA4"
-                      strokeWidth={1}
-                      strokeDasharray="4 3"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    <circle
-                      cx={cx} cy={cy} r={4}
-                      fill={stock.brandColor}
-                      stroke="white"
-                      strokeWidth={2}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </g>
-                )
-              })()}
-            </svg>
-          )}
-
-          {/* Crosshair date/price label */}
-          {!isPrivate && hoverIdx !== null && priceSeries.length > 1 && (() => {
-            const pt = priceSeries[hoverIdx]
-            const xPct = (dateToSvgX(priceMsList[hoverIdx]) / SVG_W) * 100
-            const flipLeft = xPct > 65
-            return (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 8,
-                  ...(flipLeft
-                    ? { right: `${100 - xPct}%`, marginRight: 10 }
-                    : { left: `${xPct}%`, marginLeft: 10 }),
-                  background: '#14151A',
-                  color: 'white',
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontFamily: '"JetBrains Mono", monospace',
-                  whiteSpace: 'nowrap',
-                  pointerEvents: 'none',
-                  zIndex: 10,
-                }}
-              >
-                {fmtDate(pt.date)} · {fmtPrice(pt.close, data?.stock.currency)}
-              </div>
-            )
-          })()}
-
-          {/* Creator avatar markers overlay */}
-          {markerGroups.length > 0 && (
-            <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
-              <div className="relative w-full h-full" style={{ pointerEvents: 'none' }}>
-                {markerGroups.map(group => (
-                  <MarkerDot
-                    key={group.date}
-                    group={group}
-                    onShow={() => showMarker(group.date)}
-                    onHide={hideMarker}
-                    isMobile={isMobile}
-                  />
-                ))}
-                {activeGroup && (
-                  <MarkerTooltip
-                    group={activeGroup}
-                    style={tooltipPosition(activeGroup, isMobile)}
-                    onMouseEnter={() => showMarker(activeGroup.date)}
-                    onMouseLeave={hideMarker}
-                    isMobile={isMobile}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Date ticks */}
-        {!isPrivate && (
-          <div className="flex justify-between mt-2 px-1">
-            {dateTicks.map((tick, i) => (
-              <span
-                key={i}
-                className="text-[11px]"
-                style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}
-              >
-                {tick ? fmtDate(tick).replace(/,\s*\d{4}$/, '') : ''}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {data.analyst && (
-        <AnalystCard
-          analyst={data.analyst}
-          currency={stock.currency}
-          currentPrice={stock.latestClose}
-        />
-      )}
-
-      {/* Bottom grid */}
-      <div className="grid gap-7" style={{ gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr' }}>
-        {/* Left: Recent coverage — on mobile shown second */}
-        <div className="flex flex-col gap-4" style={{ order: isMobile ? 2 : 1 }}>
-          <h2
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label={stock.ticker}
+        className="flex items-center gap-0.5 p-1 self-start"
+        style={{ background: '#F3F2EC', borderRadius: 12 }}
+      >
+        {(['creators', 'analysts'] as const).map(value => (
+          <button
+            key={value}
+            role="tab"
+            aria-selected={tab === value}
+            onClick={() => setTab(value)}
+            className="px-4 py-1.5 text-[14px] font-semibold transition-all duration-150"
             style={{
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontWeight: 700,
-              fontSize: 21,
-              letterSpacing: '-0.02em',
-              color: '#14151A',
+              borderRadius: 9,
+              background: tab === value ? 'white' : 'transparent',
+              color: tab === value ? '#14151A' : '#6E6F78',
+              boxShadow: tab === value ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
             }}
           >
-            {t('stock.recent_coverage')}
-          </h2>
-          <div className="flex flex-col gap-3">
-            {recentCoverage.map(event => {
-              const meta = SENTIMENT_META[event.sentiment]
-              return (
-                <div
-                  key={event.videoId}
-                  className="bg-white border border-[#ECEBE4] p-4 transition-colors duration-150"
-                  style={{ borderRadius: 14 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#D6D5CC')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#ECEBE4')}
-                >
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => navigate(`/creators/${event.creatorSlug}`)}
-                      className="flex items-center justify-center rounded-full shrink-0 text-white font-bold transition-transform duration-150 hover:scale-105"
-                      style={{
-                        width: 42,
-                        height: 42,
-                        background: event.creatorColor,
-                        fontSize: 15,
-                      }}
-                      title={`View ${event.creatorName}'s profile`}
-                    >
-                      {event.creatorInitial}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          onClick={() => navigate(`/creators/${event.creatorSlug}`)}
-                          className="text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 text-left"
-                        >
-                          {event.creatorName}
-                        </button>
-                        <span className="text-[11px] text-muted shrink-0">{fmtRelDate(event.publishedAt)}</span>
-                      </div>
-                      <div className="text-[11px] text-muted">{event.creatorHandle}</div>
-                      <button
-                        onClick={() => openVideo(event.videoId)}
-                        className="mt-1.5 block text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug text-left"
-                      >
-                        {event.title}
-                      </button>
-                      {event.note && (
-                        <p
-                          className="mt-1.5 text-[12.5px] leading-snug"
-                          style={{ color: '#6E6F78', fontStyle: 'italic' }}
-                        >
-                          “{event.note}”
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <div
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                          style={{ background: meta.bg, color: meta.color }}
-                        >
-                          <SentimentIcon sentiment={event.sentiment} size={10} color={meta.color} />
-                          {t(`sentiment.${event.sentiment.toLowerCase()}`)}
-                        </div>
-                        <span className="text-[11px] text-muted">
-                          @ {fmtPrice(event.priceAtMention, data?.stock.currency)}
-                        </span>
-                        <button
-                          onClick={() => openVideo(event.videoId)}
-                          className="ml-auto text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-150"
-                          style={{ background: '#F3F2EC', color: '#6E6F78' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
-                          onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
-                        >
-                          {t('stock.summary_btn')}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+            {t(`stock.tab_${value}`)}
+          </button>
+        ))}
+      </div>
 
-        {/* Right: Overall sentiment — on mobile shown first */}
-        <div className={isMobile ? '' : 'sticky top-[90px]'} style={{ order: isMobile ? 1 : 2 }}>
-          <div
-            className="bg-white border border-[#ECEBE4] p-5"
-            style={{ borderRadius: 18 }}
-          >
-            <h2
-              style={{
-                fontFamily: '"Space Grotesk", sans-serif',
-                fontWeight: 700,
-                fontSize: 17,
-                letterSpacing: '-0.015em',
-                color: '#14151A',
-              }}
-            >
-              {t('stock.overall_sentiment')}
-            </h2>
-            <p className="text-[12px] text-muted mt-0.5 mb-4">
-              {overallSentiment.total === 1 ? t('stock.ratings_one', { count: overallSentiment.total }) : t('stock.ratings_other', { count: overallSentiment.total })}
-            </p>
-
-            {overallSentiment.total > 0 && (() => {
-              const { bullCount, neutralCount, bearCount, bullishPct, neutralPct, bearishPct } = overallSentiment
-              const isBearDominant = bearCount > bullCount && bearCount >= neutralCount
-              const isNeutralDominant = !isBearDominant && neutralCount > bullCount
-              const dominantPct = isBearDominant ? bearishPct : isNeutralDominant ? neutralPct : bullishPct
-              const dominantColor = isBearDominant ? '#E5484D' : isNeutralDominant ? '#D9B26A' : '#0F9D63'
-              const subtitleKey = isBearDominant ? 'stock.of_creators_bearish' : isNeutralDominant ? 'stock.of_creators_neutral' : 'stock.of_creators_bullish'
-              return <>
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span
+      {tab === 'creators' && (
+        <>
+          {/* Chart card */}
+          <div className="bg-white" style={{ borderRadius: 18, padding: 22, border: '1px solid #ECEBE4' }}>
+            {/* Top bar */}
+            <div className="flex items-center justify-between mb-4">
+              <div
+                className="flex items-center gap-0.5 p-1"
+                style={{ background: '#F3F2EC', borderRadius: 10 }}
+              >
+                {TF_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setTf(opt.value)}
+                    className="px-3 py-1 text-[13px] font-semibold transition-all duration-150"
                     style={{
-                      fontFamily: '"Space Grotesk", sans-serif',
-                      fontWeight: 700,
-                      fontSize: 44,
-                      color: dominantColor,
-                      lineHeight: 1,
+                      borderRadius: 8,
+                      background: tf === opt.value ? 'white' : 'transparent',
+                      color: tf === opt.value ? '#14151A' : '#6E6F78',
+                      boxShadow: tf === opt.value ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
-                    {dominantPct.toFixed(0)}%
-                  </span>
-                  <span className="text-[16px] font-semibold" style={{ color: dominantColor }}>
-                    {t(`verdict.${verdict}`, verdict)}
-                  </span>
-                </div>
-                <p className="text-[13px] text-muted mb-4">{t(subtitleKey)}</p>
-
-              <SentimentBar
-                bullishPct={overallSentiment.bullishPct}
-                neutralPct={overallSentiment.neutralPct}
-                bearishPct={overallSentiment.bearishPct}
-              />
-
-              {/* Legend */}
-              <div className="flex flex-col gap-2 mt-4">
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#0F9D63' }} />
-                    <span className="text-body">{t('sentiment.bullish')}</span>
-                  </div>
-                  <span className="font-semibold text-primary">{overallSentiment.bullCount}</span>
-                </div>
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#D9B26A' }} />
-                    <span className="text-body">{t('sentiment.neutral')}</span>
-                  </div>
-                  <span className="font-semibold text-primary">{overallSentiment.neutralCount}</span>
-                </div>
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#E5484D' }} />
-                    <span className="text-body">{t('sentiment.bearish')}</span>
-                  </div>
-                  <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
-                </div>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            </>
-            })()}
+              <div
+                className="flex items-center gap-1.5 text-[12px] font-medium"
+                style={{ color: '#6E6F78' }}
+              >
+                <span
+                  className="inline-block rounded-full"
+                  style={{ width: 8, height: 8, background: stock.brandColor }}
+                />
+                {t('stock.creator_sentiment')}
+              </div>
+            </div>
+
+            {/* Chart SVG with overlay */}
+            <div
+              className="relative"
+              style={{ height: isMobile ? 240 : 360 }}
+              onMouseMove={handleChartMouseMove}
+              onMouseLeave={() => setHoverIdx(null)}
+            >
+              {isPrivate ? (
+                /* Private company — no price data: show a simple horizontal timeline */
+                <svg
+                  viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                  preserveAspectRatio="none"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                >
+                  {/* Baseline */}
+                  <line x1={0} y1={SVG_H / 2} x2={SVG_W} y2={SVG_H / 2} stroke="#E8E7E0" strokeWidth={2} />
+                </svg>
+              ) : (
+                <svg
+                  viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                  preserveAspectRatio="none"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                >
+                  <defs>
+                    <linearGradient id={`area-${ticker}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={stock.brandColor} stopOpacity="0.16" />
+                      <stop offset="100%" stopColor={stock.brandColor} stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Gridlines */}
+                  {gridPrices && gridPrices.map((gp, i) => {
+                    const y = priceToSvgY(gp)
+                    return (
+                      <g key={i}>
+                        <line x1={0} y1={y} x2={SVG_W - 50} y2={y} stroke="#F0EFE8" strokeWidth={1} />
+                        <text
+                          x={SVG_W - 4}
+                          y={y + 4}
+                          textAnchor="end"
+                          style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, fill: '#B6B7BE' }}
+                        >
+                          {fmtPrice(gp, data?.stock.currency)}
+                        </text>
+                      </g>
+                    )
+                  })}
+
+                  {/* Area fill */}
+                  {pricePts && (
+                    <polygon points={`${firstPriceX},${SVG_H} ${pricePts} ${lastPriceX},${SVG_H}`} fill={`url(#area-${ticker})`} />
+                  )}
+
+                  {/* Price line */}
+                  {pricePts && (
+                    <polyline
+                      points={pricePts}
+                      fill="none"
+                      stroke={stock.brandColor}
+                      strokeWidth={2.4}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  )}
+
+                  {/* Crosshair */}
+                  {hoverIdx !== null && priceSeries.length > 1 && (() => {
+                    const cx = dateToSvgX(priceMsList[hoverIdx])
+                    const cy = priceToSvgY(priceSeries[hoverIdx].close)
+                    return (
+                      <g>
+                        <line
+                          x1={cx} y1={0} x2={cx} y2={SVG_H}
+                          stroke="#9A9BA4"
+                          strokeWidth={1}
+                          strokeDasharray="4 3"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx={cx} cy={cy} r={4}
+                          fill={stock.brandColor}
+                          stroke="white"
+                          strokeWidth={2}
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      </g>
+                    )
+                  })()}
+                </svg>
+              )}
+
+              {/* Crosshair date/price label */}
+              {!isPrivate && hoverIdx !== null && priceSeries.length > 1 && (() => {
+                const pt = priceSeries[hoverIdx]
+                const xPct = (dateToSvgX(priceMsList[hoverIdx]) / SVG_W) * 100
+                const flipLeft = xPct > 65
+                return (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      ...(flipLeft
+                        ? { right: `${100 - xPct}%`, marginRight: 10 }
+                        : { left: `${xPct}%`, marginLeft: 10 }),
+                      background: '#14151A',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontFamily: '"JetBrains Mono", monospace',
+                      whiteSpace: 'nowrap',
+                      pointerEvents: 'none',
+                      zIndex: 10,
+                    }}
+                  >
+                    {fmtDate(pt.date)} · {fmtPrice(pt.close, data?.stock.currency)}
+                  </div>
+                )
+              })()}
+
+              {/* Creator avatar markers overlay */}
+              {markerGroups.length > 0 && (
+                <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+                  <div className="relative w-full h-full" style={{ pointerEvents: 'none' }}>
+                    {markerGroups.map(group => (
+                      <MarkerDot
+                        key={group.date}
+                        group={group}
+                        onShow={() => showMarker(group.date)}
+                        onHide={hideMarker}
+                        isMobile={isMobile}
+                      />
+                    ))}
+                    {activeGroup && (
+                      <MarkerTooltip
+                        group={activeGroup}
+                        style={tooltipPosition(activeGroup, isMobile)}
+                        onMouseEnter={() => showMarker(activeGroup.date)}
+                        onMouseLeave={hideMarker}
+                        isMobile={isMobile}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Date ticks */}
+            {!isPrivate && (
+              <div className="flex justify-between mt-2 px-1">
+                {dateTicks.map((tick, i) => (
+                  <span
+                    key={i}
+                    className="text-[11px]"
+                    style={{ color: '#B6B7BE', fontFamily: '"JetBrains Mono", monospace' }}
+                  >
+                    {tick ? fmtDate(tick).replace(/,\s*\d{4}$/, '') : ''}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+
+          {/* Bottom grid */}
+          <div className="grid gap-7" style={{ gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr' }}>
+            {/* Left: Recent coverage — on mobile shown second */}
+            <div className="flex flex-col gap-4" style={{ order: isMobile ? 2 : 1 }}>
+              <h2
+                style={{
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  fontWeight: 700,
+                  fontSize: 21,
+                  letterSpacing: '-0.02em',
+                  color: '#14151A',
+                }}
+              >
+                {t('stock.recent_coverage')}
+              </h2>
+              <div className="flex flex-col gap-3">
+                {recentCoverage.map(event => {
+                  const meta = SENTIMENT_META[event.sentiment]
+                  return (
+                    <div
+                      key={event.videoId}
+                      className="bg-white border border-[#ECEBE4] p-4 transition-colors duration-150"
+                      style={{ borderRadius: 14 }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#D6D5CC')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#ECEBE4')}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => navigate(`/creators/${event.creatorSlug}`)}
+                          className="flex items-center justify-center rounded-full shrink-0 text-white font-bold transition-transform duration-150 hover:scale-105"
+                          style={{
+                            width: 42,
+                            height: 42,
+                            background: event.creatorColor,
+                            fontSize: 15,
+                          }}
+                          title={`View ${event.creatorName}'s profile`}
+                        >
+                          {event.creatorInitial}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => navigate(`/creators/${event.creatorSlug}`)}
+                              className="text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 text-left"
+                            >
+                              {event.creatorName}
+                            </button>
+                            <span className="text-[11px] text-muted shrink-0">{fmtRelDate(event.publishedAt)}</span>
+                          </div>
+                          <div className="text-[11px] text-muted">{event.creatorHandle}</div>
+                          <button
+                            onClick={() => openVideo(event.videoId)}
+                            className="mt-1.5 block text-[13px] font-semibold text-primary hover:text-accent transition-colors duration-150 leading-snug text-left"
+                          >
+                            {event.title}
+                          </button>
+                          {event.note && (
+                            <p
+                              className="mt-1.5 text-[12.5px] leading-snug"
+                              style={{ color: '#6E6F78', fontStyle: 'italic' }}
+                            >
+                              “{event.note}”
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <div
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                              style={{ background: meta.bg, color: meta.color }}
+                            >
+                              <SentimentIcon sentiment={event.sentiment} size={10} color={meta.color} />
+                              {t(`sentiment.${event.sentiment.toLowerCase()}`)}
+                            </div>
+                            <span className="text-[11px] text-muted">
+                              @ {fmtPrice(event.priceAtMention, data?.stock.currency)}
+                            </span>
+                            <button
+                              onClick={() => openVideo(event.videoId)}
+                              className="ml-auto text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-150"
+                              style={{ background: '#F3F2EC', color: '#6E6F78' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = '#E8E7E0')}
+                              onMouseLeave={e => (e.currentTarget.style.background = '#F3F2EC')}
+                            >
+                              {t('stock.summary_btn')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Right: Overall sentiment — on mobile shown first */}
+            <div className={isMobile ? '' : 'sticky top-[90px]'} style={{ order: isMobile ? 1 : 2 }}>
+              <div
+                className="bg-white border border-[#ECEBE4] p-5"
+                style={{ borderRadius: 18 }}
+              >
+                <h2
+                  style={{
+                    fontFamily: '"Space Grotesk", sans-serif',
+                    fontWeight: 700,
+                    fontSize: 17,
+                    letterSpacing: '-0.015em',
+                    color: '#14151A',
+                  }}
+                >
+                  {t('stock.overall_sentiment')}
+                </h2>
+                <p className="text-[12px] text-muted mt-0.5 mb-4">
+                  {overallSentiment.total === 1 ? t('stock.ratings_one', { count: overallSentiment.total }) : t('stock.ratings_other', { count: overallSentiment.total })}
+                </p>
+
+                {overallSentiment.total > 0 && (() => {
+                  const { bullCount, neutralCount, bearCount, bullishPct, neutralPct, bearishPct } = overallSentiment
+                  const isBearDominant = bearCount > bullCount && bearCount >= neutralCount
+                  const isNeutralDominant = !isBearDominant && neutralCount > bullCount
+                  const dominantPct = isBearDominant ? bearishPct : isNeutralDominant ? neutralPct : bullishPct
+                  const dominantColor = isBearDominant ? '#E5484D' : isNeutralDominant ? '#D9B26A' : '#0F9D63'
+                  const subtitleKey = isBearDominant ? 'stock.of_creators_bearish' : isNeutralDominant ? 'stock.of_creators_neutral' : 'stock.of_creators_bullish'
+                  return <>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span
+                        style={{
+                          fontFamily: '"Space Grotesk", sans-serif',
+                          fontWeight: 700,
+                          fontSize: 44,
+                          color: dominantColor,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {dominantPct.toFixed(0)}%
+                      </span>
+                      <span className="text-[16px] font-semibold" style={{ color: dominantColor }}>
+                        {t(`verdict.${verdict}`, verdict)}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-muted mb-4">{t(subtitleKey)}</p>
+
+                  <SentimentBar
+                    bullishPct={overallSentiment.bullishPct}
+                    neutralPct={overallSentiment.neutralPct}
+                    bearishPct={overallSentiment.bearishPct}
+                  />
+
+                  {/* Legend */}
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex items-center justify-between text-[13px]">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#0F9D63' }} />
+                        <span className="text-body">{t('sentiment.bullish')}</span>
+                      </div>
+                      <span className="font-semibold text-primary">{overallSentiment.bullCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[13px]">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#D9B26A' }} />
+                        <span className="text-body">{t('sentiment.neutral')}</span>
+                      </div>
+                      <span className="font-semibold text-primary">{overallSentiment.neutralCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[13px]">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block rounded-full" style={{ width: 8, height: 8, background: '#E5484D' }} />
+                        <span className="text-body">{t('sentiment.bearish')}</span>
+                      </div>
+                      <span className="font-semibold text-primary">{overallSentiment.bearCount}</span>
+                    </div>
+                  </div>
+                </>
+                })()}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === 'analysts' && (
+        data.analyst ? (
+          <AnalystCard
+            analyst={data.analyst}
+            currency={stock.currency}
+            currentPrice={stock.latestClose}
+          />
+        ) : (
+          <div
+            className="bg-white border border-[#ECEBE4] p-8 text-center text-[13px] text-muted"
+            style={{ borderRadius: 18 }}
+          >
+            {t('analyst.empty')}
+          </div>
+        )
+      )}
     </div>
   )
 }

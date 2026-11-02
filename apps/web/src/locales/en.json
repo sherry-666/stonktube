@@ -27,6 +27,8 @@
     "tracked_by_one": "Tracked by {{count}} creator",
     "tracked_by_other": "Tracked by {{count}} creators",
     "creator_sentiment": "Creator sentiment at time of video",
+    "tab_creators": "Creator sentiment",
+    "tab_analysts": "Analyst ratings",
     "recent_coverage": "Recent creator coverage",
     "overall_sentiment": "Overall sentiment",
     "ratings_one": "Based on {{count}} rating in the last 7 days",
@@ -43,6 +45,7 @@
   },
   "analyst": {
     "title": "Wall Street analysts",
+    "empty": "No analyst ratings for this asset.",
     "source": "Source: Yahoo Finance · Updated {{date}}",
     "consensus": "Consensus",
     "rating_strong_buy": "Strong buy",

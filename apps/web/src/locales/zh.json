@@ -27,6 +27,8 @@
     "tracked_by_one": "{{count}} 位创作者跟踪",
     "tracked_by_other": "{{count}} 位创作者跟踪",
     "creator_sentiment": "视频发布时创作者的情绪",
+    "tab_creators": "创作者情绪",
+    "tab_analysts": "机构评分",
     "recent_coverage": "近期创作者报道",
     "overall_sentiment": "综合情绪",
     "ratings_one": "基于近7天 {{count}} 条评分",
@@ -43,6 +45,7 @@
   },
   "analyst": {
     "title": "华尔街分析师",
+    "empty": "该资产暂无机构评分。",
     "source": "来源：Yahoo Finance · 更新于 {{date}}",
     "consensus": "综合评级",
     "rating_strong_buy": "强烈买入",

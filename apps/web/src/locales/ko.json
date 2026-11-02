@@ -27,6 +27,8 @@
     "tracked_by_one": "{{count}}명의 크리에이터가 추적 중",
     "tracked_by_other": "{{count}}명의 크리에이터가 추적 중",
     "creator_sentiment": "영상 게시 당시 크리에이터 심리",
+    "tab_creators": "크리에이터 심리",
+    "tab_analysts": "애널리스트 평가",
     "recent_coverage": "최근 크리에이터 커버리지",
     "overall_sentiment": "전체 심리",
     "ratings_one": "최근 7일간 {{count}}개 평가 기준",
@@ -43,6 +45,7 @@
   },
   "analyst": {
     "title": "월가 애널리스트",
+    "empty": "이 자산에 대한 애널리스트 평가가 없습니다.",
     "source": "출처: Yahoo Finance · {{date}} 업데이트",
     "consensus": "컨센서스",
     "rating_strong_buy": "강력 매수",
